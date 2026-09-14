@@ -44,11 +44,36 @@ $run = static function (string $sql) use ($db, $dry): void {
 };
 
 $users = $columns('majors_users');
-if ($users === []) {
-    fwrite(STDERR, "majors_users does not exist in {$schema}; nothing to do.\n");
-    exit(1);
+$fresh = $users === [];
+if ($fresh) {
+    // Fresh copy (the sandbox, or a www copy that never had the admin): create the approved-user list.
+    $run("CREATE TABLE `majors_users` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `first_name` VARCHAR(100) NOT NULL DEFAULT '',
+            `last_name` VARCHAR(100) NOT NULL DEFAULT '',
+            `email` VARCHAR(255) NOT NULL,
+            `netid` CHAR(8) NULL,
+            `role` ENUM('advisor','marketing','super_admin','none') NOT NULL DEFAULT 'none',
+            `default_college_id` INT UNSIGNED NULL,
+            `default_department_id` INT UNSIGNED NULL,
+            `phone` VARCHAR(40) NULL,
+            `ouauth_id` VARCHAR(64) NULL,
+            `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+            `last_login_at` DATETIME NULL,
+            `created_at` DATETIME NULL,
+            `updated_at` DATETIME NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uq_majors_users_email` (`email`),
+            UNIQUE KEY `uq_majors_users_netid` (`netid`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $users = $dry ? ['id', 'first_name', 'last_name', 'email', 'netid', 'role', 'default_college_id', 'default_department_id',
+        'phone', 'ouauth_id', 'is_active', 'last_login_at', 'created_at', 'updated_at'] : $columns('majors_users');
 }
 
+if ($fresh) {
+    // The CREATE above already has every column and index; skip the drift repairs.
+    goto colleges;
+}
 if (!in_array('netid', $users, true)) {
     $run('ALTER TABLE `majors_users` ADD COLUMN `netid` CHAR(8) NULL AFTER `email`');
 }
@@ -95,11 +120,12 @@ if (!in_array('uq_majors_users_email', $uidx, true)) {
     }
 }
 
+colleges:
 $run('CREATE TABLE IF NOT EXISTS `majors_user_colleges` (
         `user_id` INT UNSIGNED NOT NULL, `college_id` INT UNSIGNED NOT NULL,
         PRIMARY KEY (`user_id`, `college_id`), KEY `idx_college` (`college_id`)
      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-if (in_array('default_college_id', $users, true)) {
+if (!$fresh && in_array('default_college_id', $users, true)) {
     $run('INSERT IGNORE INTO `majors_user_colleges` (`user_id`, `college_id`)
           SELECT `id`, `default_college_id` FROM `majors_users` WHERE `default_college_id` > 0');
 }

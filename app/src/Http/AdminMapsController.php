@@ -28,7 +28,7 @@ final class AdminMapsController extends Controller
         $user    = $this->app->guard()->require('advisor');
         $maps    = $this->app->maps();
         $layout  = $this->app->layout();
-        $lookups = new Lookups($this->app->db());
+        $lookups = new Lookups($this->app->db(), (array) $this->app->config->get('college_aliases', []));
 
         $mapId   = $r->id('degree_map_id');
         $order   = $r->enum('order', ['alpha', 'college'], 'alpha');
@@ -42,6 +42,7 @@ final class AdminMapsController extends Controller
         $mode = 'list';
         $map = null;
         $canEdit = false;
+        $canClone = false;
         $editableYear = false;
         $title = 'Edit Degree Maps';
 
@@ -52,7 +53,8 @@ final class AdminMapsController extends Controller
             }
             $year         = (int) $map['academic_year'];
             $editableYear = MapRepository::isEditable($map);
-            $canEdit      = $editableYear && $user->canEditCollege($lookups->collegeId((string) $map['college']));
+            $canClone     = $user->canEditCollege($lookups->collegeId((string) $map['college']));
+            $canEdit      = $editableYear && $canClone;
             $title        = ($maps->title($mapId) ?? $title) . ' — Admin';
 
             if ($wantEdit && $canEdit) {
@@ -92,6 +94,7 @@ final class AdminMapsController extends Controller
             'colleges'      => $maps->colleges($year),
             'college'       => $college,
             'can_edit'      => $canEdit,
+            'can_clone'     => $canClone,
             'editable_year' => $editableYear,
             'self_url'      => $layout->url('degree_maps/admin/maps.php'),
             'search_url'    => $layout->url('degree_maps/search.php'),

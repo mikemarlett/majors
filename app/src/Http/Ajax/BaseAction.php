@@ -22,7 +22,7 @@ abstract class BaseAction
     {
         $this->maps    = $app->maps();
         $this->editor  = new MapEditor($app->db());
-        $this->lookups = new Lookups($app->db());
+        $this->lookups = new Lookups($app->db(), (array) $app->config->get('college_aliases', []));
         $this->forms   = new Forms($app->layout(), $this->maps, $this->lookups);
     }
 

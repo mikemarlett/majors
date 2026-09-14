@@ -2,7 +2,7 @@
 /**
  * Degree Maps admin page body.
  * Variables: $user, $csrf, $mode ('list'|'view'|'edit'), $map (header or null), $results (HTML), $order, $year, $years, $colleges, $college,
- *            $can_edit (bool), $editable_year (bool), $self_url, $search_url, $flash (string|null)
+ *            $can_edit (bool), $can_clone (bool), $editable_year (bool), $self_url, $search_url, $flash (string|null)
  * @var \Majors\View\Layout $t
  */
 ?>
@@ -55,7 +55,7 @@
 <?php elseif ($mode === 'edit'): ?>
 			<button name="viewMap" value="View" class="<?= $t->cls('button.accent') ?>" type="submit">View Map</button>
 <?php endif; ?>
-<?php if (!$editable_year): ?>
+<?php if (!$editable_year && $can_clone): ?>
 			<button id="cloneMap" class="<?= $t->cls('button.accent') ?>" type="button" data-map-id="<?= (int) $map['id'] ?>">Clone to Next Year</button>
 <?php endif; ?>
 			<a class="<?= $t->cls('button') ?>" href="<?= $t->e($t->url('degree_maps/maps.php')) ?>?degree_map_id=<?= (int) $map['id'] ?>" target="_blank" rel="noopener">Public page</a>

@@ -156,13 +156,11 @@ final class Forms
     public function mapForm(array $map, User $user): string
     {
         $map = $this->emptyMap($map);
-        $colleges = $this->lookups->collegeNames();
-        if (!$user->isSuperAdmin()) {
-            $colleges = array_intersect_key($colleges, array_flip($user->colleges));
-        }
         $collegeOptions = [];
-        foreach ($colleges as $name) {
-            $collegeOptions[$name] = $name;
+        foreach ($this->lookups->collegeNameChoices() as $name => $collegeId) {
+            if ($user->isSuperAdmin() || in_array($collegeId, $user->colleges, true)) {
+                $collegeOptions[$name] = $name;
+            }
         }
         if ($map['college'] !== '' && !isset($collegeOptions[$map['college']])) {
             $collegeOptions[$map['college']] = $map['college']; // keep an existing value visible even if out of scope

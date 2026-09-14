@@ -52,6 +52,15 @@ Maps for the current and past catalog years are read-only for everyone;
 sign-in: an unlisted person sees a "not on the access list" page with the
 contact address from `config['site']['contact']`.
 
+### College names
+
+Maps and programs store the college *name*; users are scoped by the college
+*id* in `majors_colleges`. The College of Education was renamed the College of
+Applied Studies but `majors_colleges` still says "College of Education", so
+`config['college_aliases']` maps one to the other for scoping and for the
+college picker. The cleaner fix is to rename the row (and it is safe to: nothing
+joins on the name) — then drop the alias.
+
 ## Design switch
 
 `config['design']` is `old` (current wichita.edu, includes at
@@ -87,4 +96,11 @@ includes for both designs) and `docroot/academics/majors` at its real URL.
 - Retire the compatibility shims `docroot/.../maps_functions.php` and
   `majors_functions.php` once `/_resources/php/degree_maps_search_process.php`
   and `degree_search.php` are removed from the CMS.
-- Run `bin/images-audit.php` and archive unreferenced photos in `_images/`.
+- Archive the unreferenced photos in `_images/`: `bin/images-audit.php` (report in
+  [docs/images-manifest.txt](docs/images-manifest.txt)) found 565 referenced, 624
+  unreferenced (55 MB) and 2 referenced-but-missing files (`PHS.jpg`,
+  `HP_Nursing_Accelerated_Program_ITP.jpg`). `--archive <dir>` moves the orphans.
+- Data hygiene spotted by the version lookup: two 2026-27 maps exist twice
+  (ids 770/965 "Applied Engineering — Engineering Management", 789/791 "American
+  Sign Language — Structure of Language"). The new Clone action refuses to make a
+  second copy for the same year, but the existing duplicates need a human to pick one.

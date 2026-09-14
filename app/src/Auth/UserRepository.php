@@ -57,8 +57,11 @@ final class UserRepository
                     `last_login_at` = NOW(), `updated_at` = NOW()
               WHERE `id` = ?'
         );
+        // bind_param takes references; readonly properties cannot be passed by reference.
         $netid = $identity->netid;
-        $stmt->bind_param('sssi', $netid, $identity->givenName, $identity->surname, $id);
+        $given = $identity->givenName;
+        $sur   = $identity->surname;
+        $stmt->bind_param('sssi', $netid, $given, $sur, $id);
         $stmt->execute();
         $stmt->close();
     }

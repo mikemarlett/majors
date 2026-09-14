@@ -17,7 +17,8 @@ final class Lookups
     /** @var array<int,array<string,mixed>>|null */
     private ?array $colleges = null;
 
-    public function __construct(private readonly mysqli $db)
+    /** @param array<string,string> $aliases alternate college name => name in majors_colleges */
+    public function __construct(private readonly mysqli $db, private readonly array $aliases = [])
     {
     }
 
@@ -45,12 +46,43 @@ final class Lookups
         if ($name === null || $name === '') {
             return null;
         }
+        $candidates = [$name];
+        foreach ($this->aliases as $alias => $canonical) {
+            if (strcasecmp($alias, $name) === 0) {
+                $candidates[] = $canonical;
+            } elseif (strcasecmp($canonical, $name) === 0) {
+                $candidates[] = $alias;
+            }
+        }
         foreach ($this->colleges() as $id => $c) {
-            if (strcasecmp((string) $c['name'], $name) === 0) {
-                return $id;
+            foreach ($candidates as $n) {
+                if (strcasecmp((string) $c['name'], $n) === 0) {
+                    return $id;
+                }
             }
         }
         return null;
+    }
+
+    /**
+     * Names to offer when creating a map: every name a college is known by,
+     * so a new map can use the current name even if majors_colleges still
+     * holds the old one. @return array<string,int> name => college id
+     */
+    public function collegeNameChoices(): array
+    {
+        $out = [];
+        foreach ($this->colleges() as $id => $c) {
+            $out[(string) $c['name']] = $id;
+        }
+        foreach ($this->aliases as $alias => $canonical) {
+            $id = $this->collegeId($canonical);
+            if ($id !== null) {
+                $out[$alias] = $id;
+            }
+        }
+        ksort($out);
+        return $out;
     }
 
     public function collegeName(?int $id): ?string

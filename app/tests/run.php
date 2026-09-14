@@ -29,7 +29,7 @@ echo $fail === 0 ? "  all files parse\n" : "  {$fail} file(s) with syntax errors
 echo "== scripts\n";
 foreach (glob(__DIR__ . '/*.php') ?: [] as $script) {
     $name = basename($script);
-    if (in_array($name, ['run.php', 'bootstrap.php'], true)) {
+    if (in_array($name, ['run.php', 'bootstrap.php', 'parity_legacy.php'], true)) { // parity needs the legacy file + DB; see its header
         continue;
     }
     echo "-- {$name}\n";

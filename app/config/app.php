@@ -60,6 +60,14 @@ return [
         'lifetime_minutes' => 480,
     ],
 
+    // Colleges get renamed but the maps keep the name they were created with.
+    // Map legacy or current spellings onto the row in majors_colleges so
+    // advisor scoping still matches. key = name as found in degree_maps /
+    // programs, value = the name in majors_colleges.
+    'college_aliases' => [
+        'College of Applied Studies' => 'College of Education',
+    ],
+
     'site' => [
         'site_name' => 'Wichita State University',
         'logo'      => '/_resources/images/logo-blacktype.svg',
