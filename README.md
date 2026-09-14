@@ -107,10 +107,8 @@ includes for both designs) and `docroot/academics/majors` at its real URL.
   [docs/images-manifest.txt](docs/images-manifest.txt)) found 565 referenced, 624
   unreferenced (55 MB) and 2 referenced-but-missing files (`PHS.jpg`,
   `HP_Nursing_Accelerated_Program_ITP.jpg`). `--archive <dir>` moves the orphans.
-- Data hygiene spotted by the version lookup: two 2026-27 maps exist twice.
-  789/791 ("American Sign Language — Structure of Language") are identical;
-  770/965 ("Applied Engineering — Engineering Management") diverged — 965 has a
-  reworked 3rd/4th year and clean hours rows, 770 was last edited 2026-01-28.
-  Creating or cloning a second map for the same degree and year is now refused
-  (the UI offers to open the existing one) and the admin listing tags existing
-  duplicates, but these two pairs need a human to pick one and delete the other.
+- Two 2026-27 maps had been cloned twice (770/965, 789/791). Decision: keep
+  the later id. Removed on the sandbox; run `sql/002_remove_duplicate_maps.sql`
+  on www-test and www. Creating or cloning a second map for the same degree and
+  year is now refused (the UI offers to open the existing one) and the admin
+  listing tags any duplicates that do appear.

@@ -41,6 +41,12 @@ indexes on `degree_maps`. It normalizes legacy role values (`admin` →
 `super_admin`, `editor`/`approver` → `advisor`) and copies a netid out of
 `ouauth_id` when one is there. Safe to re-run.
 
+Also once, on www-test and then www:
+
+```bash
+mysql formshandlerdb < sql/002_remove_duplicate_maps.sql   # drops the two double-cloned 2026-27 maps (770, 789)
+```
+
 Then seed the first super admin and check the advisors:
 
 ```bash
