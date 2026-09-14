@@ -1,21 +1,8 @@
-# Bulk that is not source: program photos (audited separately), third-party bundles, archives
-data/main/academics/majors/_images/
-data/main/academics/majors/_admin/vendor/
-data/main/academics/majors/_admin/composer.phar
-data/main/academics/majors/degree_maps/admin/javascript/DataTables/
-data/main/academics/majors/degree_maps/admin/javascript/Editor-PHP-1.7.2/
-data/main/academics/majors/degree_maps/admin/javascript/ckeditor/
-data/main/academics/majors/degree_maps/admin/javascript/fine-uploader/
-data/main/academics/majors/degree_maps/admin/javascript/popper.js-master/
-data/main/academics/majors/degree_maps/admin/javascript/bootstrap/
-data/main/academics/majors/degree_maps/admin/javascript/jquery-ui/
-data/main/academics/majors/degree_maps/admin/javascript/mutation-summary-master/
-data/main/academics/majors/degree_maps/admin/javascript/lightbox2/
-data/main/academics/majors/degree_maps/admin/javascript/jstree/
-data/main/academics/majors/degree_maps/admin/css/bootstrap/
-data/main/academics/majors/degree_maps/admin/css/font-awesome-4.7.0/
+# Program photos (audited by bin/images-audit.php; see docs/images-manifest.txt), archives, per-server config
+docroot/academics/majors/_images/
 *.zip
 *.psd
+docroot/academics/majors/approot.php
 # Per-server config and secrets
 app/config/app.local.php
 *.credentials

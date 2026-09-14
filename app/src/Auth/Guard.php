@@ -19,7 +19,6 @@ final class Guard
 
     public function __construct(
         private readonly Kernel $app,
-        private readonly UserRepository $users,
         private readonly Csrf $csrf,
     ) {
     }
@@ -84,7 +83,7 @@ final class Guard
         if ($u === null) {
             return null;
         }
-        $fresh = $this->users->find($u->id);
+        $fresh = $this->app->users()->find($u->id);
         if ($fresh === null || $fresh->role === 'none') {
             $this->logout();
             return null;

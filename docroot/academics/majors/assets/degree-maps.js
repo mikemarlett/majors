@@ -12,6 +12,7 @@
 
 	var searchUrl = filters.getAttribute('data-search-url');
 	var selfUrl   = filters.getAttribute('data-self-url');
+	var linkBase  = filters.getAttribute('data-link-base'); // admin page: results link back into the admin
 	var input     = document.getElementById('searchList');
 	var yearSel   = document.getElementById('selected_year');
 	var collegeSel = document.getElementById('selected_college');
@@ -26,6 +27,7 @@
 		p.set('selected_year', yearSel ? yearSel.value : '');
 		p.set('selected_college', collegeSel ? collegeSel.value : 'all');
 		p.set('order', order || 'alpha');
+		if (linkBase) { p.set('link_base', linkBase); }
 		return p;
 	}
 
@@ -57,8 +59,12 @@
 			results.innerHTML = data.results || '<p>No results</p>';
 			results.removeAttribute('aria-busy');
 			initTooltips();
-			if (data.map_id && window.history && window.history.replaceState) {
-				window.history.replaceState(null, '', selfUrl + '?degree_map_id=' + data.map_id);
+			if (data.map_id) {
+				// A single hit renders the map itself; land on its real URL so the admin actions apply to it.
+				if (linkBase) { window.location.href = linkBase + data.map_id; return; }
+				if (window.history && window.history.replaceState) {
+					window.history.replaceState(null, '', selfUrl + '?degree_map_id=' + data.map_id);
+				}
 			} else {
 				pushState();
 			}

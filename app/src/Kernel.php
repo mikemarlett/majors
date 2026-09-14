@@ -118,7 +118,8 @@ final class Kernel
     public function guard(): Guard
     {
         $this->session();
-        return $this->guard ??= new Guard($this, $this->users(), $this->csrf());
+        // No database until a page actually needs the user list (logout must work without one).
+        return $this->guard ??= new Guard($this, $this->csrf());
     }
 
     public function csrf(): Csrf
@@ -170,7 +171,7 @@ final class Kernel
         if (!headers_sent()) {
             http_response_code(500);
         }
-        if ($this->request()->isAjax()) {
+        if ($this->request()->isAjax() || str_ends_with($this->request()->path(), '/ajax.php') || str_ends_with($this->request()->path(), '/search.php')) {
             Support\Json::fail($this->isDev() ? $e->getMessage() : 'Server error', 500);
         }
         if ($this->isDev()) {
