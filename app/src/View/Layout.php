@@ -1,0 +1,166 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Majors\View;
+
+use Majors\Support\Html;
+use RuntimeException;
+
+/**
+ * Template renderer with a design switch.
+ *
+ * A template name like 'degree_maps/map' is looked up in
+ * templates/<design>/ first and templates/shared/ second, so a design only
+ * needs to override the pieces that speak its chrome's vocabulary (page
+ * header, section wrappers, filter bars, buttons). Data-bearing templates
+ * live in shared/ and ask for chrome classes through $t->cls('token'), which
+ * reads templates/<design>/classmap.php.
+ *
+ * Inside a template, $t is this Layout and every entry of $vars is a local.
+ */
+final class Layout
+{
+    /** @var array<string,string>|null */
+    private ?array $classmap = null;
+
+    public function __construct(
+        private readonly string $templatesDir,
+        private readonly string $design,
+        private readonly Theme $theme,
+        private readonly string $baseUrl,
+        private readonly string $assetsDir,
+        private readonly array $site = [],
+    ) {
+    }
+
+    public function design(): string
+    {
+        return $this->design;
+    }
+
+    public function theme(): Theme
+    {
+        return $this->theme;
+    }
+
+    /** Site-wide values from config (logo, sprite, contact...). */
+    public function site(string $key, string $default = ''): string
+    {
+        $v = $this->site[$key] ?? $default;
+        return is_scalar($v) ? (string) $v : $default;
+    }
+
+    /** Render a template to a string. */
+    public function render(string $name, array $vars = []): string
+    {
+        $file = $this->resolve($name);
+        $t    = $this;
+        extract($vars, EXTR_SKIP);
+        ob_start();
+        try {
+            include $file;
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            throw $e;
+        }
+        return (string) ob_get_clean();
+    }
+
+    /** Alias that reads better inside templates. */
+    public function partial(string $name, array $vars = []): string
+    {
+        return $this->render($name, $vars);
+    }
+
+    /**
+     * Full page: wrap already-rendered content in templates/<design>/layout.php.
+     *
+     * @param array{title?:string,description?:string,head?:string[],foot?:string[],
+     *               body_class?:string,user?:mixed,csrf?:string,print?:bool} $opts
+     */
+    public function page(string $content, array $opts = []): string
+    {
+        return $this->render('layout', [
+            'content'     => $content,
+            'title'       => $opts['title'] ?? $this->site('site_name', 'Wichita State University'),
+            'description' => $opts['description'] ?? '',
+            'head'        => $opts['head'] ?? [],
+            'foot'        => $opts['foot'] ?? [],
+            'body_class'  => $opts['body_class'] ?? '',
+            'user'        => $opts['user'] ?? null,
+            'csrf'        => $opts['csrf'] ?? null,
+            'chrome'      => $this->theme->all(),
+        ]);
+    }
+
+    public function exists(string $name): bool
+    {
+        return $this->find($name) !== null;
+    }
+
+    public function e(mixed $value): string
+    {
+        return Html::e($value);
+    }
+
+    /** Chrome class(es) for a design token; '' when the design has no mapping. */
+    public function cls(string $token, string $fallback = ''): string
+    {
+        $this->classmap ??= $this->loadClassmap();
+        return $this->classmap[$token] ?? $fallback;
+    }
+
+    /** Public URL under the app's docroot folder, e.g. url('degree_maps/maps.php'). */
+    public function url(string $path = ''): string
+    {
+        return rtrim($this->baseUrl, '/') . '/' . ltrim($path, '/');
+    }
+
+    /** Cache-busted URL to a file in docroot/academics/majors/assets/. */
+    public function asset(string $path): string
+    {
+        $file = rtrim($this->assetsDir, '/') . '/' . ltrim($path, '/');
+        $v    = is_file($file) ? '?v=' . filemtime($file) : '';
+        return $this->url('assets/' . ltrim($path, '/')) . $v;
+    }
+
+    /** Inline SVG sprite reference used by both designs' icon sets. */
+    public function icon(string $symbol, string $class = 'icon', string $title = ''): string
+    {
+        $sprite = $this->site('sprite', '/_resources/images/sprites/svg-sprite-custom-symbol.svg');
+        $titleEl = $title !== '' ? '<title>' . $this->e($title) . '</title>' : '';
+        $aria    = $title !== '' ? ' role="img"' : ' aria-hidden="true"';
+        return '<svg class="' . $this->e($class) . '"' . $aria . '>' . $titleEl
+            . '<use xlink:href="' . $this->e($sprite) . '#' . $this->e($symbol) . '"></use></svg>';
+    }
+
+    private function resolve(string $name): string
+    {
+        $file = $this->find($name);
+        if ($file === null) {
+            throw new RuntimeException("Template not found: {$name} (design {$this->design})");
+        }
+        return $file;
+    }
+
+    private function find(string $name): ?string
+    {
+        $name = str_replace(['..', "\0"], '', $name);
+        foreach ([$this->design, 'shared'] as $dir) {
+            $file = $this->templatesDir . '/' . $dir . '/' . $name . '.php';
+            if (is_file($file)) {
+                return $file;
+            }
+        }
+        return null;
+    }
+
+    /** @return array<string,string> */
+    private function loadClassmap(): array
+    {
+        $file = $this->templatesDir . '/' . $this->design . '/classmap.php';
+        $map  = is_file($file) ? require $file : [];
+        return is_array($map) ? $map : [];
+    }
+}

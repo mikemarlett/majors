@@ -1,0 +1,1 @@
+<!-- stub footcode.inc -->
