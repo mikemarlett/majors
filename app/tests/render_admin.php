@@ -63,5 +63,9 @@ check($user->hasRole('advisor') && !$user->hasRole('marketing'), 'advisor role c
 $sa = new User(2, 'sa@wichita.edu', null, 'Sam', 'Admin', 'super_admin');
 check($sa->hasRole('marketing') && $sa->canEditCollege(99), 'super admin passes every check');
 check(User::fromArray($user->toArray())->colleges === [3], 'session round trip keeps colleges');
+$aa = new User(3, 'aa@wichita.edu', null, 'Aaron', 'Admin', 'advisor_admin');
+check($aa->hasRole('advisor') && !$aa->hasRole('marketing') && !$aa->hasRole('super_admin'), 'advisor_admin implies advisor only');
+check($aa->canEditCollege(4) && $aa->canEditCollege(99) && !$aa->isSuperAdmin(), 'advisor_admin edits any college but is not super admin');
+check(!$user->hasRole('advisor_admin'), 'plain advisor is not advisor_admin');
 
 finish();

@@ -54,7 +54,7 @@ chk "$(GET -b $J "$B/degree_maps/admin/manage_users.php")" 403 "advisor blocked 
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "advisor asks to edit current-year map"; hasnt $S/out.html 'id="degree-map-editor"' 'advisor gets the view, not the editor'
-chk "$(GET -b $J "$B/degree_maps/admin/maps.php?selected_year=2027")" 200 "advisor listing"; has $S/out.html 'dm-flag' 'duplicates tagged in the listing' 
+chk "$(GET -b $J "$B/degree_maps/admin/maps.php?selected_year=2027")" 200 "advisor listing"; hasnt $S/out.html 'dm-flag' 'no duplicate tags (none exist after 002)' 
 
 echo "[ajax as advisor]"
 A="$B/degree_maps/admin/ajax.php"
@@ -110,6 +110,20 @@ R=$(PK --data-urlencode "major=Aerospace Engineering" --data-urlencode "degree_t
 R=$(PK -d "degree_map_id=$DUP" "$A?action=delete_degree_map"); echo "$R" | grep -q '"success":true' && ok "cleanup 2028 map" || bad "cleanup: $R"
 R=$(PK -d "degree_map_id=$NEW" "$A?action=delete_degree_map"); echo "$R" | grep -q '"success":true' && ok "super admin deletes the e2e map" || bad "delete map: $R"
 chk "$(Q "SELECT COUNT(*) FROM degree_maps WHERE id=$NEW")" 0 "map gone"; chk "$(Q "SELECT COUNT(*) FROM degree_maps_courses WHERE degree_map_id=$NEW")" 0 "courses gone"
+
+echo "[advisor admin]"
+php bin/add-user.php aaron.admin@wichita.edu advisor_admin Aaron Admin >/dev/null
+N=$S/aaron.jar; rm -f $N; curl -s -o /dev/null -c $N -b $N "$B/auth/login.php?as=aaron.admin@wichita.edu"
+chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor admin views another college's map"; has $S/out.html 'id="cloneMap"' 'clone offered across colleges'
+chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027&editMap=Edit")" 200 "advisor admin asks to edit published map"; hasnt $S/out.html 'id="degree-map-editor"' 'published year still read-only for advisor admin'
+chk "$(GET -b $N "$B/_admin/index.php")" 403 "advisor admin blocked from majors admin"
+chk "$(GET -b $N "$B/degree_maps/admin/manage_users.php")" 403 "advisor admin blocked from users"
+GET -b $N "$B/degree_maps/admin/maps.php" >/dev/null; CN=$(grep -o 'name="csrf-token" content="[a-f0-9]*"' $S/out.html | grep -o '[a-f0-9]\{64\}')
+R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$LAS2027" "$A?action=clone_degree_map"); AN=$(echo "$R" | grep -o '"degree_map_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$AN" ] && ok "advisor admin clones another college's map → $AN" || bad "aa clone: $R"
+R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$AN&year=1&semester=1" "$A?action=edit_course"); echo "$R" | grep -q 'editCourseModal' && ok "advisor admin edits the clone" || bad "aa edit: $R"
+R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$AN" "$A?action=delete_degree_map"); echo "$R" | grep -q 'permission' && ok "advisor admin cannot delete" || bad "aa delete: $R"
+R=$(PK -d "degree_map_id=$AN" "$A?action=delete_degree_map"); echo "$R" | grep -q '"success":true' && ok "cleanup clone" || bad "cleanup: $R"
+R=$(PK -d "user_id=$(Q "SELECT id FROM majors_users WHERE email='aaron.admin@wichita.edu'")" "$A?action=delete_user"); echo "$R" | grep -q '"success":true' && ok "cleanup advisor admin user" || bad "cleanup user: $R"
 
 echo "[marketing]"
 L=$S/mia.jar; rm -f $L; curl -s -o /dev/null -c $L -b $L "$B/auth/login.php?as=mia.marketing@wichita.edu"

@@ -13,7 +13,8 @@
 		window.alert(prefix + ': ' + msg);
 	}
 
-	var ROLE_LABEL = { advisor: 'Advisor', marketing: 'Marketing', super_admin: 'Super admin', none: 'Disabled' };
+	var ROLE_LABEL = { advisor: 'Advisor', advisor_admin: 'Advisor admin', marketing: 'Marketing', super_admin: 'Super admin', none: 'Disabled' };
+	var ALL_COLLEGES = { advisor_admin: true, super_admin: true };
 
 	function loadUsers() {
 		$.getJSON(url('get_users')).done(function (r) {
@@ -25,7 +26,7 @@
 					'<td><a href="mailto:' + esc(u.email) + '">' + esc(u.first_name + ' ' + u.last_name) + '</a><br><small>' + esc(u.email) + '</small></td>' +
 					'<td>' + esc(u.netid) + '</td>' +
 					'<td>' + esc(ROLE_LABEL[u.role] || u.role) + (u.is_active ? '' : ' (inactive)') + '</td>' +
-					'<td>' + esc(u.role === 'super_admin' ? 'All' : (u.colleges.join(', ') || '—')) + '</td>' +
+					'<td>' + esc(ALL_COLLEGES[u.role] ? 'All' : (u.role === 'marketing' ? '—' : (u.colleges.join(', ') || '—'))) + '</td>' +
 					'<td>' + esc(u.last_login ? u.last_login.substring(0, 10) : 'never') + '</td>' +
 					'<td><button type="button" class="button button--small edit-user-btn" data-user-id="' + u.id + '">Edit</button> ' +
 					'<button type="button" class="button button--small delete-user-btn" data-user-id="' + u.id + '" data-user-name="' + esc(u.first_name + ' ' + u.last_name) + '">Delete</button></td></tr>';

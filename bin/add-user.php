@@ -16,7 +16,7 @@ $colleges = isset($argv[6]) ? array_map('intval', explode(',', $argv[6])) : [];
 $app = require dirname(__DIR__) . '/app/bootstrap.php';
 
 if (!$email || !$role || !in_array($role, \Majors\Auth\User::ROLES, true)) {
-    fwrite(STDERR, "usage: add-user.php <email> <advisor|marketing|super_admin|none> <first> <last> [netid] [college ids]\n");
+    fwrite(STDERR, "usage: add-user.php <email> <advisor|advisor_admin|marketing|super_admin|none> <first> <last> [netid] [college ids]\n");
     exit(1);
 }
 

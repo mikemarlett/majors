@@ -51,7 +51,13 @@ final class UserActions extends BaseAction
             'u'           => $row ?? ['id' => '', 'first_name' => '', 'last_name' => '', 'email' => '', 'netid' => '', 'role' => 'advisor', 'colleges' => [], 'default_department_id' => null, 'is_active' => 1],
             'colleges'    => $this->lookups->collegeNames(),
             'departments' => array_map(static fn (array $d) => (string) $d['department'], $this->lookups->departments()),
-            'roles'       => ['advisor' => 'Advisor (degree maps)', 'marketing' => 'Marketing (majors pages)', 'super_admin' => 'Super admin (everything)', 'none' => 'Disabled'],
+            'roles'       => [
+                'advisor'       => 'Advisor (degree maps for their colleges)',
+                'advisor_admin' => 'Advisor admin (degree maps for every college)',
+                'marketing'     => 'Marketing (majors pages)',
+                'super_admin'   => 'Super admin (everything, incl. users)',
+                'none'          => 'Disabled',
+            ],
             'csrf'        => $this->app->guard()->csrfToken(),
         ]);
     }

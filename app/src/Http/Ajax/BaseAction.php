@@ -61,7 +61,7 @@ abstract class BaseAction
 
     protected function assertCollege(string $collegeName, User $user): void
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isDegreeMapsAdmin()) {
             return;
         }
         $collegeId = $this->lookups->collegeId($collegeName);

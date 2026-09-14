@@ -158,7 +158,7 @@ final class Forms
         $map = $this->emptyMap($map);
         $collegeOptions = [];
         foreach ($this->lookups->collegeNameChoices() as $name => $collegeId) {
-            if ($user->isSuperAdmin() || in_array($collegeId, $user->colleges, true)) {
+            if ($user->isDegreeMapsAdmin() || in_array($collegeId, $user->colleges, true)) {
                 $collegeOptions[$name] = $name;
             }
         }

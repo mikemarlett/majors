@@ -41,6 +41,12 @@ foreach (['old', 'new'] as $design) {
     check(str_contains($page, 'class="site-chrome site-chrome--header"'), 'chrome wrapped for print hiding');
 }
 
+$listing = test_layout('old')->render('degree_maps/listing', [
+    'groups'    => [['key' => 'A', 'label' => 'A', 'items' => [['id' => 1, 'major' => 'Art', 'degree_type' => 'BA'], ['id' => 2, 'major' => 'Art', 'degree_type' => 'BA']]]],
+    'link_base' => '/x?degree_map_id=', 'flag_ids' => [1, 2], 'flag_text' => 'duplicate',
+]);
+check(substr_count($listing, 'class="dm-flag"') === 2, 'listing tags flagged (duplicate) maps');
+
 $css = (string) file_get_contents(dirname(__DIR__, 2) . '/docroot/academics/majors/assets/degree-map.css');
 check(str_contains($css, 'size: letter portrait'), 'print CSS pins letter portrait');
 check(str_contains($css, '.site-chrome, .noprint'), 'print CSS hides chrome and noprint');

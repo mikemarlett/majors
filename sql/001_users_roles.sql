@@ -4,12 +4,12 @@
 -- (the www-test copy has drifted — some builds have `role`, others
 -- `permission_level`) and applies only the statements that are missing.
 --
--- Roles: advisor (degree maps, scoped by majors_user_colleges),
---        marketing (majors pages), super_admin (everything + users), none.
+-- Roles: advisor (degree maps, scoped by majors_user_colleges), advisor_admin (degree maps,
+--        every college), marketing (majors pages), super_admin (everything + users), none.
 
 ALTER TABLE `majors_users`
     ADD COLUMN `netid` CHAR(8) NULL AFTER `email`,
-    ADD COLUMN `role` ENUM('advisor','marketing','super_admin','none') NOT NULL DEFAULT 'none' AFTER `netid`,
+    ADD COLUMN `role` ENUM('advisor','advisor_admin','marketing','super_admin','none') NOT NULL DEFAULT 'none' AFTER `netid`,
     ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1,
     ADD COLUMN `last_login_at` DATETIME NULL,
     ADD UNIQUE KEY `uq_majors_users_netid` (`netid`),

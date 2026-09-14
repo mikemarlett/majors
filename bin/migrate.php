@@ -53,7 +53,7 @@ if ($fresh) {
             `last_name` VARCHAR(100) NOT NULL DEFAULT '',
             `email` VARCHAR(255) NOT NULL,
             `netid` CHAR(8) NULL,
-            `role` ENUM('advisor','marketing','super_admin','none') NOT NULL DEFAULT 'none',
+            `role` ENUM('advisor','advisor_admin','marketing','super_admin','none') NOT NULL DEFAULT 'none',
             `default_college_id` INT UNSIGNED NULL,
             `default_department_id` INT UNSIGNED NULL,
             `phone` VARCHAR(40) NULL,
@@ -78,7 +78,7 @@ if (!in_array('netid', $users, true)) {
     $run('ALTER TABLE `majors_users` ADD COLUMN `netid` CHAR(8) NULL AFTER `email`');
 }
 if (!in_array('role', $users, true)) {
-    $run("ALTER TABLE `majors_users` ADD COLUMN `role` ENUM('advisor','marketing','super_admin','none') NOT NULL DEFAULT 'none' AFTER `netid`");
+    $run("ALTER TABLE `majors_users` ADD COLUMN `role` ENUM('advisor','advisor_admin','marketing','super_admin','none') NOT NULL DEFAULT 'none' AFTER `netid`");
     if (in_array('permission_level', $users, true)) {
         $run("UPDATE `majors_users` SET `role` = CASE LOWER(`permission_level`)
                 WHEN 'administrator' THEN 'super_admin' WHEN 'admin' THEN 'super_admin'
@@ -88,8 +88,8 @@ if (!in_array('role', $users, true)) {
     // Column exists but may be a VARCHAR with legacy values; normalize then constrain.
     $run("UPDATE `majors_users` SET `role` = 'super_admin' WHERE LOWER(`role`) IN ('admin','administrator')");
     $run("UPDATE `majors_users` SET `role` = 'advisor' WHERE LOWER(`role`) IN ('editor','approver')");
-    $run("UPDATE `majors_users` SET `role` = 'none' WHERE `role` NOT IN ('advisor','marketing','super_admin','none') OR `role` IS NULL");
-    $run("ALTER TABLE `majors_users` MODIFY COLUMN `role` ENUM('advisor','marketing','super_admin','none') NOT NULL DEFAULT 'none'");
+    $run("UPDATE `majors_users` SET `role` = 'none' WHERE `role` NOT IN ('advisor','advisor_admin','marketing','super_admin','none') OR `role` IS NULL");
+    $run("ALTER TABLE `majors_users` MODIFY COLUMN `role` ENUM('advisor','advisor_admin','marketing','super_admin','none') NOT NULL DEFAULT 'none'");
 }
 if (!in_array('is_active', $users, true)) {
     $run('ALTER TABLE `majors_users` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1');

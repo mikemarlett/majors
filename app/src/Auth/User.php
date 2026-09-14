@@ -6,14 +6,21 @@ namespace Majors\Auth;
 
 /**
  * A signed-in, approved user (a row of majors_users). Roles:
- *   advisor      edits degree maps for the colleges in $colleges
- *   marketing    edits the Majors marketing pages
- *   super_admin  everything, plus user management
- *   none         on the list but disabled
+ *   advisor        edits degree maps for the colleges in $colleges (future years)
+ *   advisor_admin  edits degree maps for every college (future years); no Majors, no users
+ *   marketing      edits the Majors marketing pages
+ *   super_admin    everything, plus user management and published-year edits
+ *   none           on the list but disabled
  */
 final class User
 {
-    public const ROLES = ['advisor', 'marketing', 'super_admin', 'none'];
+    public const ROLES = ['advisor', 'advisor_admin', 'marketing', 'super_admin', 'none'];
+
+    /** Roles that satisfy a check for another role. */
+    private const IMPLIES = [
+        'advisor_admin' => ['advisor'],
+        'super_admin'   => ['advisor', 'advisor_admin', 'marketing'],
+    ];
 
     /** @param list<int> $colleges ids from majors_user_colleges */
     public function __construct(
@@ -40,10 +47,24 @@ final class User
         return $this->role === 'super_admin';
     }
 
-    /** super_admin satisfies every role check. */
+    /** True when the user's role is one of $roles or implies one (super_admin implies all, advisor_admin implies advisor). */
     public function hasRole(string ...$roles): bool
     {
-        return $this->isSuperAdmin() || in_array($this->role, $roles, true);
+        if (in_array($this->role, $roles, true)) {
+            return true;
+        }
+        foreach (self::IMPLIES[$this->role] ?? [] as $implied) {
+            if (in_array($implied, $roles, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** May edit degree maps for any college (still only future years unless super admin). */
+    public function isDegreeMapsAdmin(): bool
+    {
+        return $this->role === 'advisor_admin' || $this->isSuperAdmin();
     }
 
     public function canEditDegreeMaps(): bool
@@ -59,7 +80,7 @@ final class User
     /** Advisor scope: may this user edit a map that belongs to $collegeId? */
     public function canEditCollege(?int $collegeId): bool
     {
-        if ($this->isSuperAdmin()) {
+        if ($this->isDegreeMapsAdmin()) {
             return true;
         }
         if ($this->role !== 'advisor' || $collegeId === null) {

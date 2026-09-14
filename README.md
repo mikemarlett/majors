@@ -40,15 +40,16 @@ and a notice when an older version is being viewed. The family is
 
 ## Roles
 
-| role          | can                                                                 |
-|---------------|---------------------------------------------------------------------|
-| `advisor`     | create/edit/clone degree maps for **their colleges**, future years only |
-| `marketing`   | the Majors admin                                                    |
-| `super_admin` | everything, plus Manage Users and deleting maps                     |
-| `none`        | on the list but disabled                                            |
+| role            | can                                                                 |
+|-----------------|---------------------------------------------------------------------|
+| `advisor`       | create/edit/clone degree maps for **their colleges**, future years only |
+| `advisor_admin` | the same for **every college**; no Majors, no user management |
+| `marketing`     | the Majors admin                                                    |
+| `super_admin`   | everything, plus Manage Users, deleting maps, editing published years |
+| `none`          | on the list but disabled                                            |
 
-Maps for the current and past catalog years are read-only for everyone;
-"Clone to Next Year" makes the editable copy. Nobody is auto-created at
+Maps for the current and past catalog years are read-only for advisors and
+advisor admins; "Clone to Next Year" makes the editable copy. Nobody is auto-created at
 sign-in: an unlisted person sees a "not on the access list" page with the
 contact address from `config['site']['contact']`.
 
@@ -103,10 +104,12 @@ includes for both designs) and `docroot/academics/majors` at its real URL.
 - Retire the compatibility shims `docroot/.../maps_functions.php` and
   `majors_functions.php` once `/_resources/php/degree_maps_search_process.php`
   and `degree_search.php` are removed from the CMS.
-- Archive the unreferenced photos in `_images/`: `bin/images-audit.php` (report in
-  [docs/images-manifest.txt](docs/images-manifest.txt)) found 565 referenced, 624
-  unreferenced (55 MB) and 2 referenced-but-missing files (`PHS.jpg`,
-  `HP_Nursing_Accelerated_Program_ITP.jpg`). `--archive <dir>` moves the orphans.
+- Photos: `bin/images-audit.php --archive` moved the 624 unreferenced files
+  (55 MB) out of `_images/` on 2026-09-14 into `/srv/work/majors-backups/images-archive-20260914`;
+  565 referenced files remain (see [docs/images-manifest.txt](docs/images-manifest.txt)).
+  Deploy the trimmed `_images/` to the servers, or run the same command there.
+  Two referenced files are missing everywhere: `PHS.jpg` and
+  `HP_Nursing_Accelerated_Program_ITP.jpg` (those pages show broken images today).
 - Two 2026-27 maps had been cloned twice (770/965, 789/791). Decision: keep
   the later id. Removed on the sandbox; run `sql/002_remove_duplicate_maps.sql`
   on www-test and www. Creating or cloning a second map for the same degree and

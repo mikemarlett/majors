@@ -30,7 +30,7 @@ use Majors\Support\Html;
 				<option value="<?= (int) $id ?>"<?= in_array((int) $id, $u['colleges'], true) ? ' selected' : '' ?>><?= $t->e($name) ?></option>
 <?php endforeach; ?>
 			</select>
-			<span class="help-block">Hold Ctrl (Windows) or Cmd (Mac) to pick more than one. Super admins ignore this.</span>
+			<span class="help-block">Hold Ctrl (Windows) or Cmd (Mac) to pick more than one. Advisor admins and super admins see every college regardless.</span>
 		</div>
 		<div class="ma-col-6"><label for="uf_dept">Department (optional)</label>
 			<select name="department" id="uf_dept"><option value="">None</option><?= Html::options($departments, $u['default_department_id']) ?></select></div>
