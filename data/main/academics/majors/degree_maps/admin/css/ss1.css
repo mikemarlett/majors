@@ -1,0 +1,160 @@
+﻿@import url(https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css);
+
+.td_left {
+	width: 385px ;
+	background: url(https://wichita.edu/thisis/zed/images/academics/td_left_bg.gif) ;
+}
+
+.div_left8 {
+	padding: 3px 12px 3px 8px ;
+	line-height: 21px ;
+}
+
+.div_right8 {
+	padding: 3px 8px 3px 8px ;
+}
+
+.td_right {
+	width: 170px ;
+}
+
+.table_content {
+	margin-top: 10px ;
+}
+
+.emp, .more a, .more a:visited {
+	color: #6f1200 ;
+	font-weight: bold ;
+	text-decoration: none ;
+}
+
+.more a:hover {
+    text-decoration: underline ;
+}
+
+.item_right8 {
+	margin-top: 10px ;
+	line-height: 15px ;
+}
+
+.item_right8 a {
+	font-weight: bold ;
+	color: #000 ;
+	text-decoration: none ;
+}
+
+.item_right8 a:hover, .more a:hover {
+	color: #ac4d37 ;
+	text-decoration: underline !important ;
+}
+
+.item_right8 a:visited {
+	text-decoration: none ;
+}
+
+
+.award {
+	padding-top: 10px ;
+	margin-left: 10px ;
+	margin-top: 0px ;
+	width: 360px ;
+	background: url(https://wichita.edu/thisis/zed/images/academics/award_bg.gif) no-repeat ;
+}
+
+#flash_div {
+	position:relative;
+}
+
+.menu_above_flash {
+	position: absolute ;
+	bottom: 0px ;
+	left: 0px ;
+	min-height: 45px ;
+	background-color: #000 ;
+	width: 560px;
+}
+
+.menu_above_flash_inner {
+	padding: 14px 0 0 14px ;
+}
+
+.menu_above_flash_inner a, .menu_above_flash_inner a:visited {
+	font-size: 14px ;
+	font-weight: bold ;
+	color: #fff ;
+	text-decoration: none ;
+}
+
+.menu_above_flash_inner a:hover {
+	font-weight: bold ;
+	color: #ac4d37 ;
+	text-decoration: underline ;
+}
+
+.item_right_big {
+	font-weight: bold ;
+	margin-top: 12px ;
+	line-height: 16px ;
+}
+
+.item_right_small {
+	margin-left: 5px ;
+	font-size: 12px ;
+	line-height: 16px ;
+}
+
+.item_right_big a, .item_right_small a {
+	color: #000 ;
+	text-decoration: none ;
+}
+
+.item_right_big a:hover, .item_right_small a:hover {
+	text-decoration: underline ;
+}
+
+#howsthis {
+	position: absolute ;
+	top: 0 ;
+	left: 0 ;
+	background: #fff ;
+	z-index: 2 ;
+	width: 560px ;
+	height: 264px ;
+	cursor: pointer ;
+}
+
+
+.blackbar_added {
+    padding-right: 0 ;
+    white-space: nowrap ;
+    overflow: hidden ;
+}
+
+.blackbar_added a {
+    margin-right: 15px !important ;
+}
+
+.major_detail_ul {
+    margin: 0 ;
+    padding-left: 25px ;
+    padding-top: 5px ;
+}
+
+.major_detail_ul a, .major_detail_ul a:visited {
+    text-decoration: none ;
+    color: #000 ;
+}
+
+.major_detail_ul a:hover {
+    text-decoration: underline ;
+}
+
+.dtinfofooter {
+    border-top: 1px solid #999 ;
+    padding-top: 5px ;
+    margin-top: 25px ;
+    font-size: 11px ;
+    line-height: 14px ;
+    color: #999 ;
+    margin-bottom: 20px ;
+}

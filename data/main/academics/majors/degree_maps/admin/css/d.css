@@ -1,0 +1,378 @@
+.ttt01
+{
+	background-color: #000;
+	border-radius: 3px;
+	margin-bottom: 15px;
+}
+
+.ttt01 td
+{
+	text-align: center;
+	padding-top: 12px;
+	padding-bottom: 10px;
+}
+
+.ttt01 td a
+{
+	color: #fff!important;
+	font-size: 15px;
+	text-transform: uppercase;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.ttt01 td a:hover { text-decoration: underline; }
+.galleria-errors { display: none!important; }
+
+@media screen and (max-width:560px)
+{
+	.tuitionmenu
+	{
+		visibility: hidden;
+		display: none!important;
+		margin: none;
+	}
+}
+
+@media screen and (max-width:320px)
+{
+	.tuitionmenu
+	{
+		visibility: hidden;
+		display: none!important;
+		margin: none;
+	}
+}
+
+@media screen and (max-width:560px)
+{
+	#top-menu-bar,#top-menu-bar9 { display: none!important; }
+	#nav-left ul { margin-bottom: 0!important; }
+	#nav-left ul li { font-size: 16px; }
+	#nav-left ul li,#nav-left ul li a { color: #525252!important; }
+	#contact-box a:hover,#nav-left ul li a:hover { color: #ac4d37!important; }
+
+	#nav-left
+	{
+		width: 100%!important;
+		border: 0!important;
+		margin-bottom: 10px;
+		float: none!important;
+		-webkit-box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+
+	#nav-left .line-hori
+	{
+		background: #999;
+		height: 1px;
+	}
+
+	#content1
+	{
+		display: block!important;
+		width: 100%!important;
+		padding-left: 0!important;
+	}
+
+	#menu-button
+	{
+		display: block!important;
+		font-weight: 700;
+		text-transform: uppercase;
+		cursor: pointer;
+		margin-bottom: 10px;
+		text-decoration: none;
+		color: #000;
+		background: url(https://www.wichita.edu/thisis/r/images/lmb-image.png) no-repeat;
+		background-position: right top;
+		padding-right: 43px;
+		min-height: 26px;
+		font-size: 16px;
+	}
+
+	.sidebar1
+	{
+		float: none!important;
+		margin: 0 0 10px!important;
+	}
+
+	#contact-box
+	{
+		font-size: 11px!important;
+		border-top: 1px solid #999!important;
+		padding-top: 10px;
+		margin-top: 10px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		margin-bottom: 10px!important;
+	}
+
+	#contact-box,#contact-box a { color: #969696!important; }
+	#contact-box,#content1 iframe,#wrapper-outer,.sidebar1 { width: 100%!important; }
+
+	#top-bar-black ul
+	{
+		padding: 0 0 10px;
+		width: 210px;
+		margin: 0 auto;
+		list-style-type: none;
+	}
+
+	#top-bar-black li
+	{
+		margin-top: 10px;
+		margin-bottom: 10px;
+	}
+
+	#top-bar-black li a
+	{
+		color: #fff;
+		font-weight: 700;
+		font-size: 15px;
+		text-decoration: none;
+		text-transform: uppercase;
+	}
+
+	#top-bar-black li a:hover { text-decoration: underline; }
+	#top-mobile-menu-btn { text-align: right; }
+	#dept_header,#flash-blacktop,#social-stuff img,#srchbox,.menu_above_flash { display: none; }
+
+	#content1 h1
+	{
+		font: 22px georgia!important;
+		font-weight: 400!important;
+		font-style: normal!important;
+	}
+
+	#content1 h2,#content1 h3,#content1 h4,#content1 h5,#content1 h6
+	{
+		font: 20px georgia!important;
+		font-weight: 400!important;
+		font-style: normal!important;
+	}
+
+	#content1 h3,#content1 h4,#content1 h5,#content1 h6 { font: 17px georgia!important; }
+	#content1 h5,#content1 h6 { font: 700 14px georgia!important; }
+	#content1 h6 { font: 700 13px georgia!important; }
+	.hide-in-mobile { display: none!important; }
+	.hide-in-regular { display: block!important; }
+	#asp_top_image { padding: 0!important; }
+
+	#sidebar,#sidebar2
+	{
+		width: 100%!important;
+		float: none!important;
+		margin-left: 0!important;
+		background-color: #f7f7f7;
+		padding: 3px!important;
+	}
+
+	.stripetable { border: 0!important; }
+}
+
+#wrapper-outer
+{
+	margin: 0 auto;
+	background-color: #ffffff;
+	display: none;
+}
+
+#wrapper-inner { padding: 15px 15px 45px; }
+
+.shadow
+{
+	-moz-box-shadow: 3px 3px 4px #999;
+	-webkit-box-shadow: 3px 3px 4px #999;
+	box-shadow: 3px 3px 4px #999;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#999999')";
+	filter: progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#999999');
+}
+
+#content1,#nav-left
+{
+	display: table-cell;
+	vertical-align: top;
+}
+
+#nav-left { width: 170px; }
+#nav-left ul { margin-right: 10px; }
+
+#content1
+{
+	height: 100%;
+	padding-left: 10px;
+}
+
+#resp-preview
+{
+	position: fixed;
+	top: 15px;
+	left: 50%;
+	margin-left: -160px;
+	width: 320px;
+	border: 2px solid red;
+	background-color: #ac4d37;
+	padding: 5px;
+	text-align: center;
+	color: #fff;
+	font-weight: 700;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	-khtml-border-radius: 3px;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.noselect
+{
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-o-user-select: none;
+}
+
+.line-hori
+{
+	background: url(https://www.wichita.edu/thisis/r/images/dot-hori.png);
+	height: 3px;
+}
+
+.line-vert
+{
+	background: url(https://www.wichita.edu/thisis/r/images/dot-vert.png);
+	width: 3px;
+}
+
+#div1 { display: table-cell; }
+
+#asp_top_image
+{
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+#asp_top_image img
+{
+	width: 100%!important;
+	border-radius: 3px;
+}
+
+.webks-responsive-table dd,.webks-responsive-table dt
+{
+	display: inline-block;
+	margin: 0 0 1px;
+	padding: 5px 1%;
+	border-top: 1px dotted #999;
+}
+
+.webks-responsive-table dt
+{
+	text-align: left;
+	font-weight: 700;
+	vertical-align: top;
+	word-wrap: break-word;
+	width: 23%;
+}
+
+.webks-responsive-table dd { width: 73%; }
+
+.webks-responsive-table df
+{
+	display: block;
+	padding: 5px;
+}
+
+.webks-responsive-table dl
+{
+	border: 1px solid #999;
+	background: #f6f6f6;
+	padding: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	-khtml-border-radius: 5px;
+}
+
+.webks-responsive-table .title-inner
+{
+	-webkit-transform: rotate(-90deg);
+	-moz-transform: rotate(-90deg);
+	filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+}
+
+.col-0 { border-top: 0!important; }
+
+#content1 table,.stripetable
+{
+	border-spacing: 0;
+	border-collapse: collapse;
+}
+
+.stripetable { border: 1px solid #999; }
+.stripetable tr:nth-child(odd) { background-color: #eaeaea!important; }
+.stripetable tr:nth-child(even) { background-color: #fff!important; }
+.stripetable td,.stripetable th { border: 1px solid #999; }
+
+.rss2_set .rss2_item
+{
+	margin-bottom: 10px;
+	margin-top: 10px;
+	padding-bottom: 10px;
+	padding-top: 5px;
+	border-bottom: 3px dotted #eaeaea;
+}
+
+div.rss2_item:last-child { border-bottom: 0; }
+h1.pinterest-h1 { margin-bottom: 20px!important; }
+.pinterest-style-list { padding-bottom: 30px; }
+
+.pinterest-style-list div.item
+{
+	width: 180px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	margin-right: 6px;
+	margin-bottom: 6px;
+	vertical-align: top;
+	background-color: #f6f6f6;
+	display: inline-block;
+}
+
+.pinterest-style-list div.item-inner { padding: 5px 10px; }
+
+img[specialAutoThumbPlayButton="1"]
+{
+	cursor: pointer;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+div[specialAutoThumbWrapper="1"]
+{
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+	z-index: 99999;
+}
+
+#google_translate_element
+{
+	float: left;
+	bottom: 20px;
+	right: 220px;
+}
+
+#ksdegreestats
+{
+	float: right;
+	bottom: 25px;
+	margin-left: 20px;
+	height: 31px;
+	width: 151px;
+}

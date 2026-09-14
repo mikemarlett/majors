@@ -1,0 +1,27 @@
+{
+    "name": "wsu/degree_admin",
+    "description": "Administration for degree programs at Wichita State.",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "mikemarlett",
+            "email": "48919000+mikemarlett@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "gaomingcode/jszip": "^3.6",
+        "datatables.net/datatables.net-autofill-dt": "^2.7",
+        "datatables.net/datatables.net-buttons-dt": "^3.0",
+        "datatables.net/datatables.net-colreorder-dt": "^2.0",
+        "datatables.net/datatables.net-fixedheader-dt": "^4.0",
+        "datatables.net/datatables.net-responsive-dt": "^3.0",
+        "datatables.net/datatables.net-rowgroup-dt": "^1.5",
+        "datatables.net/datatables.net-rowreorder-dt": "^1.5",
+        "datatables.net/datatables.net-scroller-dt": "^2.4",
+        "datatables.net/datatables.net-searchbuilder-dt": "^1.7",
+        "datatables.net/datatables.net-searchpanes-dt": "^2.3",
+        "datatables.net/datatables.net-select-dt": "^2.0",
+        "datatables.net/datatables.net-staterestore-dt": "^1.4"
+    }
+}

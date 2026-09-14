@@ -1,0 +1,253 @@
+html, body 
+{
+    padding: 0 ;
+    margin: 0 ;
+}
+
+body 
+{
+    font-family: Arial ;
+    background-color: #e8e8e8; 
+}
+
+.wtbl 
+{
+    width: 779px ;
+}
+
+.wtbl td
+{
+    background-color: #fff ;
+}
+
+.top001
+{
+    background: url(https://webs.wichita.edu/dt/images/ulrich2010/top.gif) ;
+    width: 779px ;
+    height: 117px ;
+    position: relative ;
+    font-size: 12px ;
+    cursor: pointer ;
+}
+
+.t1 
+{
+    position: absolute ;
+    left: 245px ;
+    top: 85px ;
+}
+
+.t1 a 
+{
+    color: #000 ;
+    text-decoration: none ;
+}
+
+.t1 a:hover
+{
+    color: #407ebd ;
+    text-decoration: underline ;
+}
+
+.t1div 
+{
+    margin-left: 8px ;
+    margin-right: 8px ;
+}
+
+.bottom001 
+{
+    width: 779px ;
+    height: 86px ;
+    background: url(https://webs.wichita.edu/dt/images/ulrich2010/bottom.gif) ;
+    position: relative ;
+    font-size: 10px ;
+}
+
+.bottom001 a
+{
+    color: #000 ;
+    text-decoration: none ;
+}
+
+.bottom001 a:hover
+{
+    color: #407ebd ;
+    text-decoration: underline ;
+}
+
+.btm1 
+{
+    position: absolute ;
+    top: 40px ;
+    left: 195px ;
+}
+
+.btm2
+{
+    position: absolute ;
+    top: 60px ;
+    left: 60px ;
+    font-size: 9px ;
+}
+
+.btm3
+{
+    position: absolute ;
+    top: 38px ;
+    left: 60px ;
+}
+
+.content1 
+{
+    width: 694px ;
+    margin-bottom: 70px ;
+    margin-top: 20px ;
+    text-align: left ;
+    line-height: 20px ;
+    font-size: 12px ;
+}
+
+h1, h3 
+{
+    color: #407ebd ;
+}
+
+h1 
+{
+    font-size: 16px ;   
+}
+
+h2 
+{
+    font-size: 14px ;   
+}
+
+h3
+{
+    font-size: 13px ;   
+}
+
+h4 
+{
+    font-size: 12px ;   
+}
+
+
+.content1 a 
+{
+    color: #407ebd ;
+    text-decoration: none ;
+}
+
+.content1 a:hover
+{
+    color: #93bd01 ;
+    text-decoration: underline ;
+}
+
+.top_image 
+{
+    margin-bottom: 5px ;
+}
+
+label.overTxtLabel {
+	font-family: arial ;
+	font-weight: bold ;
+	font-size: 10px;
+	color: #000;
+}
+
+img 
+{
+    border: 0 ;
+}
+
+.search001 
+{
+    background: url(https://webs.wichita.edu/dt/images/ulrich2010/search001.gif) no-repeat ;
+    border: 0 ;
+    width: 190px ;
+    height: 21px ;
+    position: relative ;
+}
+
+.search003 
+{
+    font-size: 10px ;
+    border: 0 ;
+    background: transparent ;
+    position: absolute ;
+    top: 3px ;
+    left: 10px ;
+    width: 150px ;
+}
+
+.search002 
+{
+    position: absolute ;
+    left: 174px ;
+    top: 0 ;
+}
+
+.t0 
+{
+    position: absolute ;
+    left: 530px ;
+    top: 10px ;
+}
+
+form 
+{
+    margin: 0 ;
+    padding: 0 ;
+}
+
+.home_div 
+{
+    position: absolute ;
+    top: 15px ;
+    left: 15px ;
+    width: 210px ;
+    height: 100px ;
+    z-index: 1000 ;
+    cursor: hand ;
+}
+
+/******************************************************************/
+/* wsu dots */
+/******************************************************************/
+.horiz_dot_1 {
+    height: 1px ;
+    /* background: url(https://www.wichita.edu/thisis/zed/images/horiz_dot_1.png) repeat-x ; */
+    border-bottom: 1px solid #000 ;
+}
+
+.vert_dot_1 {
+    position: absolute ;
+    top: 14px ;
+    left: 350px ;
+    width: 3px ;
+    height: 90px ;
+    border-bottom: 1px solid #000 ;
+    /* background: url(https://www.wichita.edu/thisis/zed/images/vert_dot_1.png) repeat-y ; */
+}
+
+.news_group_title1 {
+    font-size: 17px ;
+    font-weight: bold ;
+    text-align: center ;
+    margin-bottom: 5px ;
+}
+
+.news_group_vhr1 {
+    /* background: url(https://www.wichita.edu/thisis/zed/images/vert_dot_1.png) repeat-y ; */
+    width: 3px ;    
+    padding-left: 5px ;
+    padding-right: 5px ;
+}
+
+.news_addum1 {
+    font-family: Arial !important ;
+    line-height: 18px ;
+}

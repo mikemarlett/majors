@@ -1,0 +1,61 @@
+.image_edit_div {
+	display: none;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	-webkit-box-shadow: 0px 6px 19px -1px rgba(0,0,0,0.75);
+	-moz-box-shadow: 0px 6px 19px -1px rgba(0,0,0,0.75);
+	box-shadow: 0px 6px 19px -1px rgba(0,0,0,0.75);
+    width: 75%;
+    background-color: white;
+    padding: 20px;
+}
+
+/*
+img:hover{
+	width: 50%;
+}
+*/
+
+
+.figure-wrapper:hover #main_image_edit_div, .teaser__image:hover #inside_the_program_image_edit_div {
+	display: block;
+	z-index: 200;
+}
+
+.quicklinks nav.quicklinks__overlay .quicklinks__overlay-wrapper .quicklinks__nav-wrapper nav.main-nav a, .quicklinks nav.quicklinks__overlay .quicklinks__overlay-wrapper .quicklinks__nav-wrapper .quicklinks__list a {
+    width: 100%;
+    text-align: left;
+}
+
+div.is-active > a.accordion-title {
+	color: #FFF !important;
+}
+
+
+.accordion .accordion-title:before {
+	margin-right: 20px;
+}
+
+.accordion-item {
+    text-align: left;
+}
+
+
+.teaser.teaser--columned.teaser--columned-layered .teaser__image > img, .teaser.teaser--columned-layered.teaser--slab-columned .teaser__image > img, .teaser.teaser--slab-columned.teaser--columned-intro .teaser__image > img, .teaser.teaser--columned-intro .teaser__image > img {
+    position: absolute;
+    max-width: none;
+    max-height: none;
+    width: auto;
+    min-width: 100%;
+    height: auto;
+    min-height: 100%;
+    right: auto;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
