@@ -55,11 +55,18 @@ contact address from `config['site']['contact']`.
 ### College names
 
 Maps and programs store the college *name*; users are scoped by the college
-*id* in `majors_colleges`. The College of Education was renamed the College of
-Applied Studies but `majors_colleges` still says "College of Education", so
-`config['college_aliases']` maps one to the other for scoping and for the
-college picker. The cleaner fix is to rename the row (and it is safe to: nothing
-joins on the name) — then drop the alias.
+*id* in `majors_colleges`. Published maps are snapshots: a map keeps the name
+its college had when it was published (the 2024–2025 "College of Applied
+Studies" maps stay that way even though the college is the College of Education
+again). `config['college_aliases']` maps former names onto the current row so
+advisor scoping still works, and **Clone** writes the current name onto the
+new year's copy. Add a line there whenever a college is renamed.
+
+### Published years are read-only
+
+Maps for the current and past catalog years cannot be edited by advisors; they
+clone into next year instead. Super admins can still open the editor on a
+published map (a red warning is shown) for the rare correction.
 
 ## Design switch
 
@@ -100,7 +107,10 @@ includes for both designs) and `docroot/academics/majors` at its real URL.
   [docs/images-manifest.txt](docs/images-manifest.txt)) found 565 referenced, 624
   unreferenced (55 MB) and 2 referenced-but-missing files (`PHS.jpg`,
   `HP_Nursing_Accelerated_Program_ITP.jpg`). `--archive <dir>` moves the orphans.
-- Data hygiene spotted by the version lookup: two 2026-27 maps exist twice
-  (ids 770/965 "Applied Engineering — Engineering Management", 789/791 "American
-  Sign Language — Structure of Language"). The new Clone action refuses to make a
-  second copy for the same year, but the existing duplicates need a human to pick one.
+- Data hygiene spotted by the version lookup: two 2026-27 maps exist twice.
+  789/791 ("American Sign Language — Structure of Language") are identical;
+  770/965 ("Applied Engineering — Engineering Management") diverged — 965 has a
+  reworked 3rd/4th year and clean hours rows, 770 was last edited 2026-01-28.
+  Creating or cloning a second map for the same degree and year is now refused
+  (the UI offers to open the existing one) and the admin listing tags existing
+  duplicates, but these two pairs need a human to pick one and delete the other.

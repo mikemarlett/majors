@@ -30,7 +30,17 @@
 			method: 'POST',
 			data: data || {},
 			dataType: type || 'json'
-		}).done(done).fail(function (xhr) { fail('Error', xhr.responseJSON, xhr); });
+		}).done(done).fail(function (xhr) {
+			var r = xhr.responseJSON;
+			// A duplicate-map refusal (409) offers to open the map that already exists.
+			if (xhr.status === 409 && r && r.existing && r.degree_map_id) {
+				if (window.confirm(r.message + '\n\nOpen the existing map now?')) {
+					window.location.href = cfg.self + '?degree_map_id=' + r.degree_map_id;
+				}
+				return;
+			}
+			fail('Error', r, xhr);
+		});
 	}
 
 	function initTippy() {

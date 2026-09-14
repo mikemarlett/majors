@@ -65,6 +65,21 @@ final class Lookups
     }
 
     /**
+     * The college's current name (the one in majors_colleges) for any name it
+     * has been known by. Old maps keep the name they were published under;
+     * clones into a new year get the current one.
+     */
+    public function canonicalCollegeName(string $name): string
+    {
+        foreach ($this->aliases as $alias => $canonical) {
+            if (strcasecmp($alias, $name) === 0) {
+                return $canonical;
+            }
+        }
+        return $name;
+    }
+
+    /**
      * Names to offer when creating a map: every name a college is known by,
      * so a new map can use the current name even if majors_colleges still
      * holds the old one. @return array<string,int> name => college id

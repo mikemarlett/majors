@@ -130,6 +130,20 @@ if (!$fresh && in_array('default_college_id', $users, true)) {
           SELECT `id`, `default_college_id` FROM `majors_users` WHERE `default_college_id` > 0');
 }
 
+// degree_maps_semester_hours never had a unique key, so the old REPLACE INTO
+// saves piled up duplicate rows (map 770 has four per semester). Keep the
+// newest row per (map, year, semester), then add the key so it cannot recur.
+$shIdx = $indexes('degree_maps_semester_hours');
+if (!in_array('uq_sem_hours', $shIdx, true)) {
+    $dupes = (int) $db->query('SELECT COUNT(*) - COUNT(DISTINCT degree_map_id, year, semester) FROM degree_maps_semester_hours')->fetch_row()[0];
+    echo "semester-hours duplicate rows to remove: {$dupes}\n";
+    $run('DELETE h FROM `degree_maps_semester_hours` h
+            JOIN (SELECT `degree_map_id`, `year`, `semester`, MAX(`id`) AS keep_id
+                    FROM `degree_maps_semester_hours` GROUP BY 1, 2, 3 HAVING COUNT(*) > 1) k
+              ON k.`degree_map_id` = h.`degree_map_id` AND k.`year` = h.`year` AND k.`semester` = h.`semester` AND h.`id` <> k.keep_id');
+    $run('ALTER TABLE `degree_maps_semester_hours` ADD UNIQUE KEY `uq_sem_hours` (`degree_map_id`, `year`, `semester`)');
+}
+
 $dmIdx = $indexes('degree_maps');
 if (!in_array('idx_dm_year_college', $dmIdx, true)) {
     $run('ALTER TABLE `degree_maps` ADD INDEX `idx_dm_year_college` (`academic_year`, `college`)');

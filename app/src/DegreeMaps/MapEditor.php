@@ -197,10 +197,12 @@ final class MapEditor
             $stmt->execute();
             $stmt->close();
 
+            // Delete-then-insert rather than REPLACE: the semester table had no
+            // unique key for years, and REPLACE quietly piled up duplicate rows.
             $delSem = $this->db->prepare('DELETE FROM `degree_maps_semester_hours` WHERE `degree_map_id` = ? AND `year` = ? AND `semester` = ?');
-            $putSem = $this->db->prepare('REPLACE INTO `degree_maps_semester_hours` (`degree_map_id`,`year`,`semester`,`hours`,`timestamp`) VALUES (?,?,?,?,NOW())');
+            $putSem = $this->db->prepare('INSERT INTO `degree_maps_semester_hours` (`degree_map_id`,`year`,`semester`,`hours`,`timestamp`) VALUES (?,?,?,?,NOW())');
             $delYr  = $this->db->prepare('DELETE FROM `degree_maps_year_hours` WHERE `degree_map_id` = ? AND `year` = ?');
-            $putYr  = $this->db->prepare('REPLACE INTO `degree_maps_year_hours` (`degree_map_id`,`year`,`hours`,`timestamp`) VALUES (?,?,?,NOW())');
+            $putYr  = $this->db->prepare('INSERT INTO `degree_maps_year_hours` (`degree_map_id`,`year`,`hours`,`timestamp`) VALUES (?,?,?,NOW())');
 
             foreach ($hours as $year => $data) {
                 $year = (int) $year;
@@ -212,20 +214,18 @@ final class MapEditor
                         continue;
                     }
                     $v = trim((string) $data[$s]);
-                    if ($v === '') {
-                        $delSem->bind_param('iii', $mapId, $year, $s);
-                        $delSem->execute();
-                    } else {
+                    $delSem->bind_param('iii', $mapId, $year, $s);
+                    $delSem->execute();
+                    if ($v !== '') {
                         $putSem->bind_param('iiis', $mapId, $year, $s, $v);
                         $putSem->execute();
                     }
                 }
                 if (array_key_exists('total_hours', $data)) {
                     $v = trim((string) $data['total_hours']);
-                    if ($v === '') {
-                        $delYr->bind_param('ii', $mapId, $year);
-                        $delYr->execute();
-                    } else {
+                    $delYr->bind_param('ii', $mapId, $year);
+                    $delYr->execute();
+                    if ($v !== '') {
                         $putYr->bind_param('iis', $mapId, $year, $v);
                         $putYr->execute();
                     }
@@ -338,17 +338,21 @@ final class MapEditor
 
     // ---- clone ----------------------------------------------------------------
 
-    /** Copy a map (header, footnotes, courses with remapped footnote ids, hours) into $newYear. Returns the new id. */
-    public function clone(int $sourceId, int $newYear): int
+    /**
+     * Copy a map (header, footnotes, courses with remapped footnote ids, hours)
+     * into $newYear. $college, when given, replaces the college name on the copy
+     * (a renamed college keeps its old name on old maps only). Returns the new id.
+     */
+    public function clone(int $sourceId, int $newYear, ?string $college = null): int
     {
         $this->db->begin_transaction();
         try {
             $stmt = $this->db->prepare(
                 'INSERT INTO `degree_maps` (`program_id`,`major`,`college`,`degree_type`,`department`,`note`,`academic_year`,`hours_to_graduate`,`timestamp`)
-                 SELECT `program_id`,`major`,`college`,`degree_type`,`department`,`note`, ?, `hours_to_graduate`, NOW()
+                 SELECT `program_id`,`major`, COALESCE(?, `college`),`degree_type`,`department`,`note`, ?, `hours_to_graduate`, NOW()
                    FROM `degree_maps` WHERE `id` = ?'
             );
-            $stmt->bind_param('ii', $newYear, $sourceId);
+            $stmt->bind_param('sii', $college, $newYear, $sourceId);
             $stmt->execute();
             if ($stmt->affected_rows !== 1) {
                 throw new RuntimeException('Source map not found.');

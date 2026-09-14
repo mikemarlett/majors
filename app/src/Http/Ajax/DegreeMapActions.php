@@ -76,6 +76,12 @@ final class DegreeMapActions extends BaseAction
             // Year is fixed once created (it defines the version); ignore attempts to change it.
             $data['academic_year'] = (int) $existing['academic_year'];
         }
+        // Two maps for the same degree in the same year is almost always a double clone / double create.
+        $dupe = $this->maps->findDuplicate($data['major'], $data['degree_type'], $data['college'], $data['academic_year'], $id);
+        if ($dupe !== null) {
+            throw new DuplicateMapException(sprintf('A %s in %s (%s) already exists for %d-%d. Open that one instead of creating a second copy.',
+                $dupe['degree_type'], $dupe['major'], $dupe['college'], $data['academic_year'] - 1, $data['academic_year']), (int) $dupe['id']);
+        }
         $id = $this->editor->saveHeader($data, $id);
         return ['success' => true, 'message' => 'Map saved successfully.', 'degree_map_id' => $id];
     }
@@ -127,7 +133,9 @@ final class DegreeMapActions extends BaseAction
                     'message' => 'A ' . ($newYear - 1) . '-' . $newYear . ' version already exists; opening it.'];
             }
         }
-        $newId = $this->editor->clone($id, $newYear);
+        // Old maps keep the college name they were published under; the new year gets the current name.
+        $college = $this->lookups->canonicalCollegeName((string) $map['college']);
+        $newId   = $this->editor->clone($id, $newYear, $college !== (string) $map['college'] ? $college : null);
         return ['success' => true, 'degree_map_id' => $newId, 'message' => 'Map cloned into ' . ($newYear - 1) . '-' . $newYear . '.'];
     }
 

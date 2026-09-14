@@ -67,11 +67,13 @@
 <?php if ($map && $mode === 'view' && !$can_edit): ?>
 		<p class="help-block">
 <?php if (!$editable_year): ?>
-			Maps for the current and past catalog years are read-only. Clone this map to make next year's version.
+			Maps for the current and past catalog years are published snapshots and are read-only. Clone this map to make next year's version; if a published map truly needs a correction, ask the web team.
 <?php else: ?>
 			This map belongs to another college; you can view it but not edit it.
 <?php endif; ?>
 		</p>
+<?php elseif ($map && $mode === 'edit' && !$editable_year): ?>
+		<p class="ma-flash ma-danger"><strong>Careful:</strong> this is a published map for a current or past catalog year. Only super admins can change it, and the change is visible to students immediately.</p>
 <?php endif; ?>
 	</div>
 </section>

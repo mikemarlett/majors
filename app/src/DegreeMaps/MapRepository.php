@@ -237,6 +237,37 @@ final class MapRepository
         return $this->rows($sql, $types, $params);
     }
 
+    /**
+     * Another map with the same major, degree type and college in $year (a
+     * would-be duplicate), excluding $exceptId. @return array<string,mixed>|null
+     */
+    public function findDuplicate(string $major, string $degreeType, string $college, int $year, ?int $exceptId = null): ?array
+    {
+        $rows = $this->rows(
+            'SELECT `id`, `major`, `degree_type`, `college`, `academic_year` FROM `degree_maps`
+              WHERE `major` = ? AND `degree_type` = ? AND `college` = ? AND `academic_year` = ? AND `id` <> ?
+              ORDER BY `id` LIMIT 1',
+            'sssii',
+            [$major, $degreeType, $college, $year, (int) $exceptId]
+        );
+        return $rows[0] ?? null;
+    }
+
+    /** Ids of maps in $year that share major + degree type + college with another map in the same year. @return list<int> */
+    public function duplicateIds(int $year): array
+    {
+        $rows = $this->rows(
+            'SELECT d.`id` FROM `degree_maps` d
+               JOIN (SELECT `major`, `degree_type`, `college` FROM `degree_maps` WHERE `academic_year` = ?
+                      GROUP BY 1, 2, 3 HAVING COUNT(*) > 1) k
+                 ON k.`major` = d.`major` AND k.`degree_type` = d.`degree_type` AND k.`college` = d.`college`
+              WHERE d.`academic_year` = ?',
+            'ii',
+            [$year, $year]
+        );
+        return array_map(static fn (array $r) => (int) $r['id'], $rows);
+    }
+
     /** Newest version in the family of $map (may be $map itself). @return array<string,mixed> */
     public function latestVersion(array $map): array
     {

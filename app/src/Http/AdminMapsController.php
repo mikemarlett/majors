@@ -54,7 +54,7 @@ final class AdminMapsController extends Controller
             $year         = (int) $map['academic_year'];
             $editableYear = MapRepository::isEditable($map);
             $canClone     = $user->canEditCollege($lookups->collegeId((string) $map['college']));
-            $canEdit      = $editableYear && $canClone;
+            $canEdit      = $canClone && ($editableYear || $user->isSuperAdmin()); // super admins may touch published years
             $title        = ($maps->title($mapId) ?? $title) . ' — Admin';
 
             if ($wantEdit && $canEdit) {
@@ -77,6 +77,8 @@ final class AdminMapsController extends Controller
             $results = $layout->render('degree_maps/listing', [
                 'groups'    => $groups,
                 'link_base' => $layout->url('degree_maps/admin/maps.php') . '?degree_map_id=',
+                'flag_ids'  => $maps->duplicateIds($year), // same degree twice in one year: probably a double clone
+                'flag_text' => 'duplicate',
             ]);
         }
 

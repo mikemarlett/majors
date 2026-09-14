@@ -12,6 +12,7 @@
 .is-invalid { outline: 2px solid #bb4935; }
 .ma-flash { margin: 0; padding: 0.5rem 1rem; background: #fff5d6; border-left: 4px solid #ffc217; }
 .ma-danger { color: #bb4935; }
+.dm-flag { display: inline-block; margin-left: 0.5rem; padding: 0 0.5rem; border-radius: 1rem; background: #bb4935; color: #fff; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; vertical-align: middle; }
 
 /* simple grid for the modal forms */
 .ma-row { display: flex; flex-wrap: wrap; gap: 0 1rem; }

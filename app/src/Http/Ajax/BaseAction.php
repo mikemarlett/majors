@@ -50,7 +50,10 @@ abstract class BaseAction
 
     protected function assertCanEdit(array $map, User $user): void
     {
-        if (!MapRepository::isEditable($map)) {
+        // Published maps are a snapshot of their catalog year. Advisors never
+        // edit them; a super admin can (the "come and beg" path), and the
+        // editor shows a warning when they do.
+        if (!MapRepository::isEditable($map) && !$user->isSuperAdmin()) {
             throw new ActionException('This degree map is for a current or past catalog year and is read-only. Clone it into a future year to make changes.', 403);
         }
         $this->assertCollege((string) ($map['college'] ?? ''), $user);

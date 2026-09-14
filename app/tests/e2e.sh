@@ -52,7 +52,9 @@ CSRF=$(grep -o 'name="csrf-token" content="[a-f0-9]*"' $S/out.html | grep -o '[a
 chk "$(GET -b $J "$B/_admin/index.php")" 403 "advisor blocked from majors admin"
 chk "$(GET -b $J "$B/degree_maps/admin/manage_users.php")" 403 "advisor blocked from users"
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
-chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'clone still offered? (expect yes for view)'; 
+chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'
+chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "advisor asks to edit current-year map"; hasnt $S/out.html 'id="degree-map-editor"' 'advisor gets the view, not the editor'
+chk "$(GET -b $J "$B/degree_maps/admin/maps.php?selected_year=2027")" 200 "advisor listing"; has $S/out.html 'dm-flag' 'duplicates tagged in the listing' 
 
 echo "[ajax as advisor]"
 A="$B/degree_maps/admin/ajax.php"
@@ -102,6 +104,10 @@ chk "$(Q "SELECT GROUP_CONCAT(college_id ORDER BY college_id) FROM majors_user_c
 R=$(PK -d "user_id=$UID_" "$A?action=delete_user"); echo "$R" | grep -q '"success":true' && ok "delete_user" || bad "delete_user: $R"
 R=$(PK -d "user_id=1&first_name=Mike&last_name=Marlett&email=mike.marlett@wichita.edu&role=advisor" "$A?action=save_user"); echo "$R" | grep -q 'own super admin' && ok "cannot demote self" || bad "self demote: $R"
 chk "$(GET -b $K "$B/_admin/index.php")" 200 "super admin sees majors admin"; has $S/out.html 'id="programs_table"' 'program inventory'
+chk "$(GET -b $K "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "super admin may edit a published map"; has $S/out.html 'id="degree-map-editor"' 'editor shown'; has $S/out.html 'published map for a current or past' 'published-map warning'
+R=$(PK --data-urlencode "major=Aerospace Engineering" --data-urlencode "degree_type=BS" --data-urlencode "college=College of Engineering" --data-urlencode "academic_year=2028" "$A?action=save_map_details"); echo "$R" | grep -q '"success":true' && DUP=$(echo "$R" | grep -o '"degree_map_id":[0-9]*' | grep -o '[0-9]*$') && ok "super admin creates 2028 map $DUP" || bad "create: $R"
+R=$(PK --data-urlencode "major=Aerospace Engineering" --data-urlencode "degree_type=BS" --data-urlencode "college=College of Engineering" --data-urlencode "academic_year=2028" "$A?action=save_map_details"); echo "$R" | grep -q "\"existing\":true" && ok "second create refused with existing id" || bad "dup create: $R"
+R=$(PK -d "degree_map_id=$DUP" "$A?action=delete_degree_map"); echo "$R" | grep -q '"success":true' && ok "cleanup 2028 map" || bad "cleanup: $R"
 R=$(PK -d "degree_map_id=$NEW" "$A?action=delete_degree_map"); echo "$R" | grep -q '"success":true' && ok "super admin deletes the e2e map" || bad "delete map: $R"
 chk "$(Q "SELECT COUNT(*) FROM degree_maps WHERE id=$NEW")" 0 "map gone"; chk "$(Q "SELECT COUNT(*) FROM degree_maps_courses WHERE degree_map_id=$NEW")" 0 "courses gone"
 

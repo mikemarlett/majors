@@ -72,6 +72,8 @@ final class AjaxKernel extends Controller
         $handler = new $class($this->app);
         try {
             $result = $handler->$method($r, $user);
+        } catch (Ajax\DuplicateMapException $e) {
+            Json::fail($e->getMessage(), $e->status, ['existing' => true, 'degree_map_id' => $e->existingId]);
         } catch (Ajax\ActionException $e) {
             Json::fail($e->getMessage(), $e->status);
         }
