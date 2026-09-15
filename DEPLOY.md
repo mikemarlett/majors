@@ -10,17 +10,37 @@ docroot is managed by Modern Campus. Deploy = copy files, run one script.
 | `app/`                     | `/data/www/config/majors/`                    |
 | `docroot/academics/majors/`| `<docroot>/academics/majors/` (www-test: `/data/www/main-test/…`, www: `/data/www/main/…`) |
 
-Then, once per server:
+One app root serves every docroot on the box, the same way `/data/www/config`
+already serves www-dev and www-test. Settings layer as
+`config/app.php` → `config/app.local.php` (box-wide) → `config/app.<site>.php`,
+where `<site>` is the first label of the request host: `www`, `www-dev`,
+`www-test`. Everything else that differs between sites (docroot, theme
+include dirs, cookies) already follows `$_SERVER['DOCUMENT_ROOT']` and the host.
+
+Once per box:
 
 ```bash
-cp /data/www/config/majors/config/app.local.example.php /data/www/config/majors/config/app.local.php
-# edit: on www / www-test the defaults are right; leave env=production, design=old.
-# on www-dev set 'design' => 'new'.
-printf '%s\n' '<?php' "return '/data/www/config/majors';" > <docroot>/academics/majors/approot.php
+cd /data/www/config/majors/config
+cp app.www-dev.example.php  app.www-dev.php    # design => 'new'
+cp app.www-test.example.php app.www-test.php   # design => 'old' (nothing else to set)
+# app.local.php is not needed on the servers: the defaults already use
+# /data/www/config/functions.php and /data/www/config/phpCAS/config.php.
 ```
 
-Do **not** copy `app/dev/`, `app/tests/` or `app/config/app.local.php` from
-another server. `_images/` is copied once (it is not in git).
+Once per docroot:
+
+```bash
+printf '%s\n' '<?php' "return '/data/www/config/majors';" > /data/www/main-dev/academics/majors/approot.php
+printf '%s\n' '<?php' "return '/data/www/config/majors';" > /data/www/main-test/academics/majors/approot.php
+```
+
+CLI scripts (`bin/*.php`) have no request host, so tell them which site they
+run for: `MAJORS_SITE=www-test php bin/migrate.php`. Without it they fall back
+to the docroot name and then to `local`; with one shared database per box the
+site only changes `design`, so the scripts work either way.
+
+Do **not** copy `app/dev/`, `app/tests/` or any `app/config/app.*.php`
+override from another box. `_images/` is copied once (it is not in git).
 
 The CMS-published files in the same folder (`degree_maps/index.php`,
 `degree_maps/_nav.ounav`) are untouched; the app reads `_nav.ounav` at runtime
@@ -29,8 +49,9 @@ for the section menu.
 ## 2. Database (www-test first, then www when the tables are copied)
 
 ```bash
-cd /data/www/config/majors && php ../majors-repo/bin/migrate.php --dry-run   # or run from the checkout
-php bin/migrate.php
+cd /data/www/config/majors
+MAJORS_SITE=www-test php bin/migrate.php --dry-run
+MAJORS_SITE=www-test php bin/migrate.php
 ```
 
 `bin/migrate.php` connects the way the app does (through

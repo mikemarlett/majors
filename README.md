@@ -14,7 +14,7 @@ Both admins sit behind WSU single sign-on (CAS) and an approved-user list with r
 ```
 app/                     deployed OUTSIDE the docroot → /data/www/config/majors/
   bootstrap.php          autoloader + config + Kernel (no composer, no vendor/)
-  config/app.php         defaults; app.local.php (gitignored) = per-server overrides
+  config/app.php         defaults; app.local.php (box-wide) + app.<site>.php (per host) = overrides, gitignored
   src/                   Majors\ namespace: Support, Auth, View, DegreeMaps, Majors, Http
   templates/old|new/     the two site designs' chrome vocabulary (layout, classmap, partials)
   templates/shared/      data-bearing templates that work under either design
@@ -70,6 +70,11 @@ clone into next year instead. Super admins can still open the editor on a
 published map (a red warning is shown) for the rare correction.
 
 ## Design switch
+
+One app root can serve several sites on a box (www-dev and www-test both read
+`/data/www/config`): `Config::load` layers `app.php`, `app.local.php`, then
+`app.<site>.php` with the site taken from the request host (`www`, `www-dev`,
+`www-test`; `MAJORS_SITE=` for CLI). That is where `design` differs.
 
 `config['design']` is `old` (current wichita.edu, includes at
 `_resources/includes`) or `new` (NewCity/Tailwind design on www-dev, includes at

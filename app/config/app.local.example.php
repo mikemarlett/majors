@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Per-server overrides. Copy to app.local.php (gitignored) and edit.
+ * Box-wide overrides: copy to app.local.php (gitignored). Applies to every
+ * site served from this app root; per-site differences go in
+ * app.<site>.php (see app.www-dev.example.php / app.www-test.example.php).
  *
- * www / www-test (production shape): usually nothing but 'design' is needed,
- * because the defaults already point at /data/www/config/functions.php and
- * the phpCAS config.
+ * On the WSU servers this file is usually EMPTY or absent: the defaults in
+ * app.php already point at /data/www/config/functions.php and the phpCAS
+ * config, which both www-dev and www-test share.
  *
- * www-dev (new design): ['design' => 'new']
- *
- * Local sandbox (no CMS, no CAS): the block below.
+ * The block below is the local sandbox (no CMS, no CAS).
  */
 
 declare(strict_types=1);

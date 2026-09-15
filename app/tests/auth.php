@@ -48,4 +48,22 @@ check($r->str('x') === 'hi', 'str trims');
 check($r->arr('list') === ['1', '2'] && $r->arr('missing') === [], 'arr');
 check($r->header('X-CSRF-Token') === 't' && $r->isPost(), 'header + method');
 
+echo "[config layering]\n";
+use Majors\Support\Config;
+$dir = sys_get_temp_dir() . '/majors-cfg-' . getmypid();
+mkdir($dir);
+file_put_contents($dir . '/app.php', '<?php return ["design" => "old", "db" => ["driver" => "site", "host" => "a"], "x" => 1];');
+file_put_contents($dir . '/app.local.php', '<?php return ["db" => ["host" => "b"]];');
+file_put_contents($dir . '/app.www-dev.php', '<?php return ["design" => "new"];');
+$c = Config::load($dir, 'www-dev');
+check($c->site() === 'www-dev' && $c->string('design') === 'new' && $c->string('db.host') === 'b' && $c->string('db.driver') === 'site', 'app.php < app.local.php < app.<site>.php');
+check(Config::load($dir, 'www-test')->string('design') === 'old', 'other site keeps the default');
+$_SERVER['HTTP_HOST'] = 'www-test.wichita.edu:443'; putenv('MAJORS_SITE');
+check(Config::detectSite() === 'www-test', 'site from host');
+$_SERVER['HTTP_HOST'] = 'evil/../../etc'; check(Config::detectSite() === 'evil', 'host label sanitized');
+unset($_SERVER['HTTP_HOST']); $_SERVER['DOCUMENT_ROOT'] = '/data/www/main-dev';
+check(Config::detectSite() === 'www-dev', 'site from docroot name (CLI)');
+putenv('MAJORS_SITE=www'); check(Config::detectSite() === 'www', 'MAJORS_SITE wins'); putenv('MAJORS_SITE');
+array_map('unlink', glob($dir . '/*.php')); rmdir($dir);
+
 finish();

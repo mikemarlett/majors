@@ -49,6 +49,12 @@ final class Kernel
         return $this->config->string('env') === 'dev';
     }
 
+    /** www | www-dev | www-test | local — which per-site config layer applied. */
+    public function site(): string
+    {
+        return $this->config->site();
+    }
+
     public function docroot(): string
     {
         $d = $this->config->get('docroot');

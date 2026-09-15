@@ -5,6 +5,8 @@ docroot/academics/majors/_images/
 docroot/academics/majors/approot.php
 # Per-server config and secrets
 app/config/app.local.php
+app/config/app.www*.php
+!app/config/app.*.example.php
 *.credentials
 .env
 # Editor / OS noise
