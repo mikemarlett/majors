@@ -70,7 +70,11 @@ return [
 
     'site' => [
         'site_name' => 'Wichita State University',
-        'logo'      => '/_resources/images/logo-blacktype.svg',
+        // Per design: the redesign (www-dev) does not ship /_resources/images/.
+        'logo'      => [
+            'old' => '/_resources/images/logo-blacktype.svg',
+            'new' => '/_resources/_theme/images/site-logo.svg',
+        ],
         'sprite'    => '/_resources/images/sprites/svg-sprite-custom-symbol.svg',
         // Shown on the "not on the access list" page.
         'contact'   => 'mike.marlett@wichita.edu',

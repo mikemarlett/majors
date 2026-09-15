@@ -45,10 +45,17 @@ final class Layout
         return $this->theme;
     }
 
-    /** Site-wide values from config (logo, sprite, contact...). */
+    /**
+     * Site-wide values from config (logo, sprite, contact...). A value may be
+     * one string for both designs or ['old' => ..., 'new' => ...] when the
+     * asset lives somewhere else under the redesign.
+     */
     public function site(string $key, string $default = ''): string
     {
         $v = $this->site[$key] ?? $default;
+        if (is_array($v)) {
+            $v = $v[$this->design] ?? $v['old'] ?? $default;
+        }
         return is_scalar($v) ? (string) $v : $default;
     }
 
