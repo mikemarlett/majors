@@ -130,7 +130,11 @@ php -S 0.0.0.0:8091 -t /data/www/main-dev    # www-dev   (new design)
 ```
 
 Refresh a mirror by copying `_resources/` from the server; nothing under
-`/data/www` is in this repo.
+`/data/www` is in this repo. Individual files can be pulled from the CMS
+staging site with `bin/mirror-fetch.php <remote_dir> <dest,dest> <names…>`
+(uses the Modern Campus workspace's `McClient` and its credentials; it reads
+binaries through `GET /pages/content`, since `_resources/images/` on the
+server is too large to copy whole).
 
 ## Next phase
 
