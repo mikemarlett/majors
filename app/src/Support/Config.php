@@ -13,7 +13,7 @@ namespace Majors\Support;
  *   config/app.<site>.php       one site, e.g. app.www-dev.php (gitignored)
  *
  * <site> is the first label of the request host (www, www-dev, www-test); for
- * CLI scripts set MAJORS_SITE=www-test, or it falls back to the docroot name
+ * CLI scripts set MAJORS_SITE=www-test; a Host that is only an IP address, or none at all, falls back to the docroot name
  * (main → www, main-dev → www-dev, main-test → www-test), then 'local'.
  * Dotted keys: get('auth.provider').
  */
@@ -47,10 +47,10 @@ final class Config
         $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
         if ($host !== '') {
             $label = strtolower(explode('.', explode(':', $host)[0])[0]);
-            if (in_array($label, ['localhost', '127'], true)) {
-                return 'local';
+            // A bare IP address says nothing about which site this is; use the docroot name.
+            if (!ctype_digit($label) && $host[0] !== '[') {
+                return $label === 'localhost' ? 'local' : self::clean($label);
             }
-            return self::clean($label);
         }
         $docroot = basename(rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/'));
         return match ($docroot) {

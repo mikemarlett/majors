@@ -102,6 +102,36 @@ php app/tests/run.php
 The dev router serves `app/dev/stub-docroot` as the docroot (stand-in site
 includes for both designs) and `docroot/academics/majors` at its real URL.
 
+### Server mirror
+
+The sandbox box also mirrors the servers' layout so the app runs exactly as it
+will in production, with the real site includes, CSS and the CMS's own
+section-nav renderer:
+
+| Path                          | Stands in for                          | Contents |
+|-------------------------------|----------------------------------------|----------|
+| `/data/www/main/`             | www (`/data/www/main` on that box)     | `_resources/`, `calendar/`, `search/` |
+| `/data/www/main-test/`        | www-test (`/data/www/main` there)      | `_resources/`, `academics/`, `calendar/` |
+| `/data/www/main-dev/`         | www-dev (`/data/www/main-dev`)         | complete copy |
+| `/data/www/config/`           | the shared config dir                  | `functions.php`, `mysql.php` (local creds), `phpCAS/` |
+
+`<docroot>/academics/majors` in each mirror is a symlink to this repo's
+`docroot/academics/majors`, `/data/www/config/majors` is a symlink to `app/`,
+and the gitignored `docroot/academics/majors/approot.php` points there, so the
+front controllers resolve the app the same way they do on a server. Site
+detection uses the docroot name (`main` → www, `main-test` → www-test,
+`main-dev` → www-dev) when the request's Host is only an IP address, and the
+gitignored `app/config/app.www*.php` files pick the design per site.
+
+```bash
+php -S 0.0.0.0:8089 -t /data/www/main        # www       (current design)
+php -S 0.0.0.0:8090 -t /data/www/main-test   # www-test  (current design)
+php -S 0.0.0.0:8091 -t /data/www/main-dev    # www-dev   (new design)
+```
+
+Refresh a mirror by copying `_resources/` from the server; nothing under
+`/data/www` is in this repo.
+
 ## Next phase
 
 - Majors marketing-page editor (fields, images, similar programs, links) in `_admin/`.
