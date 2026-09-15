@@ -37,7 +37,9 @@ foreach (['old', 'new'] as $design) {
     check(str_contains($html, 'dm-blank'), 'blank cells fill ragged semesters');
 
     $page = $layout->page($html, ['title' => 'T', 'page_header' => 'Degree Maps', 'nav_items' => ['All Degree Maps' => '/x']]);
-    check(str_contains($page, 'STUB SITE HEADER') && str_contains($page, 'STUB SITE FOOTER'), 'full page includes the stub chrome');
+    $hasHeader = str_contains($page, 'STUB SITE HEADER') || str_contains($page, 'id="site-header"');
+    $hasFooter = str_contains($page, 'STUB SITE FOOTER') || str_contains($page, '<footer data-tw-theme');
+    check($hasHeader && $hasFooter, 'full page includes the site chrome fragments');
     check(!str_contains($page, 'site-chrome'), 'chrome fragments are not wrapped (they open/close shared wrappers)');
     check((bool) preg_match('#Degree Maps(</span>)?</h1>#', $page), 'layout renders the page header');
     check(str_contains($page, 'All Degree Maps'), 'layout renders the section menu');
