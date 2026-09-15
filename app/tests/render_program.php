@@ -23,7 +23,7 @@ foreach (['old', 'new'] as $design) {
     check(str_contains($html, 'Wind tunnels and flight labs'), 'inside the program');
     check(str_contains($html, 'Careers in Aerospace Engineering'), 'careers');
     check(str_contains($html, 'Mechanical Engineering') && str_contains($html, '?id=42'), 'similar programs linked');
-    check(str_contains($html, 'Degrees from College of Engineering'), 'section nav gets college entry');
+    check(isset($r->sectionNav($program)['Degrees from College of Engineering']), 'section nav gets college entry');
     check(!str_contains($html, 'STUB SITE HEADER'), 'no chrome in body');
 
     $groups = ProgramRenderer::group([$program, ['id' => 9, 'academic_program' => 'Biology', 'program_type' => 'BA', 'college' => 'Fairmount College']], 'alpha');

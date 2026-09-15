@@ -105,6 +105,7 @@ final class AdminMapsController extends Controller
 
         $this->page($content, [
             'title'      => $title,
+            'page_header' => 'Edit Degree Maps',
             'user'       => $user,
             'csrf'       => $csrf,
             'body_class' => 'majors-admin',

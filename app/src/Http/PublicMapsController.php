@@ -71,13 +71,16 @@ final class PublicMapsController extends Controller
             'colleges'      => $maps->colleges($year),
             'college'       => $college,
             'showing_map'   => $mapId !== null,
-            'nav_file'      => $this->app->docroot() . '/' . $layout->site('degree_maps_nav'),
             'search_url'    => $layout->url('degree_maps/search.php'),
             'self_url'      => $layout->url('degree_maps/maps.php'),
         ]);
 
+        $navFile = $this->app->docroot() . '/' . $layout->site('degree_maps_nav');
         $this->page($content, [
             'title'       => $title,
+            'page_header' => 'Degree Maps',
+            'nav_html'    => is_file($navFile) ? (string) file_get_contents($navFile) : '',
+            'nav_items'   => is_file($navFile) ? [] : ['All Degree Maps' => $layout->url('degree_maps/maps.php'), 'All Programs' => $layout->url('index.php')],
             'description' => 'Degree Maps to guide students through degrees at Wichita State',
             'head'        => [
                 '<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">',

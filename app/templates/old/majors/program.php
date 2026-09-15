@@ -4,13 +4,9 @@
  * Port of the legacy display_major(). Content fields are trusted admin HTML.
  *
  * Variables: $p (program), $c (content), $title, $is_certificate, $program_links, $learn_how_links,
- *            $degree_maps (id,label,url), $similar, $nav_items, $program_url
+ *            $degree_maps (id,label,url), $similar, $program_url (header + section menu come from the layout)
  * @var \Majors\View\Layout $t
  */
-$nav_html = '';
-foreach ($nav_items as $label => $href) {
-    $nav_html .= '<li><a href="' . $t->e($href) . '">' . $t->e($label) . '</a></li>' . "\n";
-}
 $teaser = function (string $headline, string $text, ?string $linkText, ?string $linkUrl, bool $editableHeadline = true) use ($t): string {
     $out = '<div class="teaser collection__item"><div class="teaser__body">'
         . '<div class="teaser__headline"><h3 class="headline-group"><span class="head">' . $t->e($headline) . '</span></h3></div>'
@@ -39,7 +35,6 @@ if (!empty($c['curriculum_link_url'])) {
 $curriculum .= $mapsBlock() . '</div></div>';
 $admissions = $teaser((string) ($c['admissions_headline'] ?? 'Admission'), (string) ($c['admissions_text'] ?? ''), $c['admissions_link_text'] ?? null, $c['admissions_link_url'] ?? null);
 ?>
-<?= $t->partial('partials/page_header', ['title' => 'Details: ' . $title, 'nav_html' => $nav_html, 'noprint' => false]) ?>
 
 <section class="section-wrap section-wrap--shade-light">
 	<div class="program-card">

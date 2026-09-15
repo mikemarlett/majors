@@ -7,7 +7,6 @@
 $reason  = $reason ?? 'role';
 $contact = $t->site('contact');
 ?>
-<?= $t->partial('partials/page_header', ['title' => $reason === 'provider' ? 'Sign-in problem' : 'Access denied', 'noprint' => false]) ?>
 <section class="<?= $t->cls('section') ?>">
 <?php if ($reason === 'not_listed'): ?>
 	<p class="<?= $t->cls('heading4') ?>">You signed in successfully, but this account is not on the access list for the Degree Maps and Majors editors.</p>

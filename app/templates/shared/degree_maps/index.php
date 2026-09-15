@@ -1,13 +1,11 @@
 <?php
 /**
  * Public Degree Maps page body: header, intro, filters, view switch, results.
- * Variables: $title, $results, $order, $year, $years, $colleges, $college, $showing_map,
- *            $nav_file, $search_url, $self_url
+ * Variables: $results, $order, $year, $years, $colleges, $college, $showing_map, $search_url, $self_url
+ * (the page header and section menu are rendered by the layout)
  * @var \Majors\View\Layout $t
  */
-$nav_html = (isset($nav_file) && is_file($nav_file)) ? (string) file_get_contents($nav_file) : '';
 ?>
-<?= $t->partial('partials/page_header', ['title' => $title, 'nav_html' => $nav_html, 'noprint' => true]) ?>
 
 <section class="<?= $t->cls('section.feature') ?> noprint">
 	<div class="<?= $t->cls('landing_panel') ?>">

@@ -17,6 +17,7 @@ final class AdminUsersController extends Controller
 
         $this->page($layout->render('degree_maps/admin/users', ['user' => $user, 'csrf' => $csrf]), [
             'title'      => 'Manage Users',
+            'page_header' => 'Manage Users',
             'user'       => $user,
             'csrf'       => $csrf,
             'body_class' => 'majors-admin',

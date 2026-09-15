@@ -36,9 +36,18 @@ foreach (['old', 'new'] as $design) {
     check(!str_contains($html, 'STUB SITE HEADER'), 'map body contains no chrome');
     check(str_contains($html, 'dm-blank'), 'blank cells fill ragged semesters');
 
-    $page = $layout->page($html, ['title' => 'T']);
-    check(str_contains($page, 'STUB SITE HEADER'), 'full page includes the stub chrome');
-    check(str_contains($page, 'class="site-chrome site-chrome--header"'), 'chrome wrapped for print hiding');
+    $page = $layout->page($html, ['title' => 'T', 'page_header' => 'Degree Maps', 'nav_items' => ['All Degree Maps' => '/x']]);
+    check(str_contains($page, 'STUB SITE HEADER') && str_contains($page, 'STUB SITE FOOTER'), 'full page includes the stub chrome');
+    check(!str_contains($page, 'site-chrome'), 'chrome fragments are not wrapped (they open/close shared wrappers)');
+    check((bool) preg_match('#Degree Maps(</span>)?</h1>#', $page), 'layout renders the page header');
+    check(str_contains($page, 'All Degree Maps'), 'layout renders the section menu');
+    if ($design === 'new') {
+        check(str_contains($page, 'data-page-has-section-nav') && str_contains($page, 'with-sidebar__main-inner-wrapper'), 'new design: sidebar grid around content');
+        check(str_contains($page, 'data-nc-component="simple-page-header"') && str_contains($page, 'desktop-section-nav'), 'new design: design-system header band + section nav');
+        check(str_contains($page, 'class="majors-new'), 'new design body class');
+    } else {
+        check(str_contains($page, '<main class="main main--slab">'), 'old design: legacy main element');
+    }
 }
 
 $listing = test_layout('old')->render('degree_maps/listing', [
@@ -49,7 +58,7 @@ check(substr_count($listing, 'class="dm-flag"') === 2, 'listing tags flagged (du
 
 $css = (string) file_get_contents(dirname(__DIR__, 2) . '/docroot/academics/majors/assets/degree-map.css');
 check(str_contains($css, 'size: letter portrait'), 'print CSS pins letter portrait');
-check(str_contains($css, '.site-chrome, .noprint'), 'print CSS hides chrome and noprint');
+check(str_contains($css, 'header:not(main *)') && str_contains($css, 'footer:not(main *)'), 'print CSS hides site header/footer without wrapper elements');
 
 // Empty theme dir → fragments are '' and nothing leaks.
 $empty = new \Majors\View\Theme('/nonexistent/dir');

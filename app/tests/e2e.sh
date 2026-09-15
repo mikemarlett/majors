@@ -24,7 +24,7 @@ PROG=$(Q "SELECT academic_program_id FROM majors_programs_content WHERE descript
 echo "ids: eng2027=$ENG2027 famOld=$FAM_OLD famNew=$FAM_NEW las2027=$LAS2027 program=$PROG"
 
 echo "[public degree maps]"
-chk "$(GET "$B/degree_maps/maps.php")" 200 "listing"; has $S/out.html 'dm-listing' 'listing markup'; has $S/out.html 'STUB SITE HEADER' 'chrome included'
+chk "$(GET "$B/degree_maps/maps.php")" 200 "listing"; has $S/out.html 'dm-listing' 'listing markup'; grep -qE 'STUB SITE HEADER|id="site-header"' $S/out.html && ok "chrome included" || bad "chrome included"
 chk "$(GET "$B/degree_maps/maps.php?order=college")" 200 "by college"; has $S/out.html 'Fairmount College' 'college groups'
 chk "$(GET "$B/degree_maps/maps.php?degree_map_id=$ENG2027")" 200 "one map"; has $S/out.html 'dm-table' 'map table'; has $S/out.html 'Systemwide General Education' 'SGE key'; has $S/out.html "?latest=$ENG2027" 'permalink shown'
 chk "$(GET "$B/degree_maps/maps.php?map_id=$ENG2027")" 200 "legacy map_id alias"
@@ -38,7 +38,7 @@ chk "$(GET -X POST -d "searchList=A&selected_year=2027" "$B/degree_maps/search.p
 echo "[public majors]"
 chk "$(GET "$B/index.php")" 200 "programs listing"; has $S/out.html 'All Degrees' 'headline'; has $S/out.html 'majors-jump' 'jump nav'
 chk "$(GET "$B/index.php?order=college&filter=online")" 200 "filtered"; has $S/out.html 'Online Degrees' 'filter headline'
-chk "$(GET "$B/index.php?id=$PROG")" 200 "program page"; has $S/out.html 'program-card' 'program card (old design)'
+chk "$(GET "$B/index.php?id=$PROG")" 200 "program page"; grep -qE 'program-card|majors-program-intro' $S/out.html && ok "program page body (either design)" || bad "program page body"
 chk "$(GET "$B/search.php?filter=graduate")" 200 "majors search json"; has $S/out.html '"title":"Graduate Degrees"' 'json title'
 
 echo "[auth gating]"

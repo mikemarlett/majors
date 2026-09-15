@@ -28,6 +28,7 @@ final class AdminMajorsController extends Controller
 
         $this->page($content, [
             'title'      => 'Majors Admin',
+            'page_header' => 'Majors Admin',
             'user'       => $user,
             'csrf'       => $csrf,
             'body_class' => 'majors-admin',

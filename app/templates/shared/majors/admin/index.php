@@ -5,7 +5,6 @@
  * @var \Majors\View\Layout $t
  */
 ?>
-<?= $t->partial('partials/page_header', ['title' => 'Majors Admin', 'noprint' => true]) ?>
 <section class="<?= $t->cls('section') ?>">
 	<p>Every academic program and the state of its marketing page. Filter the table below; click a program to preview its public page.
 	The page editor is the next phase of this project — until then, content changes go through the web team.</p>

@@ -31,7 +31,7 @@ abstract class Controller
     protected function notFound(string $message = 'Not found'): never
     {
         http_response_code(404);
-        $this->page($this->app->layout()->render('error', ['message' => $message, 'code' => 404]), ['title' => 'Not found']);
+        $this->page($this->app->layout()->render('error', ['message' => $message, 'code' => 404]), ['title' => 'Not found', 'page_header' => 'Not found', 'header_print' => true]);
         exit;
     }
 }

@@ -6,7 +6,6 @@
  * @var \Majors\View\Layout $t
  */
 ?>
-<?= $t->partial('partials/page_header', ['title' => 'Edit Degree Maps', 'noprint' => true]) ?>
 
 <?php if (!empty($flash)): ?>
 <div class="<?= $t->cls('section.shade') ?> noprint"><p class="ma-flash"><?= $t->e($flash) ?></p></div>

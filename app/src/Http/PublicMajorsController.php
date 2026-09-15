@@ -37,6 +37,9 @@ final class PublicMajorsController extends Controller
             $content = $renderer->page($program, $this->app->maps()->forProgram($id));
             $this->page($content, [
                 'title'       => ProgramRenderer::title($program),
+                'page_header' => 'Details: ' . ProgramRenderer::title($program),
+                'nav_items'   => $renderer->sectionNav($program),
+                'header_print' => true,
                 'description' => (string) ($program['content']['meta_description'] ?? ''),
                 'head'        => ['<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">'],
             ]);
@@ -86,8 +89,6 @@ final class PublicMajorsController extends Controller
         }
 
         $content = $layout->render('majors/index', [
-            'title'      => 'Degree Programs',
-            'nav_items'  => $renderer->sectionNav(),
             'results'    => $listing,
             'filter'     => $filter,
             'order'      => $order,
@@ -99,6 +100,8 @@ final class PublicMajorsController extends Controller
         ]);
         $this->page($content, [
             'title'       => 'Degree Programs',
+            'page_header' => 'Degree Programs',
+            'nav_items'   => $renderer->sectionNav(),
             'description' => 'All Wichita State University degree programs.',
             'head'        => ['<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">'],
             'foot'        => ['<script src="' . $layout->e($layout->asset('majors.js')) . '" defer></script>'],

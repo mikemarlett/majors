@@ -1,7 +1,13 @@
 <?php
 /**
- * Page chrome for the current (2018) wichita.edu design.
- * Variables: $content, $title, $description, $head[], $foot[], $body_class, $user, $csrf, $chrome[]
+ * Page chrome for the current (2018) wichita.edu design. Mirrors the legacy
+ * pages exactly: headcode.inc in <head>, header.inc right after <body>,
+ * <main class="main main--slab"> with alert.php, then footer.inc, footcode.inc,
+ * analytics.inc. The include fragments are NOT wrapped in extra elements —
+ * they may open and close shared wrappers between them.
+ *
+ * Variables: $content, $title, $description, $head[], $foot[], $body_class, $user, $csrf,
+ *            $page_header, $nav_html, $section_nav (unused here), $header_print, $chrome[]
  * @var \Majors\View\Layout $t
  */
 ?>
@@ -23,23 +29,22 @@
 
 <?php endforeach; ?>
 </head>
-<body<?= $body_class ? ' class="' . $t->e($body_class) . '"' : '' ?>>
+<body class="majors-old<?= $body_class ? ' ' . $t->e($body_class) : '' ?>">
 <!-- OU Search Ignore Start Here -->
-<div class="site-chrome site-chrome--header">
 <?= $chrome['header'] ?>
-</div>
 <!-- OU Search Ignore End Here -->
 <main class="<?= $t->cls('main') ?>">
 <?= $chrome['alert'] ?>
 <?php if ($user): ?>
 <?= $t->partial('partials/signed_in_bar', ['user' => $user]) ?>
 <?php endif; ?>
+<?php if ($page_header !== null): ?>
+<?= $t->partial('partials/page_header', ['title' => $page_header, 'nav_html' => $nav_html, 'noprint' => !$header_print]) ?>
+<?php endif; ?>
 <?= $content ?>
 </main>
 <!-- OU Search Ignore Start Here -->
-<div class="site-chrome site-chrome--footer">
 <?= $chrome['footer'] ?>
-</div>
 <?= $chrome['footcode'] ?>
 <?= $chrome['analytics'] ?>
 <?php foreach ($foot as $f): ?>

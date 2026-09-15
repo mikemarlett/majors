@@ -1,16 +1,12 @@
 <?php
 /**
  * Degree Programs listing page body.
- * Variables: $title, $nav_items (label=>href), $results, $filter, $order, $search, $college, $colleges, $self_url, $search_url
+ * Variables: $results, $filter, $order, $search, $college, $colleges, $self_url, $search_url
+ * (the page header and section menu are rendered by the layout)
  * @var \Majors\View\Layout $t
  */
-$nav_html = '';
-foreach ($nav_items as $label => $href) {
-    $nav_html .= '<li><a href="' . $t->e($href) . '">' . $t->e($label) . '</a></li>' . "\n";
-}
 $filters = ['all' => 'All Programs', 'undergrad' => 'Undergraduate Degrees', 'graduate' => 'Graduate Degrees', 'online' => 'Online', 'minors' => 'Minors', 'certificates' => 'Certificates', 'badges' => 'Badges'];
 ?>
-<?= $t->partial('partials/page_header', ['title' => $title, 'nav_html' => $nav_html, 'noprint' => true]) ?>
 
 <section class="<?= $t->cls('section.shade') ?> noprint">
 	<div class="<?= $t->cls('filters') ?> dm-filters" id="majors-filters" data-search-url="<?= $t->e($search_url) ?>" data-self-url="<?= $t->e($self_url) ?>">

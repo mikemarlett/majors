@@ -4,7 +4,6 @@
  * @var \Majors\View\Layout $t
  */
 ?>
-<?= $t->partial('partials/page_header', ['title' => 'Manage Users', 'noprint' => true]) ?>
 <section class="<?= $t->cls('section') ?>">
 	<p>People on this list can sign in with their myWSU ID. <strong>Advisors</strong> edit degree maps for their colleges, <strong>marketing</strong> staff edit the majors pages, and <strong>super admins</strong> can do both and manage this list.</p>
 	<p><button id="add-user-btn" class="<?= $t->cls('button.accent') ?>" type="button">Add New User</button></p>

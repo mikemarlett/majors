@@ -109,7 +109,7 @@ final class Guard
         $layout = $this->app->layout();
         echo $layout->page(
             $layout->render('auth/denied', ['user' => $user, 'roles' => $roles, 'reason' => 'role']),
-            ['title' => 'Access denied', 'user' => $user]
+            ['title' => 'Access denied', 'page_header' => 'Access denied', 'header_print' => true, 'user' => $user]
         );
         exit;
     }

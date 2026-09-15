@@ -100,6 +100,7 @@ final class Kernel
             $this->config->string('base_url', '/academics/majors'),
             $this->webRoot . '/assets',
             (array) $this->config->get('site', []),
+            $this->docroot(),
         );
     }
 

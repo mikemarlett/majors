@@ -51,14 +51,14 @@ final class AuthController extends Controller
         } catch (Throwable $e) {
             error_log('[majors] sign-in failed: ' . $e->getMessage());
             http_response_code(400);
-            $this->page($layout->render('auth/denied', ['reason' => 'provider', 'detail' => $this->app->isDev() ? $e->getMessage() : '']), ['title' => 'Sign-in problem']);
+            $this->page($layout->render('auth/denied', ['reason' => 'provider', 'detail' => $this->app->isDev() ? $e->getMessage() : '']), ['title' => 'Sign-in problem', 'page_header' => 'Sign-in problem', 'header_print' => true]);
             exit;
         }
 
         $user = $this->app->users()->findByNetidOrEmail($identity->netid, $identity->email);
         if ($user === null || $user->role === 'none') {
             http_response_code(403);
-            $this->page($layout->render('auth/denied', ['reason' => 'not_listed', 'identity' => $identity]), ['title' => 'Access denied']);
+            $this->page($layout->render('auth/denied', ['reason' => 'not_listed', 'identity' => $identity]), ['title' => 'Access denied', 'page_header' => 'Access denied', 'header_print' => true]);
             exit;
         }
 

@@ -31,6 +31,7 @@ final class Layout
         private readonly string $baseUrl,
         private readonly string $assetsDir,
         private readonly array $site = [],
+        private readonly string $docroot = '',
     ) {
     }
 
@@ -76,21 +77,42 @@ final class Layout
     /**
      * Full page: wrap already-rendered content in templates/<design>/layout.php.
      *
-     * @param array{title?:string,description?:string,head?:string[],foot?:string[],
-     *               body_class?:string,user?:mixed,csrf?:string,print?:bool} $opts
+     * The layout owns the page header band and the section menu, because the
+     * two designs place them differently (the new one puts the menu in a
+     * sidebar grid around the content). Pass:
+     *   page_header  h1 text (null = no header band)
+     *   nav_items    label => href for the section menu (old: printed as a list;
+     *                new: used only when the site's own section-nav renderer is absent)
+     *   nav_html     pre-rendered <li>…</li> items (e.g. from the CMS _nav.ounav)
+     *   header_print whether the header band prints (default false: .noprint)
+     *
+     * @param array{title?:string,description?:string,head?:string[],foot?:string[],body_class?:string,
+     *               user?:mixed,csrf?:string,page_header?:?string,nav_items?:array<string,string>,nav_html?:string,header_print?:bool} $opts
      */
     public function page(string $content, array $opts = []): string
     {
+        $navHtml = $opts['nav_html'] ?? '';
+        foreach ($opts['nav_items'] ?? [] as $label => $href) {
+            $navHtml .= '<li><a href="' . $this->e($href) . '">' . $this->e($label) . '</a></li>' . "\n";
+        }
+        $sectionNav = null;
+        if ($this->design === 'new' && ($navHtml !== '' || !empty($opts['nav_items']))) {
+            $sectionNav = (new SectionNav($this->docroot))->render((string) ($_SERVER['REQUEST_URI'] ?? '/'));
+        }
         return $this->render('layout', [
-            'content'     => $content,
-            'title'       => $opts['title'] ?? $this->site('site_name', 'Wichita State University'),
-            'description' => $opts['description'] ?? '',
-            'head'        => $opts['head'] ?? [],
-            'foot'        => $opts['foot'] ?? [],
-            'body_class'  => $opts['body_class'] ?? '',
-            'user'        => $opts['user'] ?? null,
-            'csrf'        => $opts['csrf'] ?? null,
-            'chrome'      => $this->theme->all(),
+            'content'      => $content,
+            'title'        => $opts['title'] ?? $this->site('site_name', 'Wichita State University'),
+            'description'  => $opts['description'] ?? '',
+            'head'         => $opts['head'] ?? [],
+            'foot'         => $opts['foot'] ?? [],
+            'body_class'   => $opts['body_class'] ?? '',
+            'user'         => $opts['user'] ?? null,
+            'csrf'         => $opts['csrf'] ?? null,
+            'page_header'  => $opts['page_header'] ?? null,
+            'nav_html'     => $navHtml,
+            'section_nav'  => $sectionNav,
+            'header_print' => (bool) ($opts['header_print'] ?? false),
+            'chrome'       => $this->theme->all(),
         ]);
     }
 
