@@ -79,3 +79,7 @@ span.calculated_hours.warning { background: #ff8a00; color: #000; }
 .ma-user-form select[multiple] { height: auto; }
 
 @media print { .ma-actions, .ma-links, .calculated_hours, .course-item--add, .drag-handle, a.edit_course { display: none !important; } }
+
+/* user form */
+.ma-required { color: #bb4935; }
+.ma-warning { color: #bb4935; font-weight: 600; }

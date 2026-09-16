@@ -24,7 +24,7 @@
 			r.users.forEach(function (u) {
 				html += '<tr class="' + (u.is_active ? '' : 'inactive') + '">' +
 					'<td><a href="mailto:' + esc(u.email) + '">' + esc(u.first_name + ' ' + u.last_name) + '</a><br><small>' + esc(u.email) + '</small></td>' +
-					'<td>' + esc(u.netid) + '</td>' +
+					'<td>' + (u.netid ? esc(u.netid) : '<strong class="ma-warning">missing: cannot sign in</strong>') + '</td>' +
 					'<td>' + esc(ROLE_LABEL[u.role] || u.role) + (u.is_active ? '' : ' (inactive)') + '</td>' +
 					'<td>' + esc(ALL_COLLEGES[u.role] ? 'All' : (u.role === 'marketing' ? '—' : (u.colleges.join(', ') || '—'))) + '</td>' +
 					'<td>' + esc(u.last_login ? u.last_login.substring(0, 10) : 'never') + '</td>' +

@@ -99,10 +99,11 @@ CS=$(grep -o 'name="csrf-token" content="[a-f0-9]*"' $S/out.html | grep -o '[a-f
 PK() { curl -s -b $K -H "X-CSRF-Token: $CS" -X POST "$@"; }
 R=$(curl -s -b $K "$A?action=get_users"); echo "$R" | grep -q 'ada.advisor' && ok "get_users" || bad "get_users: $R"
 R=$(curl -s -b $K "$A?action=get_user_form&user_id=2"); echo "$R" | grep -q 'value="Ada"' && ok "get_user_form" || bad "user form: $R"
-R=$(PK --data-urlencode "first_name=Tom" --data-urlencode "last_name=Temp" --data-urlencode "email=tom.temp@wichita.edu" --data-urlencode "role=advisor" --data-urlencode "colleges[]=3" --data-urlencode "colleges[]=4" "$A?action=save_user"); UID_=$(echo "$R" | grep -o '"user_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$UID_" ] && ok "save_user → $UID_" || bad "save_user: $R"
+R=$(PK --data-urlencode "first_name=Tom" --data-urlencode "last_name=Temp" --data-urlencode "email=tom.temp@wichita.edu" --data-urlencode "netid=t123t456" --data-urlencode "role=advisor" --data-urlencode "colleges[]=3" --data-urlencode "colleges[]=4" "$A?action=save_user"); UID_=$(echo "$R" | grep -o '"user_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$UID_" ] && ok "save_user → $UID_" || bad "save_user: $R"
+R=$(PK --data-urlencode "first_name=No" --data-urlencode "last_name=Netid" --data-urlencode "email=no.netid@wichita.edu" --data-urlencode "role=advisor" "$A?action=save_user"); echo "$R" | grep -q "myWSU ID is required" && ok "save_user refuses a row without netid" || bad "netid required: $R"
 chk "$(Q "SELECT GROUP_CONCAT(college_id ORDER BY college_id) FROM majors_user_colleges WHERE user_id=$UID_")" "3,4" "user colleges saved"
 R=$(PK -d "user_id=$UID_" "$A?action=delete_user"); echo "$R" | grep -q '"success":true' && ok "delete_user" || bad "delete_user: $R"
-R=$(PK -d "user_id=1&first_name=Mike&last_name=Marlett&email=mike.marlett@wichita.edu&role=advisor" "$A?action=save_user"); echo "$R" | grep -q 'own super admin' && ok "cannot demote self" || bad "self demote: $R"
+R=$(PK -d "user_id=1&first_name=Mike&last_name=Marlett&email=mike.marlett@wichita.edu&netid=q262t958&role=advisor" "$A?action=save_user"); echo "$R" | grep -q 'own super admin' && ok "cannot demote self" || bad "self demote: $R"
 chk "$(GET -b $K "$B/_admin/index.php")" 200 "super admin sees majors admin"; has $S/out.html 'id="programs_table"' 'program inventory'
 chk "$(GET -b $K "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "super admin may edit a published map"; has $S/out.html 'id="degree-map-editor"' 'editor shown'; has $S/out.html 'published map for a current or past' 'published-map warning'
 R=$(PK --data-urlencode "major=Aerospace Engineering" --data-urlencode "degree_type=BS" --data-urlencode "college=College of Engineering" --data-urlencode "academic_year=2028" "$A?action=save_map_details"); echo "$R" | grep -q '"success":true' && DUP=$(echo "$R" | grep -o '"degree_map_id":[0-9]*' | grep -o '[0-9]*$') && ok "super admin creates 2028 map $DUP" || bad "create: $R"
@@ -112,7 +113,7 @@ R=$(PK -d "degree_map_id=$NEW" "$A?action=delete_degree_map"); echo "$R" | grep 
 chk "$(Q "SELECT COUNT(*) FROM degree_maps WHERE id=$NEW")" 0 "map gone"; chk "$(Q "SELECT COUNT(*) FROM degree_maps_courses WHERE degree_map_id=$NEW")" 0 "courses gone"
 
 echo "[advisor admin]"
-php app/bin/add-user.php aaron.admin@wichita.edu advisor_admin Aaron Admin >/dev/null
+php app/bin/add-user.php aaron.admin@wichita.edu advisor_admin Aaron Admin a999a999 >/dev/null
 N=$S/aaron.jar; rm -f $N; curl -s -o /dev/null -c $N -b $N "$B/auth/login.php?as=aaron.admin@wichita.edu"
 chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor admin views another college's map"; has $S/out.html 'id="cloneMap"' 'clone offered across colleges'
 chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027&editMap=Edit")" 200 "advisor admin asks to edit published map"; hasnt $S/out.html 'id="degree-map-editor"' 'published year still read-only for advisor admin'

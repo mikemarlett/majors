@@ -69,9 +69,10 @@ final class UserActions extends BaseAction
             throw new ActionException('First name, last name and a valid email are required.');
         }
         $role = $r->enum('role', User::ROLES, 'none');
+        // CAS identifies people by netid (verified on www-test 2026-09-15), so a row without one can never sign in.
         $netid = strtolower($r->str('netid'));
-        if ($netid !== '' && !preg_match('/^[a-z][a-z0-9]{2,7}$/', $netid)) {
-            throw new ActionException('The myWSU ID should look like a123b456.');
+        if (!preg_match('/^[a-z][a-z0-9]{2,7}$/', $netid)) {
+            throw new ActionException($netid === '' ? 'The myWSU ID is required: sign-in matches people by it.' : 'The myWSU ID should look like a123b456.');
         }
         $id = $r->id('user_id');
         if ($id !== null && $id === $user->id && $role !== 'super_admin') {
@@ -83,7 +84,7 @@ final class UserActions extends BaseAction
             'first_name'            => $r->str('first_name'),
             'last_name'             => $r->str('last_name'),
             'email'                 => $email,
-            'netid'                 => $netid !== '' ? $netid : null,
+            'netid'                 => $netid,
             'role'                  => $role,
             'default_college_id'    => $colleges[0] ?? null,
             'default_department_id' => $r->id('department'),

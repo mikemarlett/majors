@@ -15,8 +15,8 @@ use Majors\Support\Html;
 	<div class="ma-row">
 		<div class="ma-col-8"><label for="uf_email">Email (wichita.edu)</label><input type="email" name="email" id="uf_email" required value="<?= $t->e($u['email']) ?>">
 			<span class="help-block">Must match the address released by myWSU sign-in.</span></div>
-		<div class="ma-col-4"><label for="uf_netid">myWSU ID</label><input type="text" name="netid" id="uf_netid" value="<?= $t->e($u['netid']) ?>" placeholder="a123b456" pattern="[A-Za-z][A-Za-z0-9]{2,7}">
-			<span class="help-block">Optional; filled in automatically at first sign-in.</span></div>
+		<div class="ma-col-4"><label for="uf_netid">myWSU ID <span class="ma-required">*</span></label><input type="text" name="netid" id="uf_netid" value="<?= $t->e($u['netid']) ?>" placeholder="a123b456" pattern="[A-Za-z][A-Za-z0-9]{2,7}" required>
+			<span class="help-block">Required: sign-in matches people by this ID (as in the myWSU login), not by email.</span></div>
 	</div>
 	<div class="ma-row">
 		<div class="ma-col-6"><label for="uf_role">Role</label><?= Html::select('role', $roles, $u['role'], ['id' => 'uf_role']) ?></div>

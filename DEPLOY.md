@@ -77,7 +77,7 @@ Then seed the first super admin and check the advisors:
 
 ```bash
 cd /data/www/config/majors
-php bin/add-user.php mike.marlett@wichita.edu super_admin Mike Marlett q262t958
+php bin/add-user.php mike.marlett@wichita.edu super_admin Mike Marlett q262t958   # netid is required
 mysql formshandlerdb -e "SELECT id,email,netid,role,is_active FROM majors_users"
 ```
 
