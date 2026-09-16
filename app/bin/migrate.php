@@ -85,7 +85,9 @@ if (!in_array('role', $users, true)) {
                 WHEN 'editor' THEN 'advisor' WHEN 'approver' THEN 'advisor' ELSE 'none' END");
     }
 } else {
-    // Column exists but may be a VARCHAR with legacy values; normalize then constrain.
+    // Column exists but may be a VARCHAR with legacy values, or an ENUM without the
+    // new names (www-test): widen first so the normalizing UPDATEs cannot truncate.
+    $run("ALTER TABLE `majors_users` MODIFY COLUMN `role` VARCHAR(32) NULL");
     $run("UPDATE `majors_users` SET `role` = 'super_admin' WHERE LOWER(`role`) IN ('admin','administrator')");
     $run("UPDATE `majors_users` SET `role` = 'advisor' WHERE LOWER(`role`) IN ('editor','approver')");
     $run("UPDATE `majors_users` SET `role` = 'none' WHERE `role` NOT IN ('advisor','advisor_admin','marketing','super_admin','none') OR `role` IS NULL");

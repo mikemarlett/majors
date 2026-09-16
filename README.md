@@ -21,7 +21,7 @@ app/                     deployed OUTSIDE the docroot → /data/www/config/major
   dev/                   php -S router + stub site includes for local work
   tests/                 php -l runner and renderer/auth checks (no database needed)
   bin/                   migrate.php, add-user.php, images-audit.php, mirror-fetch.php (run from /data/www/config/majors)
-  sql/                   reference SQL for the migration (bin/migrate.php is the real thing)
+  sql/                   003_migration_plain.sql = the migration for the mysql client; 001/002 reference + duplicate-map cleanup
 docroot/academics/majors/  deployed INTO the docroot; three-line front controllers + assets
 docs/                    baseline manifest of the pre-cleanup tree, image manifest
 ```

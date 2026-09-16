@@ -52,6 +52,13 @@ MAJORS_SITE=www-test php bin/migrate.php --dry-run
 MAJORS_SITE=www-test php bin/migrate.php
 ```
 
+Or, without PHP, the same migration as plain SQL (idempotent, safe to re-run
+or to finish an interrupted run):
+
+```bash
+mysql formshandlerdb < /data/www/config/majors/sql/003_migration_plain.sql
+```
+
 `bin/migrate.php` connects the way the app does (through
 `/data/www/config/functions.php`), inspects `information_schema`, and only
 applies what is missing: `majors_users.netid / role / is_active / last_login_at`,
