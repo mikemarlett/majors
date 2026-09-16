@@ -75,4 +75,15 @@ foreach (['www-test.wichita.edu', 'www.wichita.edu:443', '156.26.1.10', 'claudeb
     check(!ProviderFactory::isPrivateHost($h), "dev provider refused on '$h'");
 }
 
+// Azure claim mapping (Graph /me shape and ID-token shape).
+use Majors\Auth\AzureProvider;
+$az = AzureProvider::identityFromClaims(['id' => 'guid', 'mail' => 'Mike.Marlett@wichita.edu', 'userPrincipalName' => 'Q262T958@wichita.edu', 'givenName' => 'Mike', 'surname' => 'Marlett', 'onPremisesSamAccountName' => 'q262t958']);
+check($az->netid === 'q262t958' && $az->email === 'mike.marlett@wichita.edu' && $az->surname === 'Marlett', 'azure: sam account name, mail, names');
+$az2 = AzureProvider::identityFromClaims(['userPrincipalName' => 'a123b456@wichita.edu', 'mail' => null]);
+check($az2->netid === 'a123b456' && $az2->email === 'a123b456@wichita.edu', 'azure: netid from UPN, email falls back to UPN');
+$az3 = AzureProvider::identityFromClaims(['preferred_username' => 'someone.else@wichita.edu', 'given_name' => 'Some', 'family_name' => 'One']);
+check($az3->netid === null && $az3->email === 'someone.else@wichita.edu' && $az3->givenName === 'Some', 'azure: non-netid UPN leaves netid null');
+$threw = false; try { AzureProvider::identityFromClaims(['id' => 'guid']); } catch (\RuntimeException $e) { $threw = true; }
+check($threw, 'azure: no identifying claims throws');
+
 finish();

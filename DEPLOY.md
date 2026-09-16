@@ -112,6 +112,31 @@ https, so it does not depend on how someone reached the page. Attributes
 needed: the netid (`sAMAccountName` / `UDC_IDENTIFIER`), plus `mail`,
 `givenName`, `sn` if released.
 
+## 2c. Azure / Entra ID instead of CAS (optional)
+
+The app can sign people in through the existing Azure app registration
+(`/data/www/config/phpAzure/loader.php`, the one `/_resources/authorization/azure.php`
+uses) instead of CAS. In the site's config file:
+
+```php
+'auth' => ['provider' => 'azure', 'service_host' => 'www-test.wichita.edu'],
+```
+
+Prerequisites, both in the Azure app registration (Entra admin center ▸ App
+registrations ▸ Authentication / Certificates & secrets):
+
+1. Add the redirect URI `https://www-test.wichita.edu/academics/majors/auth/login.php`
+   (and the www-dev / www ones when needed). Azure refuses unlisted URIs the
+   way CAS refuses unregistered services.
+2. A **valid client secret**. Secrets expire (24 months at most); one issued
+   "a few years ago" has lapsed and must be replaced in the loader's
+   `WSU_OAUTH2_CLIENT_SECRET`. Sign-in fails with `AADSTS7000222` when it has.
+
+The netid comes from `onPremisesSamAccountName` (Graph `/me`, needs the
+`User.Read` scope that is requested by default) or from the UPN's local part;
+the row in `majors_users` is matched by netid as with CAS. `auth/login.php?diag=1`
+reports the loader, the constants and the exact redirect URI to register.
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.

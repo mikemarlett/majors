@@ -44,9 +44,21 @@ return [
     ],
 
     'auth' => [
-        // 'cas' (WSU single sign-on via phpCAS) | 'dev' (local only, env=dev)
+        // 'cas' (WSU single sign-on via phpCAS) | 'azure' (Entra ID via the
+        // phpAzure app registration) | 'dev' (local only, env=dev)
         'provider'    => 'cas',
         'cas_config'  => '/data/www/config/phpCAS/config.php',
+        // Azure: values null = the WSU_OAUTH2_* constants from the loader. The
+        // redirect URI is always https://<service_host>/academics/majors/auth/login.php
+        // and must be on the app registration's redirect-URI list.
+        'azure' => [
+            'loader'        => '/data/www/config/phpAzure/loader.php',
+            'client_id'     => null,
+            'client_secret' => null,
+            'tenant'        => null,
+            'scopes'        => 'openid profile email User.Read',
+            'netid_claim'   => 'onPremisesSamAccountName',
+        ],
         // DevProvider: email to sign in as when ?as= is not given.
         'dev_default' => null,
         // Host used in the CAS service URL (https://<host>/academics/majors/auth/login.php).

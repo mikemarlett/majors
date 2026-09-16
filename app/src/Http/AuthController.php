@@ -52,10 +52,22 @@ final class AuthController extends Controller
         $checks[] = ['Host header on this request', (string) ($_SERVER['HTTP_HOST'] ?? ''), 'ok'];
 
         $provider = $cfg->string('auth.provider', 'cas');
-        $checks[] = ['auth.provider', $provider, $ok($provider === 'cas')];
+        $checks[] = ['auth.provider', $provider, $ok(in_array($provider, ['cas', 'azure'], true))];
+        if ($provider === 'azure') {
+            $az     = (array) ($cfg->get('auth.azure') ?? []);
+            $loader = (string) ($az['loader'] ?? '/data/www/config/phpAzure/loader.php');
+            $checks[] = ['phpAzure loader', $loader, $ok(is_file($loader))];
+            if (is_file($loader)) {
+                require_once $loader;
+                $have = array_filter(['WSU_OAUTH2_CLIENT_ID', 'WSU_OAUTH2_CLIENT_SECRET', 'WSU_OAUTH2_TENANT'], 'defined');
+                $checks[] = ['Azure registration constants', count($have) . ' of 3 defined' . (count($have) < 3 ? ' (or set auth.azure.client_id/client_secret/tenant)' : ''), $ok(count($have) === 3 || (!empty($az['client_id']) && !empty($az['client_secret']) && !empty($az['tenant'])))];
+                $checks[] = ['league/oauth2-client', class_exists('\\League\\OAuth2\\Client\\Provider\\GenericProvider') ? 'loaded' : 'missing', $ok(class_exists('\\League\\OAuth2\\Client\\Provider\\GenericProvider'))];
+            }
+            $checks[] = ['Azure redirect URI to register', $service, 'ok'];
+        }
         $casCfg = $cfg->string('auth.cas_config', '/data/www/config/phpCAS/config.php');
-        $checks[] = ['phpCAS config file', $casCfg, $ok(is_file($casCfg))];
-        if (is_file($casCfg)) {
+        $checks[] = ['phpCAS config file', $casCfg, $ok($provider !== 'cas' || is_file($casCfg))];
+        if ($provider === 'cas' && is_file($casCfg)) {
             $c = (static function (string $f): array { require $f; return ['path' => $phpcas_path ?? '', 'host' => $cas_host ?? '', 'ctx' => $cas_context ?? '']; })($casCfg);
             $casPhp = rtrim((string) $c['path'], '/') . '/CAS.php';
             $checks[] = ['phpCAS library', $casPhp . (is_file($casPhp) ? '' : ' (missing)'), $ok(is_file($casPhp))];

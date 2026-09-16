@@ -15,6 +15,9 @@ final class ProviderFactory
         switch ($name) {
             case 'cas':
                 return new CasProvider($config->string('auth.cas_config', '/data/www/config/phpCAS/config.php'));
+            case 'azure':
+                $azure = $config->get('auth.azure');
+                return new AzureProvider(is_array($azure) ? $azure : []);
             case 'dev':
                 if (!$isDev) {
                     throw new RuntimeException('The dev sign-in provider is only allowed when env=dev.');
