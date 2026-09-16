@@ -31,7 +31,10 @@ return [
 
     'auth' => [
         'provider'    => 'dev',
-        'dev_default' => 'mike.marlett@wichita.edu',
+        // Optional: who ?as= defaults to. Leave unset so a fresh browser is NOT
+        // signed in automatically (the dev provider only answers on localhost /
+        // private-network hosts either way).
+        // 'dev_default' => 'you@wichita.edu',
     ],
 
     'session' => [

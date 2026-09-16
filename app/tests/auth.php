@@ -66,4 +66,13 @@ check(Config::detectSite() === 'www-dev', 'site from docroot name (CLI)');
 putenv('MAJORS_SITE=www'); check(Config::detectSite() === 'www', 'MAJORS_SITE wins'); putenv('MAJORS_SITE');
 array_map('unlink', glob($dir . '/*.php')); rmdir($dir);
 
+// The dev provider must never answer on a public hostname (a sandbox config copied to a server).
+use Majors\Auth\ProviderFactory;
+foreach (['localhost', 'localhost:8080', '127.0.0.1', '127.0.0.1:8087', '192.168.1.78:8091', '10.0.0.5', '[::1]:8080', ''] as $h) {
+    check(ProviderFactory::isPrivateHost($h), "dev provider allowed on '$h'");
+}
+foreach (['www-test.wichita.edu', 'www.wichita.edu:443', '156.26.1.10', 'claudebox3000.attlocal.net', '8.8.8.8'] as $h) {
+    check(!ProviderFactory::isPrivateHost($h), "dev provider refused on '$h'");
+}
+
 finish();
