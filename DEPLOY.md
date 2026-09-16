@@ -37,7 +37,8 @@ to the docroot name and then to `local`; with one shared database per box the
 site only changes `design`, so the scripts work either way.
 
 Do **not** copy `app/dev/`, `app/tests/` or any `app/config/app.*.php`
-override from another box. `_images/` is copied once (it is not in git).
+override from another box. `app/bin/` and `app/sql/` do come along, so the
+commands below run from `/data/www/config/majors`. `_images/` is copied once (it is not in git).
 
 The CMS-published files in the same folder (`degree_maps/index.php`,
 `degree_maps/_nav.ounav`) are untouched; the app reads `_nav.ounav` at runtime
@@ -62,12 +63,13 @@ indexes on `degree_maps`. It normalizes legacy role values (`admin` →
 Also once, on www-test and then www:
 
 ```bash
-mysql formshandlerdb < sql/002_remove_duplicate_maps.sql   # drops the two double-cloned 2026-27 maps (770, 789)
+mysql formshandlerdb < /data/www/config/majors/sql/002_remove_duplicate_maps.sql   # drops the two double-cloned 2026-27 maps (770, 789)
 ```
 
 Then seed the first super admin and check the advisors:
 
 ```bash
+cd /data/www/config/majors
 php bin/add-user.php mike.marlett@wichita.edu super_admin Mike Marlett q262t958
 mysql formshandlerdb -e "SELECT id,email,netid,role,is_active FROM majors_users"
 ```

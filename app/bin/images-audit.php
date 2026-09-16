@@ -6,15 +6,26 @@
  * marketing copy)? Writes a manifest and, with --archive <dir>, moves the
  * unreferenced files out of the docroot.
  *
- *   php bin/images-audit.php                       report only
- *   php bin/images-audit.php --archive /data/majors-images-archive
+ *   php app/bin/images-audit.php                                    report only (repo checkout)
+ *   php bin/images-audit.php --images /data/www/main/academics/majors/_images --archive /data/majors-images-archive
  */
 
 declare(strict_types=1);
 
-$app    = require dirname(__DIR__) . '/app/bootstrap.php';
+$app    = require dirname(__DIR__) . '/bootstrap.php';
 $db     = $app->db();
-$imgDir = dirname(__DIR__) . '/docroot/academics/majors/_images';
+// _images lives in the docroot: the git checkout's copy when run from the repo,
+// otherwise the deployed folder (override with --images <dir>).
+$imgDir = dirname(__DIR__, 2) . '/docroot/academics/majors/_images';
+if (($i = array_search('--images', $argv, true)) !== false) {
+    $imgDir = $argv[$i + 1] ?? '';
+} elseif (!is_dir($imgDir)) {
+    $imgDir = $app->docroot() . '/academics/majors/_images';
+}
+if (!is_dir($imgDir)) {
+    fwrite(STDERR, "_images not found at {$imgDir}; pass --images <dir>\n");
+    exit(1);
+}
 $archiveTo = null;
 if (($i = array_search('--archive', $argv, true)) !== false) {
     $archiveTo = $argv[$i + 1] ?? null;
@@ -70,7 +81,8 @@ foreach ($files as $rel => $size) {
 }
 $missing = array_diff(array_keys($referenced), array_keys($files));
 
-$manifest = dirname(__DIR__) . '/docs/images-manifest.txt';
+$docs     = dirname(__DIR__, 2) . '/docs';
+$manifest = (is_dir($docs) && is_writable($docs) ? $docs : getcwd()) . '/images-manifest.txt';
 $out = "# _images audit " . date('c') . "\n# referenced: " . count($used) . " files (" . round($usedBytes / 1048576, 1) . " MB)"
     . "\n# unreferenced: " . count($orphans) . " files (" . round($orphanBytes / 1048576, 1) . " MB)"
     . "\n# referenced but missing on disk: " . count($missing) . "\n\n[referenced]\n" . implode("\n", $used)

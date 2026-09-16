@@ -16,7 +16,7 @@
 declare(strict_types=1);
 
 $dry = in_array('--dry-run', $argv, true);
-$app = require dirname(__DIR__) . '/app/bootstrap.php';
+$app = require dirname(__DIR__) . '/bootstrap.php';
 $db  = $app->db();
 $schema = $db->query('SELECT DATABASE()')->fetch_row()[0];
 

@@ -112,7 +112,7 @@ R=$(PK -d "degree_map_id=$NEW" "$A?action=delete_degree_map"); echo "$R" | grep 
 chk "$(Q "SELECT COUNT(*) FROM degree_maps WHERE id=$NEW")" 0 "map gone"; chk "$(Q "SELECT COUNT(*) FROM degree_maps_courses WHERE degree_map_id=$NEW")" 0 "courses gone"
 
 echo "[advisor admin]"
-php bin/add-user.php aaron.admin@wichita.edu advisor_admin Aaron Admin >/dev/null
+php app/bin/add-user.php aaron.admin@wichita.edu advisor_admin Aaron Admin >/dev/null
 N=$S/aaron.jar; rm -f $N; curl -s -o /dev/null -c $N -b $N "$B/auth/login.php?as=aaron.admin@wichita.edu"
 chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor admin views another college's map"; has $S/out.html 'id="cloneMap"' 'clone offered across colleges'
 chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027&editMap=Edit")" 200 "advisor admin asks to edit published map"; hasnt $S/out.html 'id="degree-map-editor"' 'published year still read-only for advisor admin'

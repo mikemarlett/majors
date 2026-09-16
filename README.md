@@ -20,9 +20,9 @@ app/                     deployed OUTSIDE the docroot → /data/www/config/major
   templates/shared/      data-bearing templates that work under either design
   dev/                   php -S router + stub site includes for local work
   tests/                 php -l runner and renderer/auth checks (no database needed)
+  bin/                   migrate.php, add-user.php, images-audit.php, mirror-fetch.php (run from /data/www/config/majors)
+  sql/                   reference SQL for the migration (bin/migrate.php is the real thing)
 docroot/academics/majors/  deployed INTO the docroot; three-line front controllers + assets
-bin/                     migrate.php, add-user.php, images-audit.php
-sql/                     reference SQL for the migration (bin/migrate.php is the real thing)
 docs/                    baseline manifest of the pre-cleanup tree, image manifest
 ```
 
@@ -131,7 +131,7 @@ php -S 0.0.0.0:8091 -t /data/www/main-dev    # www-dev   (new design)
 
 Refresh a mirror by copying `_resources/` from the server; nothing under
 `/data/www` is in this repo. Individual files can be pulled from the CMS
-staging site with `bin/mirror-fetch.php <remote_dir> <dest,dest> <names…>`
+staging site with `app/bin/mirror-fetch.php <remote_dir> <dest,dest> <names…>`
 (uses the Modern Campus workspace's `McClient` and its credentials; it reads
 binaries through `GET /pages/content`, since `_resources/images/` on the
 server is too large to copy whole).
@@ -143,14 +143,14 @@ server is too large to copy whole).
 - Retire the compatibility shims `docroot/.../maps_functions.php` and
   `majors_functions.php` once `/_resources/php/degree_maps_search_process.php`
   and `degree_search.php` are removed from the CMS.
-- Photos: `bin/images-audit.php --archive` moved the 624 unreferenced files
+- Photos: `app/bin/images-audit.php --archive` moved the 624 unreferenced files
   (55 MB) out of `_images/` on 2026-09-14 into `/srv/work/majors-backups/images-archive-20260914`;
   565 referenced files remain (see [docs/images-manifest.txt](docs/images-manifest.txt)).
   Deploy the trimmed `_images/` to the servers, or run the same command there.
   Two referenced files are missing everywhere: `PHS.jpg` and
   `HP_Nursing_Accelerated_Program_ITP.jpg` (those pages show broken images today).
 - Two 2026-27 maps had been cloned twice (770/965, 789/791). Decision: keep
-  the later id. Removed on the sandbox; run `sql/002_remove_duplicate_maps.sql`
+  the later id. Removed on the sandbox; run `app/sql/002_remove_duplicate_maps.sql`
   on www-test and www. Creating or cloning a second map for the same degree and
   year is now refused (the UI offers to open the existing one) and the admin
   listing tags any duplicates that do appear.
