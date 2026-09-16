@@ -51,7 +51,13 @@ final class Guard
         $user = $this->user();
         if ($user === null) {
             $return = $this->app->request()->uri();
-            header('Location: ' . $this->app->layout()->url('auth/login.php') . '?return=' . rawurlencode($return), true, 302);
+            $login  = $this->app->layout()->url('auth/login.php') . '?return=' . rawurlencode($return);
+            // Sandbox convenience: admin/maps.php?as=you@wichita.edu carries the identity through to the dev provider.
+            $as = $this->app->request()->str('as');
+            if ($as !== '' && $this->app->isDev()) {
+                $login .= '&as=' . rawurlencode($as);
+            }
+            header('Location: ' . $login, true, 302);
             exit;
         }
         if ($roles !== [] && !$user->hasRole(...$roles)) {
