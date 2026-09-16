@@ -94,6 +94,24 @@ mysql formshandlerdb -e "UPDATE majors_users SET netid='q262t958' WHERE email='m
 If a sign-in fails and the error log is out of reach,
 `auth/login.php?diag=1` shows what the server sees and the last failure.
 
+## 2b. CAS registration (once per server, by ITS)
+
+CAS authorizes by service URL, and the test servers talk to a separate CAS
+(`cas-test.wichita.edu`, set by `cas_host` in `/data/www/config/phpCAS/config.php`;
+www uses `cas.wichita.edu`). "Application Not Authorized to Use CAS" means the
+service below is not registered on that CAS server. Ask ITS to register:
+
+| Server   | CAS server              | Service URL |
+|----------|-------------------------|-------------|
+| www-test | cas-test.wichita.edu    | `https://www-test.wichita.edu/academics/majors/auth/login.php` |
+| www-dev  | cas-test.wichita.edu    | `https://www-dev.wichita.edu/academics/majors/auth/login.php` |
+| www      | cas.wichita.edu         | `https://www.wichita.edu/academics/majors/auth/login.php` |
+
+The service URL is fixed by `auth.service_host` (per-site config) and is always
+https, so it does not depend on how someone reached the page. Attributes
+needed: the netid (`sAMAccountName` / `UDC_IDENTIFIER`), plus `mail`,
+`givenName`, `sn` if released.
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.
