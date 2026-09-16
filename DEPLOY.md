@@ -81,10 +81,18 @@ php bin/add-user.php mike.marlett@wichita.edu super_admin Mike Marlett q262t958
 mysql formshandlerdb -e "SELECT id,email,netid,role,is_active FROM majors_users"
 ```
 
-Every advisor needs `role='advisor'`, the email CAS releases (their
-wichita.edu address), and at least one row in `majors_user_colleges` — Manage
-Users (`degree_maps/admin/manage_users.php`) does this once a super admin can
-sign in.
+Every user needs a **netid** (verified on www-test 2026-09-15: CAS identifies
+people by netid, and a row with only an email is not matched), a role, and
+for advisors at least one row in `majors_user_colleges`. Manage Users
+(`degree_maps/admin/manage_users.php`) does this once a super admin can sign
+in; for the first super admin:
+
+```bash
+mysql formshandlerdb -e "UPDATE majors_users SET netid='q262t958' WHERE email='mike.marlett@wichita.edu'"
+```
+
+If a sign-in fails and the error log is out of reach,
+`auth/login.php?diag=1` shows what the server sees and the last failure.
 
 ## 3. Verify on www-test
 
