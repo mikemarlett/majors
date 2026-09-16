@@ -49,6 +49,11 @@ return [
         'cas_config'  => '/data/www/config/phpCAS/config.php',
         // DevProvider: email to sign in as when ?as= is not given.
         'dev_default' => null,
+        // Host used in the CAS service URL (https://<host>/academics/majors/auth/login.php).
+        // CAS authorizes by service URL, so this must be the registered name, e.g.
+        // 'www-test.wichita.edu' — not an internal server name someone typed in.
+        // null = the request's Host header. Outside env=dev the scheme is always https.
+        'service_host' => null,
     ],
 
     'session' => [

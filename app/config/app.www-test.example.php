@@ -13,4 +13,5 @@ declare(strict_types=1);
 
 return [
     'design' => 'old',
+    'auth'   => ['service_host' => 'www-test.wichita.edu'],
 ];

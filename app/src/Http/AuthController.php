@@ -48,7 +48,8 @@ final class AuthController extends Controller
         $https = (($_SERVER['HTTPS'] ?? 'off') !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
         $checks[] = ['Request scheme seen by PHP', ($https ? 'https' : 'http') . ' (HTTPS=' . ($_SERVER['HTTPS'] ?? 'unset') . ', X-Forwarded-Proto=' . ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'unset') . ')', $ok($https)];
         $service = $this->absolute($layout->url('auth/login.php'));
-        $checks[] = ['CAS service URL we register', $service, $ok(str_starts_with($service, 'https://'))];
+        $checks[] = ['CAS service URL we register', $service . ($cfg->string('auth.service_host', '') === '' ? '  (host taken from the request; set auth.service_host to pin it)' : ''), $ok(str_starts_with($service, 'https://'))];
+        $checks[] = ['Host header on this request', (string) ($_SERVER['HTTP_HOST'] ?? ''), 'ok'];
 
         $provider = $cfg->string('auth.provider', 'cas');
         $checks[] = ['auth.provider', $provider, $ok($provider === 'cas')];
@@ -170,10 +171,21 @@ final class AuthController extends Controller
         return $this->app->layout()->url('degree_maps/admin/maps.php');
     }
 
+    /**
+     * Absolute URL for the CAS service. CAS authorizes by this exact URL, so it
+     * must not wobble with how someone reached the page: on a server the scheme
+     * is always https and the host comes from auth.service_host when set
+     * (an internal server name or a plain http:// visit would otherwise
+     * produce an unregistered service).
+     */
     private function absolute(string $path): string
     {
-        $https = (($_SERVER['HTTPS'] ?? 'off') !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-        $host  = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $https = !$this->app->isDev()
+            || (($_SERVER['HTTPS'] ?? 'off') !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        $host  = $this->app->config->string('auth.service_host', '');
+        if ($host === '') {
+            $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        }
         return ($https ? 'https' : 'http') . '://' . $host . $path;
     }
 }
