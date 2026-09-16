@@ -1,4 +1,5 @@
 <?php
 
-// Copy to approot.php on each server and point it at the deployed app/ folder.
+// Optional. _bootstrap.php already looks in /data/www/config/majors; copy this to
+// approot.php only if the app is deployed somewhere else.
 return '/data/www/config/majors';

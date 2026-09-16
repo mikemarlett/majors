@@ -27,12 +27,9 @@ cp app.www-test.example.php app.www-test.php   # design => 'old' (nothing else t
 # /data/www/config/functions.php and /data/www/config/phpCAS/config.php.
 ```
 
-Once per docroot:
-
-```bash
-printf '%s\n' '<?php' "return '/data/www/config/majors';" > /data/www/main-dev/academics/majors/approot.php
-printf '%s\n' '<?php' "return '/data/www/config/majors';" > /data/www/main-test/academics/majors/approot.php
-```
+Nothing is written into the docroot: `_bootstrap.php` looks for the app at
+`/data/www/config/majors` on its own (an `approot.php` beside it is only
+needed if the app is deployed somewhere else).
 
 CLI scripts (`bin/*.php`) have no request host, so tell them which site they
 run for: `MAJORS_SITE=www-test php bin/migrate.php`. Without it they fall back
