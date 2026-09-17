@@ -112,7 +112,7 @@ https, so it does not depend on how someone reached the page. Attributes
 needed: the netid (`sAMAccountName` / `UDC_IDENTIFIER`), plus `mail`,
 `givenName`, `sn` if released.
 
-## 2c. Azure / Entra ID instead of CAS (optional)
+## 2c. Azure / Entra ID instead of CAS (in use on www-test since 2026-09-17)
 
 The app can sign people in through the existing Azure app registration
 (`/data/www/config/phpAzure/loader.php`, the one `/_resources/authorization/azure.php`
