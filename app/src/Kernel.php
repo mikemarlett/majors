@@ -175,6 +175,11 @@ final class Kernel
     private function fail(\Throwable $e): never
     {
         error_log(sprintf('[majors] %s: %s in %s:%d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine()));
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            // So auth/login.php?diag=1 can show it on a server whose error log is out of reach.
+            $safe = $e instanceof \mysqli_sql_exception ? 'database error (see server log)' : $e->getMessage();
+            $_SESSION['auth_last_error'] = ['at' => date('Y-m-d H:i:s'), 'message' => get_class($e) . ': ' . mb_substr($safe, 0, 600)];
+        }
         if (!headers_sent()) {
             http_response_code(500);
         }

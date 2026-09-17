@@ -125,8 +125,10 @@ final class AuthController extends Controller
             $return = $this->safeReturn((string) ($_SESSION['auth_return'] ?? ''));
         }
 
-        $provider = $this->app->identityProvider();
         try {
+            // Building the provider can fail too (unknown auth.provider, the dev
+            // provider on a public host): keep that on the sign-in problem page.
+            $provider = $this->app->identityProvider();
             // The provider must come back to exactly this URL (CAS validates the service URL).
             $identity = $provider->authenticate($this->absolute($layout->url('auth/login.php')));
         } catch (Throwable $e) {
