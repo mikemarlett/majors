@@ -130,7 +130,7 @@ registrations ▸ Authentication / Certificates & secrets):
    way CAS refuses unregistered services.
 2. A **valid client secret**. Secrets expire (24 months at most); one issued
    "a few years ago" has lapsed and must be replaced in the loader's
-   `WSU_OAUTH2_CLIENT_SECRET`. Sign-in fails with `AADSTS7000222` when it has.
+   `WSU_OAUTH2_SECRET`. Sign-in fails with `AADSTS7000222` when it has.
 
 The netid comes from `onPremisesSamAccountName` (Graph `/me`, needs the
 `User.Read` scope that is requested by default) or from the UPN's local part;

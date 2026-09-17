@@ -59,8 +59,13 @@ final class AuthController extends Controller
             $checks[] = ['phpAzure loader', $loader, $ok(is_file($loader))];
             if (is_file($loader)) {
                 require_once $loader;
-                $have = array_filter(['WSU_OAUTH2_CLIENT_ID', 'WSU_OAUTH2_CLIENT_SECRET', 'WSU_OAUTH2_TENANT'], 'defined');
-                $checks[] = ['Azure registration constants', count($have) . ' of 3 defined' . (count($have) < 3 ? ' (or set auth.azure.client_id/client_secret/tenant)' : ''), $ok(count($have) === 3 || (!empty($az['client_id']) && !empty($az['client_secret']) && !empty($az['tenant'])))];
+                $have = [
+                    'client id'     => defined('WSU_OAUTH2_CLIENT_ID') || !empty($az['client_id']),
+                    'client secret' => defined('WSU_OAUTH2_SECRET') || defined('WSU_OAUTH2_CLIENT_SECRET') || !empty($az['client_secret']),
+                    'tenant'        => defined('WSU_OAUTH2_TENANT') || !empty($az['tenant']),
+                ];
+                $missing = array_keys(array_filter($have, static fn (bool $b) => !$b));
+                $checks[] = ['Azure registration values', $missing === [] ? 'client id, secret and tenant present' : 'missing: ' . implode(', ', $missing) . ' (constants WSU_OAUTH2_CLIENT_ID / WSU_OAUTH2_SECRET / WSU_OAUTH2_TENANT in the loader, or auth.azure.*)', $ok($missing === [])];
                 $checks[] = ['league/oauth2-client', class_exists('\\League\\OAuth2\\Client\\Provider\\GenericProvider') ? 'loaded' : 'missing', $ok(class_exists('\\League\\OAuth2\\Client\\Provider\\GenericProvider'))];
             }
             $checks[] = ['Azure redirect URI to register', $service, 'ok'];

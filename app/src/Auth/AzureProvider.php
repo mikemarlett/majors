@@ -14,7 +14,8 @@ use RuntimeException;
  *
  * Settings come from config 'auth.azure' and fall back to the constants
  * defined by /data/www/config/phpAzure/loader.php (WSU_OAUTH2_CLIENT_ID,
- * WSU_OAUTH2_CLIENT_SECRET, WSU_OAUTH2_TENANT). The redirect URI is our own
+ * WSU_OAUTH2_SECRET — the name the existing azure.php uses; WSU_OAUTH2_CLIENT_SECRET
+ * is accepted too — and WSU_OAUTH2_TENANT). The redirect URI is our own
  * auth/login.php (absolute), so that URL must be on the app registration's
  * redirect-URI list — Azure refuses anything not listed, exactly as CAS does.
  *
@@ -125,15 +126,20 @@ final class AzureProvider implements IdentityProvider
             throw new RuntimeException("league/oauth2-client is not available (expected from {$loader}).");
         }
 
-        $get = static function (array $s, string $key, string $const): string {
+        $get = static function (array $s, string $key, string ...$consts): string {
             $v = $s[$key] ?? null;
             if (is_string($v) && $v !== '') {
                 return $v;
             }
-            return defined($const) ? (string) constant($const) : '';
+            foreach ($consts as $const) {
+                if (defined($const) && (string) constant($const) !== '') {
+                    return (string) constant($const);
+                }
+            }
+            return '';
         };
         $clientId = $get($this->settings, 'client_id', 'WSU_OAUTH2_CLIENT_ID');
-        $secret   = $get($this->settings, 'client_secret', 'WSU_OAUTH2_CLIENT_SECRET');
+        $secret   = $get($this->settings, 'client_secret', 'WSU_OAUTH2_SECRET', 'WSU_OAUTH2_CLIENT_SECRET');
         $tenant   = $get($this->settings, 'tenant', 'WSU_OAUTH2_TENANT');
         foreach (['client id' => $clientId, 'client secret' => $secret, 'tenant' => $tenant] as $what => $v) {
             if ($v === '') {
