@@ -44,17 +44,41 @@ final class Theme
         return $this->includesDir;
     }
 
+    /** One fragment, captured on first use (each include runs at most once per request). */
     public function fragment(string $name): string
     {
-        $this->loaded ??= $this->load();
-        return $this->loaded[$name] ?? '';
+        if (!isset(self::FRAGMENTS[$name])) {
+            return '';
+        }
+        if (!array_key_exists($name, $this->loaded ?? [])) {
+            $path = rtrim($this->includesDir, '/') . '/' . self::FRAGMENTS[$name];
+            $this->loaded[$name] = is_file($path) ? $this->capture($path) : '';
+        }
+        return $this->loaded[$name];
+    }
+
+    /**
+     * Only the named fragments are captured; the rest come back as ''. A design
+     * that never renders alert.php must not include it: the theme's alert.php
+     * fetches an RSS feed over the network on every request and hangs when
+     * the server cannot reach it (www-dev, 2026-09-17: 60 s → 504).
+     *
+     * @param string[] $names
+     * @return array<string,string> every fragment name, loaded or ''
+     */
+    public function fragments(array $names): array
+    {
+        $out = [];
+        foreach (array_keys(self::FRAGMENTS) as $name) {
+            $out[$name] = in_array($name, $names, true) ? $this->fragment($name) : '';
+        }
+        return $out;
     }
 
     /** @return array<string,string> */
     public function all(): array
     {
-        $this->loaded ??= $this->load();
-        return $this->loaded;
+        return $this->fragments(array_keys(self::FRAGMENTS));
     }
 
     public function isAvailable(): bool
@@ -62,24 +86,19 @@ final class Theme
         return is_file(rtrim($this->includesDir, '/') . '/headcode.inc');
     }
 
-    /** @return array<string,string> */
-    private function load(): array
-    {
-        $out = [];
-        foreach (self::FRAGMENTS as $name => $file) {
-            $path       = rtrim($this->includesDir, '/') . '/' . $file;
-            $out[$name] = is_file($path) ? $this->capture($path) : '';
-        }
-        return $out;
-    }
-
     private function capture(string $path): string
     {
+        // Site includes may fetch things (alert.php reads an RSS feed): never let
+        // one unreachable host hold the whole page for a minute.
+        $prevTimeout = ini_get('default_socket_timeout');
+        ini_set('default_socket_timeout', '5');
         ob_start();
         try {
             include $path;
         } catch (\Throwable $e) {
             error_log('Theme fragment failed: ' . $path . ' — ' . $e->getMessage());
+        } finally {
+            ini_set('default_socket_timeout', (string) $prevTimeout);
         }
         return (string) ob_get_clean();
     }

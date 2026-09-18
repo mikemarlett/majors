@@ -21,6 +21,16 @@ use RuntimeException;
  */
 final class Layout
 {
+    /**
+     * Which site includes each design's layout renders. The new theme's pages
+     * never show alert.php or analytics.inc, and alert.php makes a network
+     * call on every request, so the new design must not even load them.
+     */
+    private const CHROME_FRAGMENTS = [
+        'old' => ['headcode', 'header', 'alert', 'footer', 'footcode', 'analytics'],
+        'new' => ['headcode', 'header', 'footer', 'footcode'],
+    ];
+
     /** @var array<string,string>|null */
     private ?array $classmap = null;
 
@@ -119,7 +129,7 @@ final class Layout
             'nav_html'     => $navHtml,
             'section_nav'  => $sectionNav,
             'header_print' => (bool) ($opts['header_print'] ?? false),
-            'chrome'       => $this->theme->all(),
+            'chrome'       => $this->theme->fragments(self::CHROME_FRAGMENTS[$this->design] ?? self::CHROME_FRAGMENTS['old']),
         ]);
     }
 
