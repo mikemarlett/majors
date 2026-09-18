@@ -53,8 +53,10 @@ return [
     'button.small'         => 'nc-chip-link',
     'button_collection'    => 'flex flex-wrap items-center gap-3',
 
-    'table'                => '',            // dm-table / ma-table carry their own rules
-    'table_wrap'           => 'overflow-x-auto',
+    // The theme styles tables only inside .prose (dark head row, bordered cells,
+    // zebra rows); max-w-none lifts prose's 65ch limit so the table can fill the column.
+    'table'                => '',
+    'table_wrap'           => 'prose max-w-none overflow-x-auto',
 
     'alpha_list'           => '',
     'alpha_list.items'     => 'mt-8',

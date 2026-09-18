@@ -5,6 +5,7 @@
 ?>
 <div class="majors-diag">
 	<p>What a sign-in on this server would do, without attempting one. Rows marked <strong>PROBLEM</strong> are the place to look.</p>
+	<div class="<?= $t->cls('table_wrap') ?>">
 	<table class="<?= $t->cls('table') ?>">
 		<thead><tr><th>Check</th><th>Value</th><th>Status</th></tr></thead>
 		<tbody>
@@ -17,5 +18,6 @@
 		<?php endforeach; ?>
 		</tbody>
 	</table>
+	</div>
 	<p><a href="<?= $t->e($t->url('auth/login.php')) ?>">Try signing in</a></p>
 </div>
