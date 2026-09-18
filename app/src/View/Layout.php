@@ -118,6 +118,7 @@ final class Layout
         }
         return $this->render('layout', [
             'content'      => $content,
+            'top'          => $opts['top'] ?? '',   // full-width strip under the page title (new design); before the content (old)
             'title'        => $opts['title'] ?? $this->site('site_name', 'Wichita State University'),
             'description'  => $opts['description'] ?? '',
             'head'         => $opts['head'] ?? [],

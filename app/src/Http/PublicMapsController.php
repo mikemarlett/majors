@@ -62,21 +62,26 @@ final class PublicMapsController extends Controller
             ]);
         }
 
+        $filters = $layout->render('degree_maps/filters', [
+            'order'      => $order,
+            'year'       => $year,
+            'years'      => $maps->years(),
+            'colleges'   => $maps->colleges($year),
+            'college'    => $college,
+            'search_url' => $layout->url('degree_maps/search.php'),
+            'self_url'   => $layout->url('degree_maps/maps.php'),
+        ]);
         $content = $layout->render('degree_maps/index', [
-            'title'         => 'Degree Maps',
-            'results'       => $results,
-            'order'         => $order,
-            'year'          => $year,
-            'years'         => $maps->years(),
-            'colleges'      => $maps->colleges($year),
-            'college'       => $college,
-            'showing_map'   => $mapId !== null,
-            'search_url'    => $layout->url('degree_maps/search.php'),
-            'self_url'      => $layout->url('degree_maps/maps.php'),
+            'results'     => $results,
+            'order'       => $order,
+            'year'        => $year,
+            'showing_map' => $mapId !== null,
+            'self_url'    => $layout->url('degree_maps/maps.php'),
         ]);
 
         $navFile = $this->app->docroot() . '/' . $layout->site('degree_maps_nav');
         $this->page($content, [
+            'top'         => $filters,
             'title'       => $title,
             'page_header' => 'Degree Maps',
             'nav_html'    => is_file($navFile) ? (string) file_get_contents($navFile) : '',

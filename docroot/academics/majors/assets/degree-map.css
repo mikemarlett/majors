@@ -109,7 +109,7 @@ body {
 .majors-new .dm-listing li { padding: .5rem 0; border-bottom: 1px solid rgb(39 37 31 / .12); }
 .majors-new .dm-listing a, .majors-new .dm-view-switch a, .majors-new .majors-results-header a:not(.nc-button), .majors-new .dm-versions a { color: rgb(39 37 31); text-decoration: underline; text-decoration-thickness: 1px; }
 .majors-new .dm-listing a:hover, .majors-new .dm-view-switch a:hover { color: rgb(144 59 65); }
-.majors-new .dm-listing hr { border: 0; border-top: 2px solid rgb(255 219 0); margin: 2rem 0 1rem; }
+.majors-new .dm-listing hr { border: 0; border-top: 1px solid rgb(39 37 31 / .15); margin: 2rem 0 1rem; }
 .majors-new .dm-table { border-collapse: collapse; }
 .majors-new .dm-table th, .majors-new .dm-table td { border: 1px solid rgb(39 37 31 / .15); }
 .majors-new .dm-table thead th { background: rgb(39 37 31); color: #fff; text-align: left; }
@@ -120,6 +120,20 @@ body {
 .majors-new .nc-button.majors-accent:hover { background: rgb(144 59 65); color: #fff; }
 .majors-new .nc-chip-link { display: inline-block; padding: .25rem .75rem; border: 1px solid rgb(39 37 31 / .3); border-radius: 999px; font-size: .85rem; text-decoration: none; color: rgb(39 37 31); }
 .majors-new .nc-chip-link:hover { border-color: rgb(144 59 65); color: rgb(144 59 65); }
+/* full-width strip under the page-title band: help accordion + search/select */
+.majors-new .majors-top { padding-top: 1.5rem; }
+.majors-new .majors-top > * + * { margin-top: 1rem; }
+.majors-new .majors-top .majors-band { padding: 1.25rem 1.5rem; }
+.majors-new .majors-top .dm-filters { align-items: end; }
+.majors-new .majors-top .dm-filters form { margin: 0; }
+.majors-new .majors-top .dm-filters select { min-width: 14rem; }
+.majors-new .dm-help [data-accordion-section-contents] p { max-width: 65ch; }
+/* map header: the logo is wide (4.4:1), so centre it against the two title lines */
+.majors-new .dm-header { align-items: center; gap: 1.5rem; margin-top: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgb(39 37 31 / .15); }
+.majors-new .dm-logo { width: auto; height: 3.5rem; min-width: 0; padding-top: 0; flex: 0 0 auto; }
+.majors-new .dm-college { font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .25rem; line-height: 1.2; }
+.majors-new .dm-title { font-size: 1.4rem; font-weight: 700; margin: 0; }
+.majors-new .dm-year { margin-top: 2rem; }
 .majors-new .majors-admin-bar { background: rgb(245 244 242); border-bottom: 1px solid rgb(39 37 31 / .15); }
 .majors-new .majors-admin-bar a { text-decoration: underline; }
 .majors-new .ma-editor .button, .majors-new .ma-actions .button { display: inline-flex; align-items: center; gap: .4rem; }

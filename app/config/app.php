@@ -90,7 +90,9 @@ return [
         // Per design: the redesign (www-dev) does not ship /_resources/images/.
         'logo'      => [
             'old' => '/_resources/images/logo-blacktype.svg',
-            'new' => '/_resources/_theme/images/site-logo.svg',
+            // The theme's site-logo.svg has white lettering (built for the dark header);
+            // this is the same file with the lettering in the theme's ink colour.
+            'new' => 'img/wsu-logo-dark.svg',
         ],
         'sprite'    => '/_resources/images/sprites/svg-sprite-custom-symbol.svg',
         // Shown on the "not on the access list" page.

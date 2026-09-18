@@ -14,7 +14,7 @@
  *
  * The include fragments must therefore NOT be wrapped in anything.
  *
- * Variables: $content, $title, $description, $head[], $foot[], $body_class, $user, $csrf,
+ * Variables: $content, $top (full-width strip under the title band), $title, $description, $head[], $foot[], $body_class, $user, $csrf,
  *            $page_header, $nav_html, $section_nav (array{desktop,mobile}|null), $header_print, $chrome[]
  * @var \Majors\View\Layout $t
  */
@@ -45,6 +45,11 @@ $hasNav = $section_nav !== null || $nav_html !== '';
 <?php if ($page_header !== null): ?>
 	<div class="relative<?= $header_print ? '' : ' noprint' ?>">
 <?= $t->partial('partials/page_header', ['title' => $page_header]) ?>
+	</div>
+<?php endif; ?>
+<?php if ($top !== ''): ?>
+	<div class="container majors-top">
+<?= $top ?>
 	</div>
 <?php endif; ?>
 <?php if ($hasNav): ?>

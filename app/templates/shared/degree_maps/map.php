@@ -12,6 +12,10 @@ $latest_id  = $latest_id ?? $map['id'];
 $is_latest  = (int) $latest_id === (int) $map['id'];
 $link_base  = $link_base ?? '';
 $latest_url = $latest_url ?? '';
+$new        = $t->design() === 'new';   // no decorative yellow rules, standard headings
+$rule       = $new ? '' : '<hr class="dm-rule noprint">';
+$logo       = $t->site('logo', '/_resources/images/logo-blacktype.svg');
+$logo       = str_starts_with($logo, '/') || str_starts_with($logo, 'http') ? $logo : $t->asset($logo);
 ?>
 <article class="dm" id="degree-map-<?= (int) $map['id'] ?>" data-map-id="<?= (int) $map['id'] ?>">
 <?php if (count($versions) > 1 || $latest_url !== ''): ?>
@@ -35,18 +39,20 @@ $latest_url = $latest_url ?? '';
 	</nav>
 <?php endif; ?>
 
-	<hr class="dm-rule noprint">
-	<h2 class="dm-heading noprint">Degree Map</h2>
-	<hr class="dm-rule noprint">
+<?= $rule ?>
+	<h2 class="<?= $new ? $t->cls('heading3') : 'dm-heading' ?> noprint">Degree Map</h2>
+<?= $rule ?>
 
 	<header class="dm-header">
-		<img src="<?= $t->e($t->site('logo', '/_resources/images/logo-blacktype.svg')) ?>" alt="Wichita State University" class="dm-logo">
+		<img src="<?= $t->e($logo) ?>" alt="Wichita State University" class="dm-logo">
 		<div class="dm-header__text">
 			<h3 class="dm-college"><?= $t->e($map['college']) ?></h3>
 			<h4 class="dm-title"><?= $t->e($map['title']) ?> (<?= $t->e($map['year_label']) ?>)</h4>
 		</div>
 	</header>
+<?php if (!$new): ?>
 	<hr class="dm-rule dm-rule--header">
+<?php endif; ?>
 
 <?php if ($map['note'] !== ''): ?>
 	<div class="<?= $t->cls('alert') ?> dm-note">
@@ -62,7 +68,7 @@ $latest_url = $latest_url ?? '';
 
 <?php foreach ($map['years'] as $i => $yr): ?>
 <?php if ($i > 0): ?>
-	<hr class="dm-rule noprint">
+<?= $rule ?>
 <?php endif; ?>
 	<div class="<?= $t->cls('table_wrap') ?> dm-year">
 		<table class="<?= $t->cls('table') ?> dm-table<?= $yr['summer'] ? ' dm-table--summer' : '' ?>">
@@ -108,12 +114,16 @@ $latest_url = $latest_url ?? '';
 <?php endforeach; ?>
 
 <?php if ($map['hours_to_graduate'] !== ''): ?>
+<?php if (!$new): ?>
 	<hr class="dm-rule">
+<?php endif; ?>
 	<p class="dm-graduate <?= $t->cls('heading6') ?>">Hours needed to complete the degree: <?= $t->e($map['hours_to_graduate']) ?></p>
 <?php endif; ?>
 
 <?php if ($map['note_footnote'] || $map['footnotes']): ?>
+<?php if (!$new): ?>
 	<hr class="dm-rule">
+<?php endif; ?>
 	<section class="dm-footnotes" aria-label="Footnotes">
 <?php if ($map['note_footnote']): ?>
 		<div class="dm-footnotes__note"><strong>Note: </strong><?= $map['note_footnote']['note'] ?></div>

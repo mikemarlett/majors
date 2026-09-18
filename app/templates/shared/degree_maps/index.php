@@ -1,51 +1,11 @@
 <?php
 /**
- * Public Degree Maps page body: header, intro, filters, view switch, results.
- * Variables: $results, $order, $year, $years, $colleges, $college, $showing_map, $search_url, $self_url
- * (the page header and section menu are rendered by the layout)
+ * Public Degree Maps page body: view switch + results. The search/select bar
+ * is degree_maps/filters.php, rendered by the layout in the full-width top slot.
+ * Variables: $results, $order, $year, $showing_map, $self_url
  * @var \Majors\View\Layout $t
  */
 ?>
-
-<section class="<?= $t->cls('section.feature') ?> noprint">
-	<div class="<?= $t->cls('landing_panel') ?>">
-		<p class="<?= $t->cls('landing_panel.text') ?>">Use the search field below to search the degree maps by name, college, department, or degree type. Choose a catalog year and college to narrow the list.</p>
-	</div>
-</section>
-
-<section class="<?= $t->cls('section.shade') ?> noprint">
-	<div class="<?= $t->cls('filters') ?> dm-filters" id="dm-filters" data-search-url="<?= $t->e($search_url) ?>" data-self-url="<?= $t->e($self_url) ?>">
-		<form id="search_form" class="<?= $t->cls('filters.search') ?>" method="post" action="<?= $t->e($self_url) ?>">
-			<label class="<?= $t->cls('sr_only') ?>" for="searchList">Search</label>
-			<input id="searchList" name="searchList" type="search" placeholder="Search Degree Maps" autocomplete="off">
-			<button type="submit">Search</button>
-		</form>
-		<form id="search_academic_year" class="<?= $t->cls('filters.select') ?>" method="get" action="<?= $t->e($self_url) ?>">
-			<label class="<?= $t->cls('sr_only') ?>" for="selected_year">Select Catalog Year</label>
-			<select id="selected_year" name="selected_year">
-				<optgroup label="Catalog Year">
-<?php foreach ($years as $y): ?>
-					<option value="<?= (int) $y ?>"<?= (int) $y === (int) $year ? ' selected' : '' ?>><?= (int) $y - 1 ?> - <?= (int) $y ?></option>
-<?php endforeach; ?>
-				</optgroup>
-			</select>
-			<input type="hidden" name="order" value="<?= $t->e($order) ?>">
-		</form>
-		<form id="search_select" class="<?= $t->cls('filters.select') ?>" method="get" action="<?= $t->e($self_url) ?>">
-			<label class="<?= $t->cls('sr_only') ?>" for="selected_college">Select College</label>
-			<select id="selected_college" name="selected_college">
-				<optgroup label="College">
-					<option value="all">All Colleges</option>
-<?php foreach ($colleges as $c): ?>
-					<option value="<?= $t->e($c) ?>"<?= $college === $c ? ' selected' : '' ?>><?= $t->e($c) ?></option>
-<?php endforeach; ?>
-				</optgroup>
-			</select>
-			<input type="hidden" name="order" value="<?= $t->e($order) ?>">
-			<input type="hidden" name="selected_year" value="<?= (int) $year ?>">
-		</form>
-	</div>
-</section>
 
 <div class="<?= $t->cls('wrapper') ?> dm-page">
 	<div class="dm-view-switch noprint">

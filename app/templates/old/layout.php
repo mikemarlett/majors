@@ -6,7 +6,7 @@
  * analytics.inc. The include fragments are NOT wrapped in extra elements —
  * they may open and close shared wrappers between them.
  *
- * Variables: $content, $title, $description, $head[], $foot[], $body_class, $user, $csrf,
+ * Variables: $content, $top, $title, $description, $head[], $foot[], $body_class, $user, $csrf,
  *            $page_header, $nav_html, $section_nav (unused here), $header_print, $chrome[]
  * @var \Majors\View\Layout $t
  */
@@ -41,6 +41,7 @@
 <?php if ($page_header !== null): ?>
 <?= $t->partial('partials/page_header', ['title' => $page_header, 'nav_html' => $nav_html, 'noprint' => !$header_print]) ?>
 <?php endif; ?>
+<?= $top ?>
 <?= $content ?>
 </main>
 <!-- OU Search Ignore Start Here -->
