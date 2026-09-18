@@ -127,6 +127,7 @@ body {
 .majors-new .majors-top .dm-filters { align-items: end; }
 .majors-new .majors-top .dm-filters form { margin: 0; }
 .majors-new .majors-top .dm-filters select { min-width: 14rem; }
+.majors-new .majors-top .dm-help { margin-top: 1.25rem; border-top: 1px solid rgb(39 37 31 / .12); padding-top: .5rem; }
 .majors-new .dm-help [data-accordion-section-contents] p { max-width: 65ch; }
 /* map header: the logo is wide (4.4:1), so centre it against the two title lines */
 .majors-new .dm-header { align-items: center; gap: 1.5rem; margin-top: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgb(39 37 31 / .15); }
