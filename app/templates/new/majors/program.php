@@ -19,7 +19,7 @@ $fancy = static function (array $links) use ($t): string {
     return $out . '</ul>';
 };
 $card = static function (string $headline, string $html, ?string $linkText, ?string $linkUrl, string $extra = '') use ($t, $fancy): string {
-    $out = '<div class="majors-card"><h3 class="nc-heading text-xl mb-3">' . $t->e($headline) . '</h3><div class="prose max-w-none">' . $html . '</div>';
+    $out = '<div class="border border-black/15 p-6"><h3 class="nc-heading text-xl mb-3">' . $t->e($headline) . '</h3><div class="prose max-w-none">' . $html . '</div>';
     if ($linkText && $linkUrl) {
         $out .= '<div class="mt-4">' . $fancy([['text' => $linkText, 'href' => $linkUrl]]) . '</div>';
     }
@@ -81,7 +81,7 @@ if (!$is_certificate && !empty($c['careers_headline'])) {
 <?php endif; ?>
 
 <?php if (!empty($c['inside_the_program_headline'])): ?>
-<section class="vertical-rhythm-standard majors-band">
+<section class="vertical-rhythm-standard bg-neutral-200 p-6">
 	<div class="flex flex-col gap-8 md:flex-row md:items-start">
 <?php if (!empty($c['inside_the_program_image_url'])): ?>
 		<img class="w-full md:basis-1/3 shrink-0" src="<?= $t->e($c['inside_the_program_image_url']) ?>" alt="<?= $t->e($c['inside_the_program_image_alt'] ?? '') ?>">
@@ -103,7 +103,7 @@ if (!$is_certificate && !empty($c['careers_headline'])) {
 	<h2 class="nc-heading text-2xl mb-6">Similar Programs</h2>
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 <?php foreach ($similar as $s): ?>
-		<a class="majors-card majors-card--link" href="<?= $t->e($program_url . (int) $s['id']) ?>">
+		<a class="block overflow-hidden border border-black/15 text-current no-underline hover:border-black/60" href="<?= $t->e($program_url . (int) $s['id']) ?>">
 <?php if (!empty($s['main_image_url'])): ?>
 			<img class="w-full aspect-[3/2] object-cover" src="<?= $t->e($s['main_image_url']) ?>" alt="">
 <?php endif; ?>

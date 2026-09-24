@@ -87,19 +87,12 @@ body {
 }
 
 /* ---- new design (body.majors-new) ------------------------------------------
-   The redesign's compiled Tailwind ships only the utilities its own templates
-   use and styles neither form controls nor data tables, so the few things our
-   pages need are here, scoped to the new-design body class. Palette from the
+   This app's templates are part of the theme's Tailwind content scan (see
+   tools/theme-build), so layout is utilities in the templates. What lives
+   here is only what the theme does not style at all: form controls, the map
+   table's corrections on top of .prose, and a few app components. Palette from the
    compiled theme: ink rgb(39 37 31), hover red rgb(144 59 65), Shocker yellow
    rgb(255 219 0), Inter type. */
-.majors-new .majors-content { padding-top: .25rem; padding-bottom: 3rem; }
-.majors-new .majors-content > * + * { margin-top: 2rem; }
-.majors-new .majors-band { background: rgb(245 244 242); padding: 1.25rem 1.5rem; }
-.majors-new .majors-note { border-left: 4px solid rgb(255 219 0); background: rgb(255 219 0 / .14); padding: 1rem 1.25rem; }
-.majors-new .majors-note--danger { border-left-color: rgb(144 59 65); background: rgb(144 59 65 / .08); }
-.majors-new .majors-card { border: 1px solid rgb(39 37 31 / .15); padding: 1.5rem; }
-.majors-new .majors-card--link { display: block; padding: 0; overflow: hidden; color: inherit; text-decoration: none; }
-.majors-new .majors-card--link:hover { border-color: rgb(144 59 65); }
 .majors-new .dm-filters input[type="search"], .majors-new .dm-filters input[type="text"], .majors-new .dm-filters select {
 	border: 0; border-bottom: 2px solid rgb(39 37 31); background: rgb(245 244 242); font: inherit; padding: .75rem 1rem; margin: 0; min-width: 12rem;
 }
@@ -131,9 +124,7 @@ body {
 .majors-new .nc-button.majors-accent:hover { background: rgb(144 59 65); color: #fff; }
 .majors-new .nc-chip-link { display: inline-block; padding: .25rem .75rem; border: 1px solid rgb(39 37 31 / .3); border-radius: 999px; font-size: .85rem; text-decoration: none; color: rgb(39 37 31); }
 .majors-new .nc-chip-link:hover { border-color: rgb(144 59 65); color: rgb(144 59 65); }
-/* full-width strip under the page-title band: help accordion + search/select */
 /* top slot: full-bleed slabs stacked directly under the title band */
-.majors-new .majors-top .dm-filters { align-items: end; }
 .majors-new .majors-top .dm-filters form { margin: 0; }
 .majors-new .majors-top .dm-filters select { min-width: 14rem; }
 .majors-new .majors-top .dm-filters input, .majors-new .majors-top .dm-filters select { background: #fff; }
@@ -149,7 +140,6 @@ body {
 /* alerts (design-system GlobalAlert markup, see partials/alert.php) */
 .majors-new .majors-alert-slab { margin: 1.5rem 0; }
 .majors-new .majors-alert-slab .majors-slab__inner { padding: 1.5rem 0; }
-.majors-new .majors-alert__icon { mask-size: contain !important; -webkit-mask-size: contain !important; }
 .majors-new .majors-alert__title { font-size: 1.35rem; }
 .majors-new .majors-alert .prose ul { margin: 0; }
 .majors-new .dm-help [data-accordion-section-contents] p { max-width: 65ch; }
@@ -160,9 +150,7 @@ body {
 .majors-new .dm-title { font-size: 1.4rem; font-weight: 700; margin: 0; }
 .majors-new .dm-year { margin-top: 2rem; }
 .majors-new .majors-admin-bar { background: rgb(245 244 242); border-bottom: 1px solid rgb(39 37 31 / .15); font-size: .9rem; }
-.majors-new .majors-admin-bar__inner { padding: .6rem 0; gap: .5rem 1rem; }
 .majors-new .majors-admin-bar__role { display: inline-block; margin-left: .35rem; padding: 0 .5rem; border-radius: 999px; background: rgb(39 37 31 / .08); font-size: .8rem; text-transform: capitalize; }
-.majors-new .majors-admin-bar nav { gap: .5rem; }
 .majors-new .majors-admin-bar .nc-chip-link { background: #fff; }
 .majors-new .majors-admin-bar .nc-chip-link.is-current { background: rgb(39 37 31); border-color: rgb(39 37 31); color: #fff; }
 .majors-new .majors-admin-bar__out { margin-left: .5rem; border-style: dashed; }

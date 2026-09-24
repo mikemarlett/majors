@@ -69,13 +69,13 @@ $hasNav = $section_nav !== null || $nav_html !== '';
 			</div>
 		</div>
 		<div class="with-sidebar__main sidebar-up:col-[span_13_/_span_13] sidebar-up:order-first">
-			<div class="with-sidebar__main-inner-wrapper majors-content px-4 sidebar-up:px-0">
+			<div class="with-sidebar__main-inner-wrapper majors-content px-4 sidebar-up:px-0 pt-1 pb-12 space-y-8">
 <?= $content ?>
 			</div>
 		</div>
 	</div>
 <?php else: ?>
-	<div class="container my-vertical-space majors-content">
+	<div class="container my-vertical-space majors-content space-y-8">
 <?= $content ?>
 	</div>
 <?php endif; ?>

@@ -33,9 +33,9 @@ return [
 
     // Vertical rhythm inside the main column comes from the theme's own class.
     'section'              => 'vertical-rhythm-standard',
-    'section.shade'        => 'vertical-rhythm-standard majors-band',
+    'section.shade'        => 'vertical-rhythm-standard bg-neutral-200 p-6',
     'section.feature'      => 'vertical-rhythm-standard',
-    'section.actions'      => 'vertical-rhythm-standard majors-band',
+    'section.actions'      => 'vertical-rhythm-standard bg-neutral-200 p-6',
     'section.header'       => 'mb-4',
     'landing_panel'        => 'prose max-w-4xl',
     'landing_panel.text'   => 'text-lg',
@@ -63,11 +63,12 @@ return [
     'divided_list'         => '',
     'divided_list.item'    => 'py-3',
 
-    'alert'                => 'majors-note',
-    'alert.emergency'      => 'majors-note majors-note--danger',
-    'alert.wrapper'        => 'flex gap-3',
-    'alert.icon'           => 'shrink-0 w-6',
-    'alert.message'        => 'grow',
+    // Alerts are partials/alert.php (design-system GlobalAlert); the old-design tokens are unused here.
+    'alert'                => '',
+    'alert.emergency'      => '',
+    'alert.wrapper'        => '',
+    'alert.icon'           => '',
+    'alert.message'        => '',
 
     'row'                  => 'flex flex-wrap gap-4',
     'col.2'                => 'basis-1/6',

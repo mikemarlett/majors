@@ -1,8 +1,8 @@
 <?php
 /**
- * "Signed in as" strip on admin pages (new design). The compiled theme CSS
- * only ships the utilities its own templates use, so the layout of this bar
- * comes from .majors-admin-bar rules in degree-map.css, not from utilities.
+ * "Signed in as" strip on admin pages (new design). Layout is Tailwind
+ * utilities (this app's templates are in the theme's content scan); only the
+ * chip/tag looks live in degree-map.css.
  * Variables: $user (\Majors\Auth\User)
  * @var \Majors\View\Layout $t
  */
@@ -14,9 +14,9 @@ $link = static function (string $path, string $label) use ($t, $here): string {
 };
 ?>
 <div class="majors-admin-bar noprint">
-	<div class="container majors-admin-bar__inner">
-		<span class="majors-admin-bar__who">Signed in as <strong><?= $t->e($user->name()) ?></strong> <span class="majors-admin-bar__role"><?= $t->e(str_replace('_', ' ', $user->role)) ?></span></span>
-		<nav class="majors-admin-bar__nav" aria-label="Admin">
+	<div class="container flex flex-wrap items-center gap-x-4 gap-y-2 py-2 text-sm majors-admin-bar__inner">
+		<span class="mr-auto majors-admin-bar__who">Signed in as <strong><?= $t->e($user->name()) ?></strong> <span class="majors-admin-bar__role"><?= $t->e(str_replace('_', ' ', $user->role)) ?></span></span>
+		<nav class="flex flex-wrap items-center gap-2 majors-admin-bar__nav" aria-label="Admin">
 <?php if ($user->canEditDegreeMaps()): ?>
 			<?= $link('degree_maps/admin/maps.php', 'Degree Maps') ?>
 
