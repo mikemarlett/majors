@@ -26,6 +26,10 @@ Deploying is a CMS step: replace `/_resources/_theme/tailwind.css` on the
 site and bump the `?v=` on the stylesheet link in
 `/_resources/_theme/includes/headcode.inc`, then republish.
 
-Keep in mind: whoever next rebuilds the theme without this app in the scan
-loses those utilities again. Either run this script for every theme build,
-or add the two globs to NewCity's config permanently.
+The two globs are proposed upstream in NewCity's repo
+(`newcity/wichita-state-2024`, branch `majors-content-scan`, merge request !10
+against `WSU-custom-updates`, 2026-09-24). Until that merges, `build.sh` adds
+them itself, so either way a build from this script carries the app. A clone of
+the upstream repo lives at `/srv/work/wichita-state-2024-upstream` on the
+sandbox (`THEME_SRC=` points the script at it); the token that pushes to it is
+in `~/.config/newcity-gitlab.token` (git scope only, no API).

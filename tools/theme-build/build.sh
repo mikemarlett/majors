@@ -38,7 +38,7 @@ fi
 # 2. The container's /app layout: config, helpers, css entry, component css/twig, custom postcss plugins.
 rm -rf css postcss-custom-plugins tailwind-helpers components majors
 cp -r "$THEME_SRC/theme/css" css
-cp -r "$THEME_SRC/.storybook/storybook-config/tailwind-helpers" tailwind-helpers
+[ -d "$THEME_SRC/.storybook/storybook-config/tailwind-helpers" ] && cp -r "$THEME_SRC/.storybook/storybook-config/tailwind-helpers" tailwind-helpers || mkdir -p tailwind-helpers   # empty, untracked upstream
 ln -s "$THEME_SRC/theme/components" components
 cp -r "$BB/postcss-custom-plugins" .
 cp "$BB/expose-tailwind.config.js" .
