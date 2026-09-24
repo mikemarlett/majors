@@ -92,8 +92,8 @@ foreach ($programs as $p) {
         'degree_title' => ($over || empty($p['degree_title'])) ? $x['degree_title'] : $p['degree_title'],
         'credit_hours' => ($over || empty($p['credit_hours'])) ? $x['credit_hours'] : $p['credit_hours'],
     ];
-    if ($new['catalog_url'] === $p['catalog_url'] && $new['degree_title'] === $p['degree_title'] && $new['credit_hours'] === $p['credit_hours']) {
-        $n['unchanged']++;
+    if (!$sqlOut && $new['catalog_url'] === $p['catalog_url'] && $new['degree_title'] === $p['degree_title'] && $new['credit_hours'] === $p['credit_hours']) {
+        $n['unchanged']++;   // (SQL output always carries every row: the target box may differ from this one)
         continue;
     }
     $n['updated']++;
