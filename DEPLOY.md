@@ -8,7 +8,7 @@ docroot is managed by Modern Campus. Deploy = copy files, run one script.
 | from (repo)                | to (server)                                   |
 |----------------------------|-----------------------------------------------|
 | `app/`                     | `/data/www/config/majors/`                    |
-| `docroot/academics/majors/`| `<docroot>/academics/majors/` (www-test: `/data/www/main-test/…`, www: `/data/www/main/…`) |
+| `docroot/academics/majors/`| `<docroot>/academics/majors/` — `/data/www/main/` on both the test box (www-test) and the production box (www); `/data/www/main-dev/` for www-dev |
 
 One app root serves every docroot on the box, the same way `/data/www/config`
 already serves www-dev and www-test. Settings layer as
