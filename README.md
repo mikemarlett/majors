@@ -136,6 +136,14 @@ staging site with `app/bin/mirror-fetch.php <remote_dir> <dest,dest> <names…>`
 binaries through `GET /pages/content`, since `_resources/images/` on the
 server is too large to copy whole).
 
+## Rebuilding the theme stylesheet
+
+The new design's compiled Tailwind only carries the utilities the theme's own
+templates use. `tools/theme-build/build.sh` rebuilds it from the
+`wichita-state-2024` checkout with this app's templates in the scan (see
+[tools/theme-build/README.md](tools/theme-build/README.md)); the result is
+what `/_resources/_theme/tailwind.css` on the site should be.
+
 ## Next phase
 
 - Majors marketing-page editor (fields, images, similar programs, links) in `_admin/`.
