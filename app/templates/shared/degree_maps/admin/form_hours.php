@@ -17,7 +17,7 @@ $span = static function (string $calc, mixed $manual) use ($t): string {
 		<fieldset>
 			<input type="hidden" name="degree_map_id" value="<?= (int) $map['id'] ?>">
 			<legend class="sr-only">Course hours</legend>
-			<p class="help-block">Enter the hours to print for each semester and year. The gray number is the sum of the courses listed; it turns orange when the two disagree.</p>
+			<p class="help-block">These are the hours the map prints. Unsaved fields start at the sum of the courses listed; change a value to print something else. The gray number is that course sum, and turns orange when it disagrees with the field.</p>
 			<table class="course_hours_table">
 				<thead><tr><th scope="col">Semester</th><?php foreach ($years as $y => $name): ?><th scope="col"><?= $t->e($name) ?> Year</th><?php endforeach; ?></tr></thead>
 				<tbody>

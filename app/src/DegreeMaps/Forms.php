@@ -69,17 +69,18 @@ final class Forms
         return $courses;
     }
 
+    /** Every year/semester slot present; unsaved slots are null (no invented 15s or 30s). */
     public static function padHours(array $hours): array
     {
         for ($y = 1; $y <= 4; $y++) {
             for ($s = 1; $s <= 3; $s++) {
                 if (!isset($hours[$y][$s])) {
-                    $hours[$y][$s] = ['hours' => $s === 3 ? null : '15'];
+                    $hours[$y][$s] = ['hours' => null];
                 } elseif (!is_array($hours[$y][$s])) {
                     $hours[$y][$s] = ['hours' => $hours[$y][$s]];
                 }
             }
-            $hours[$y]['total_hours'] ??= '30';
+            $hours[$y]['total_hours'] ??= null;
         }
         return $hours;
     }
@@ -185,8 +186,15 @@ final class Forms
         for ($y = 1; $y <= 4; $y++) {
             foreach ([1, 2, 3] as $s) {
                 $calc[$y][$s] = HoursCalculator::semester($map['courses'], $y, $s);
+                // Unsaved slot: start from the sum of the courses (what the map would print anyway).
+                if (trim((string) ($map['hours'][$y][$s]['hours'] ?? '')) === '' && $calc[$y][$s] !== '0') {
+                    $map['hours'][$y][$s]['hours'] = $calc[$y][$s];
+                }
             }
             $calc[$y]['total_hours'] = HoursCalculator::year($map['courses'], $y);
+            if (trim((string) ($map['hours'][$y]['total_hours'] ?? '')) === '' && $calc[$y]['total_hours'] !== '0') {
+                $map['hours'][$y]['total_hours'] = $calc[$y]['total_hours'];
+            }
         }
         return $this->layout->render('degree_maps/admin/form_hours', ['map' => $map, 'calc' => $calc, 'years' => self::YEARS, 'semesters' => self::SEMESTERS]);
     }
