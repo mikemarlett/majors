@@ -45,6 +45,11 @@ body {
 .dm-versions__list a, .dm-versions__list strong { margin-right: 0.75rem; }
 .dm-versions__permalink { color: #3b3b3b; word-break: break-all; }
 
+/* Old-design alert bars assume they run full-bleed with the 75rem wrapper centred
+   in the viewport, so the site only pads the wrapper below an 80em viewport. Inside
+   our (already ≤ 75rem) column that leaves the icon on the edge; pad it always. */
+.dm-note .alert-bar__wrapper, .ma-sge-warning .alert-bar__wrapper { padding-left: 1.875rem; padding-right: 1.875rem; }
+
 /* table */
 .dm-year { margin-bottom: 1rem; }
 .dm-table { margin-bottom: 1rem; width: 100%; }
