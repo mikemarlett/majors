@@ -53,6 +53,41 @@ chk "$(GET -b $J "$B/_admin/index.php")" 403 "advisor blocked from majors admin"
 chk "$(GET -b $J "$B/degree_maps/admin/manage_users.php")" 403 "advisor blocked from users"
 chk "$(GET -b $J "$B/degree_maps/admin/help.php")" 200 "advisor help page"; has $S/out.html 'id="h-course"' 'help: add-a-course section'; has $S/out.html 'href="/academics/majors/degree_maps/admin/help.php"' 'help linked from admin bar'
 chk "$(curl -s -o /dev/null -w "%{http_code}" "$B/degree_maps/admin/help.php")" 302 "anonymous help redirects to sign-in"
+
+echo "[majors editor]"
+M=$(mktemp); curl -s -o /dev/null -c $M -b $M -L "$B/auth/login.php?as=mia.marketing@wichita.edu&return=/academics/majors/_admin/index.php"
+chk "$(GET -b $M "$B/_admin/index.php")" 200 "marketing: inventory"; has $S/out.html 'href="/academics/majors/_admin/program.php?id=' 'inventory has Edit links'
+chk "$(GET -b $M "$B/_admin/program.php?id=$PROG")" 200 "marketing: editor page"; has $S/out.html 'id="programForm"' 'program form'; has $S/out.html 'id="sectionList"' 'sections list'
+chk "$(GET -b $M "$B/_admin/blocks.php")" 200 "marketing: shared blocks page"; has $S/out.html 'id="blocks_table"' 'blocks table'
+chk "$(GET -b $J "$B/_admin/program.php?id=$PROG")" 403 "advisor blocked from the editor"
+MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//'); GET -b $M "$B/_admin/program.php?id=$PROG" >/dev/null; MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//')
+MP() { curl -s -b $M -H "X-CSRF-Token: $MC" -X POST "$@"; }
+MA=$B/_admin/ajax.php
+NAME=$(Q "SELECT academic_program FROM majors_academic_programs WHERE id=$PROG")
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "credit_hours=99" --data-urlencode "modality=Online" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save_program" || bad "save_program: $R"
+chk "$(Q "SELECT credit_hours FROM majors_academic_programs WHERE id=$PROG")" 99 "program facts saved"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "modality=Sideways" "$MA?action=save_program"); echo "$R" | grep -q 'Modality must be' && ok "save_program validates modality" || bad "modality validation: $R"
+MP -d "program_id=$PROG&credit_hours=&modality=" --data-urlencode "academic_program=$NAME" "$MA?action=save_program" >/dev/null
+R=$(MP -d "program_id=$PROG&kind=teaser" "$MA?action=get_section_form"); echo "$R" | grep -q 'id="editSectionForm"' && ok "get_section_form" || bad "section form: $R"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=teaser" --data-urlencode "headline=E2E card" --data-urlencode "body=<p>e2e body</p>" --data-urlencode "links[text][]=Go" --data-urlencode "links[href][]=/x" "$MA?action=save_section"); SEC=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC" ] && ok "save_section → $SEC" || bad "save_section: $R"; echo "$R" | grep -q 'E2E card' && ok "sections html returned" || bad "sections html"
+GET "$B/index.php?id=$PROG" >/dev/null; has $S/out.html 'E2E card' 'new section on the public page'; has $S/out.html 'href="/x"' 'section link on the public page'
+chk "$(Q "SELECT COUNT(*) FROM majors_programs_content WHERE academic_program_id=$PROG AND wildcard_headline='E2E card' OR (academic_program_id=$PROG AND careers_headline='E2E card')")" 1 "flat row kept in step" || true
+BLK=$(Q "SELECT id FROM majors_content_blocks ORDER BY id LIMIT 1")
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "kind=teaser" --data-urlencode "block_id=$BLK" "$MA?action=save_section"); echo "$R" | grep -q 'shared block' && ok "section switched to a shared block" || bad "attach block: $R"
+R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=detach_section"); echo "$R" | grep -q '"success":true' && ok "detach_section" || bad "detach: $R"
+chk "$(Q "SELECT block_id IS NULL AND headline<>'' FROM majors_program_sections WHERE id=$SEC")" 1 "detached section owns the block's text"
+FIRST=$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG ORDER BY position LIMIT 1")
+R=$(MP -d "program_id=$PROG&order[]=$SEC&order[]=$FIRST" "$MA?action=save_section_order"); echo "$R" | grep -q '"success":true' && ok "save_section_order" || bad "order: $R"
+chk "$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG ORDER BY position LIMIT 1")" "$SEC" "section moved first"
+R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section" || bad "delete: $R"
+R=$(curl -s -b $M "$MA?action=program_search&q=engineering"); echo "$R" | grep -q '"results":\[{' && ok "program_search" || bad "search: $R"
+OTHER=$(Q "SELECT id FROM majors_academic_programs WHERE status='active' AND id<>$PROG ORDER BY id LIMIT 1")
+R=$(MP -d "program_id=$PROG&similar[]=$OTHER" "$MA?action=save_similar"); echo "$R" | grep -q '"success":true' && ok "save_similar" || bad "similar: $R"
+R=$(MP --data-urlencode "headline=E2E block" --data-urlencode "body=<p>shared</p>" "$MA?action=save_block"); NB=$(echo "$R" | grep -o '"block_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$NB" ] && ok "save_block → $NB" || bad "save_block: $R"
+R=$(MP -d "block_id=$BLK" "$MA?action=delete_block"); echo "$R" | grep -q 'is used on' && ok "delete_block refuses a used block" || bad "delete used block: $R"
+R=$(MP -d "block_id=$NB" "$MA?action=delete_block"); echo "$R" | grep -q '"success":true' && ok "delete_block (unused)" || bad "delete block: $R"
+R=$(MP --data-urlencode "academic_program=E2E Test Program" --data-urlencode "credential=Minor" "$MA?action=new_program"); NP=$(echo "$R" | grep -o '"program_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$NP" ] && ok "new_program → $NP" || bad "new_program: $R"
+Q "DELETE FROM majors_programs_content WHERE academic_program_id=$NP; DELETE FROM majors_academic_programs WHERE id=$NP" >/dev/null
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "advisor asks to edit current-year map"; hasnt $S/out.html 'id="degree-map-editor"' 'advisor gets the view, not the editor'

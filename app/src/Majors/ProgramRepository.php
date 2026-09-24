@@ -244,13 +244,13 @@ final class ProgramRepository
     /** Admin listing: every program with its content timestamp and similar count. @return list<array<string,mixed>> */
     public function adminList(): array
     {
-        $sql = 'SELECT m.*, c.`timestamp` AS `content_timestamp`, c.`id` AS `content_id`,
+        $sql = 'SELECT m.*,
                        (SELECT COUNT(*) FROM `majors_similar_programs` s WHERE s.`main_academic_program_id` = m.`id`) AS `similar_count`,
-                       (c.`description` IS NOT NULL AND c.`description` <> "") AS `has_description`,
-                       (c.`main_image_url` IS NOT NULL AND c.`main_image_url` <> "") AS `has_image`
+                       (SELECT COUNT(*) FROM `majors_program_sections` x WHERE x.`program_id` = m.`id`) AS `section_count`,
+                       (m.`description` IS NOT NULL AND m.`description` <> "") AS `has_description`,
+                       (m.`image_url` IS NOT NULL AND m.`image_url` <> "") AS `has_image`
                   FROM `majors_academic_programs` m
-                  LEFT JOIN `majors_programs_content` c ON c.`academic_program_id` = m.`id`
-                 ORDER BY m.`college`, m.`department`, m.`academic_program`, m.`program_type`';
+                 ORDER BY (m.`status` = "retired"), m.`college`, m.`department`, m.`academic_program`, m.`program_type`';
         return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
 }

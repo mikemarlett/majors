@@ -83,3 +83,27 @@ span.calculated_hours.warning { background: #ff8a00; color: #000; }
 /* user form */
 .ma-required { color: #bb4935; }
 .ma-warning { color: #bb4935; font-weight: 600; }
+
+/* ---- majors editor ------------------------------------------------------- */
+.ma-editor-head { margin-bottom: 0; }
+.ma-flags { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; align-items: center; margin: .5rem 0 1rem; }
+.ma-flags label { display: inline-flex; align-items: center; gap: .35rem; margin: 0; font-weight: 400; }
+.ma-links-edit { display: flex; flex-direction: column; gap: .35rem; }
+.ma-link-row { display: flex; gap: .35rem; align-items: center; }
+.ma-link-row input { flex: 1 1 0; margin: 0; }
+.ma-link-row input:last-of-type { flex: 2 1 0; }
+.ma-link-remove { border: 0; background: transparent; font-size: 1.2rem; line-height: 1; cursor: pointer; color: #bb4935; padding: 0 .35rem; }
+.ma-sections { list-style: none; margin: 0 0 1rem; padding: 0; }
+.ma-section { display: flex; gap: .75rem; align-items: flex-start; border: 1px solid #c9c7c4; background: #fff; padding: .75rem; margin-bottom: .5rem; }
+.ma-section .drag-handle { cursor: grab; color: #777; padding: .1rem .35rem; }
+.ma-section__body { flex: 1 1 auto; min-width: 0; }
+.ma-section__meta { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #555; margin-bottom: .2rem; }
+.ma-section__shared { background: #fff5d6; border: 1px solid #ffc217; border-radius: 999px; padding: 0 .5rem; text-transform: none; letter-spacing: 0; }
+.ma-section__excerpt { color: #444; font-size: .9rem; margin-top: .2rem; }
+.ma-section__links { font-size: .85rem; color: #555; margin-top: .2rem; }
+.ma-section__actions { display: flex; flex-direction: column; gap: .35rem; flex: 0 0 auto; }
+.ma-sections__empty { color: #555; padding: .75rem; border: 1px dashed #c9c7c4; }
+.sortable-placeholder { border: 2px dashed #ffc217; background: #fff5d6; height: 3rem; margin-bottom: .5rem; }
+.ma-save-status { margin-left: .75rem; font-size: .9rem; }
+.ck-editor__editable { min-height: 8rem; }
+.majors-new .ma-section { border-color: rgb(39 37 31 / .2); }

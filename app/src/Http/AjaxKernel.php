@@ -8,6 +8,7 @@ use Majors\Http\Ajax\CatalogActions;
 use Majors\Http\Ajax\CourseActions;
 use Majors\Http\Ajax\DegreeMapActions;
 use Majors\Http\Ajax\FootnoteActions;
+use Majors\Http\Ajax\ProgramActions;
 use Majors\Http\Ajax\UserActions;
 use Majors\Support\Json;
 use Majors\Support\Request;
@@ -47,6 +48,20 @@ final class AjaxKernel extends Controller
         'save_map_footnotes'  => [FootnoteActions::class,  'save',              ['advisor'],              'POST', true],
         'delete_footnote'     => [FootnoteActions::class,  'delete',            ['advisor'],              'POST', true],
         'get_footnotes'       => [FootnoteActions::class,  'list',              ['advisor'],              'ANY',  false],
+        // Majors editor (marketing; super admins implied)
+        'program_search'      => [ProgramActions::class,   'search',            ['marketing'],            'GET',  false],
+        'new_program'         => [ProgramActions::class,   'create',            ['marketing'],            'POST', true],
+        'save_program'        => [ProgramActions::class,   'saveProgram',       ['marketing'],            'POST', true],
+        'get_section_form'    => [ProgramActions::class,   'sectionForm',       ['marketing'],            'ANY',  false],
+        'save_section'        => [ProgramActions::class,   'saveSection',       ['marketing'],            'POST', true],
+        'detach_section'      => [ProgramActions::class,   'detachSection',     ['marketing'],            'POST', true],
+        'delete_section'      => [ProgramActions::class,   'deleteSection',     ['marketing'],            'POST', true],
+        'save_section_order'  => [ProgramActions::class,   'saveSectionOrder',  ['marketing'],            'POST', true],
+        'save_similar'        => [ProgramActions::class,   'saveSimilar',       ['marketing'],            'POST', true],
+        'get_block_form'      => [ProgramActions::class,   'blockForm',         ['marketing'],            'ANY',  false],
+        'save_block'          => [ProgramActions::class,   'saveBlock',         ['marketing'],            'POST', true],
+        'delete_block'        => [ProgramActions::class,   'deleteBlock',       ['marketing'],            'POST', true],
+
         // users (super admins only)
         'get_users'           => [UserActions::class,      'list',              ['super_admin'],          'GET',  false],
         'get_user_form'       => [UserActions::class,      'form',              ['super_admin'],          'ANY',  false],

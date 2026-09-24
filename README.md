@@ -163,9 +163,15 @@ templates use. `tools/theme-build/build.sh` rebuilds it from the
 [tools/theme-build/README.md](tools/theme-build/README.md)); the result is
 what `/_resources/_theme/tailwind.css` on the site should be.
 
+## Majors editor (marketing role)
+
+- `_admin/index.php` — inventory with status, section counts, Edit links, New program, Shared blocks.
+- `_admin/program.php?id=N` — the editor: program fields and flags, the Program Card (description, "Learn how…", buttons, photo), Program Details (degree, modality, credit hours, entry term, STEM, coordinator, catalog link), meta tags; the ordered sections (drag to reorder; cards and features; a section can use a shared block, or Customize to take its own copy); similar programs (search picker); linked degree maps.
+- `_admin/blocks.php` — shared content blocks; saving one changes every page that uses it; a block in use cannot be deleted.
+- Rich text is CKEditor 5 (classic build from jsdelivr) on the HTML fields, falling back to a plain textarea. Every save refreshes the legacy flat row so `ai-meta.php` on www stays right.
+
 ## Next phase
 
-- Majors marketing-page editor (fields, images, similar programs, links) in `_admin/`.
 - Refine `templates/new/` against the live www-dev design; flip `design` there.
 - Retire the compatibility shims `docroot/.../maps_functions.php` and
   `majors_functions.php` once `/_resources/php/degree_maps_search_process.php`
