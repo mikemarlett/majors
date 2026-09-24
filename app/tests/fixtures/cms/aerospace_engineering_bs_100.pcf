@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pcf-stylesheet path="/_resources/xsl/landing.xsl" title="HTML" extension="php"?>
+
+<!DOCTYPE document SYSTEM "http://commons.omniupdate.com/dtd/standard.dtd"> 
+
+<document xmlns:ouc="http://omniupdate.com/XSL/Variables">
+
+	<headcode></headcode> <!-- before closing head tag -->
+	<bodycode></bodycode> <!-- after opening body tag -->
+	<footcode></footcode> <!-- before closing body tag -->
+	<ouc:info><tcf>standard-landing.tcf</tcf><tmpl>standard-landing.tmpl</tmpl></ouc:info>
+
+	<ouc:properties label="metadata">
+		<title>Details: Aerospace Engineering, Major, ENG</title>
+		<meta name="Description" content="The Bachelor of Science (BS) in aerospace engineering will prepare you for a high-paying career designing or analyzing aircraft and spacecraft. You'll have access to some of the best aerospace facilities in the country—and the chance to work and research with faculty and industry professionals on campus and throughout Wichita, the world's “Air Capital.”" />
+		<meta name="Keywords" content="Aerospace Engineering, BS, Major, Undergraduate, Aerospace Engineering, College of Engineering" />
+	</ouc:properties>
+
+	<ouc:properties label="config">
+		<parameter name="heading" type="text" group="Everyone" prompt="Page Heading" alt="Optional - Please enter the page heading. If blank, the 'title' value above will be used.">Details: Aerospace Engineering, Major</parameter>
+		<parameter section="Page Layout" name="options" type="checkbox" group="Everyone" prompt="Options" alt="Select Page Options">
+<option value="navigation" selected="false">Navigation</option>
+</parameter>	
+	</ouc:properties>
+
+	<ouc:div label="hero" group="Everyone" button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header Hero / CTA Section"/></ouc:div>
+	<ouc:div label="header-hero"  group="Everyone"  button="hide"><ouc:multiedit type="image" dependency="yes" prompt="Hero Image" alt="Select Hero Image" lockout="no" section="Header Hero Image *required"/><img src="" alt="" /></ouc:div>
+	<ouc:div label="hero-video"  group="Everyone"  button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Hero Video" alt="Select Hero Video" lockout="no" section="Header Hero Video *image required for mobile view"/></ouc:div>
+
+
+	<ouc:div label="cta" group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header CTA Image/Video Overlay"/></ouc:div>
+	<ouc:div label="cta-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="CTA Content" alt="Enter content"/></ouc:div>
+	<ouc:div label="cta-link-text" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="cta-link" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link" alt="Enter Link URL."/></ouc:div>
+
+	<ouc:div label="intro-panel"  group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Page Intro Panel"/></ouc:div>
+
+	<ouc:div label="intro-panel-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="Intro Panel" alt="Enter content"/></ouc:div><ouc:div label="intro-panel-background"  group="Everyone"  button="hide"><ouc:multiedit type="select" prompt="Panel Background" options="Wheat:section-wrap--wheat;Yellow:section-wrap--wsuyellow;Yellow with Arrows:section-wrap--arrows-bright;Light:section-wrap--shade-light;Gray:section-wrap--shade-medium;Gray with Dots:section-wrap--dots;Dark:section-wrap--shade-dark;Dark With Arrows:section-wrap--arrows-dark;None:section-wrap"/>section-wrap--wheat</ouc:div>
+	<ouc:div label="intro-panel-link-text-1" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text One" alt="Enter Link Text."/>Our Innovative Approach</ouc:div>
+	<ouc:div label="intro-panel-link-1" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link One" alt="Enter Link URL."/></ouc:div>
+
+
+	
+	<ouc:div label="intro-panel-link-text-2" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Two" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-2" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Two" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="intro-panel-link-text-3" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Three" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-3" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Three" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="teaser-content" group="Everyone" button-text="Teaser Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/></ouc:div>
+
+	<ouc:div label="maincontent" data-table-separator-options="" group="Everyone" button-text="Main Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/><table class="ou-snippet-generic-section-two-column"><caption>Snippet: Section For Program Card - Two Column Content</caption>
+<tbody>
+<tr>
+<td data-select-list="backgrounds">section-wrap--shade-light</td>
+<td data-select-list="arrows">&nbsp;</td>
+</tr>
+<tr>
+<td>
+<table class="ou-snippet-program-card"><caption>Snippet: Program Card</caption>
+<tbody>
+<tr>
+<td>Major</td>
+</tr>
+<tr>
+<td>Aerospace Engineering</td>
+</tr>
+<tr>
+<td>
+<ul>
+<li><a href="{{f:22192582}}">All Programs</a></li>
+<li><a href="{{f:21723039}}">College of Engineering</a></li>
+<li><a href="{{d:3473654}}">Aerospace Engineering</a></li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<p>The Bachelor of Science (BS) in aerospace engineering is an ideal fit if you're passionate about designing or analyzing aircraft and spacecraft. You'll have access to some of the best aerospace facilities in the country &mdash; and the chance to work and research with faculty and industry professionals on campus and throughout Wichita, known as the "Air Capital of the World."</p>
+</td>
+</tr>
+<tr>
+<td>
+<h3 class="heading4">Learn how aerospace engineering is the right fit for you.</h3>
+<table class="ou-snippet-generic-button-collection"><caption>Button Collection</caption>
+<tbody>
+<tr>
+<td data-select-list="buttons">landing-panel__buttons button-collection--accent-first</td>
+<td><a class="button" href="https://slate.wichita.edu/register/ugrfi">Request Info </a> <a class="button" href="https://my.wsu-info.org/apply-get-started">Start Your Application</a></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>&nbsp;
+<table class="ou-snippet-media-with-caption"><caption>Snippet: Media With Caption</caption>
+<thead>
+<tr>
+<td data-select-list="orientation">captioned-media--right</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img title="" role="presentation" src="{{f:75212535}}" alt="" width="800" height="600" /></td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<section class="teaser-collection section-wrap collection--two-columns">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Applied learning at Wichita State</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>At Wichita State, applied learning is everything. In fact, every degree we offer has a guaranteed applied learning or research experience built right into it equipping you with the relevant skills and experience to make you workforce ready before graduation.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="{{d:3378519}}"> <span>Learn about our innovative approach</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Admission to the program</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>To be admitted into the aerospace engineering program, you must first be admitted to Wichita State.</p>
+<p>For WSU's admission requirements, and to apply, click the link below.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="https://wichita.edu/admissions"> <span>Admission requirements</span> </a></div>
+</div>
+</div>
+</div>
+</section>
+<section class="section-wrap section-wrap--dots"><header class="section-header section-header--no-border">
+<h2>Inside the Program</h2>
+</header>
+<div class="teaser teaser--columned-intro">
+<div class="teaser__image"><a> <img class="" style="max-width: 100%; height: auto;" title="Alex Kanelakos graduated from WSU in 2007 and has worked at NASA ever since." src="{{f:22199154}}" alt="Alex Kanelakos graduated from WSU in 2007 and has worked at NASA ever since." /></a></div>
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Successful NASA career started at Wichita State</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>When he was a high school student considering where to go to college, Alex Kanelakos looked for the best opportunity to get an education that provided real, hands-on work in his field.&nbsp;</p>
+<p>He chose WSU&nbsp;when he learned about its relationship with NASA. To say it worked out well for him is an understatement.</p>
+<p>After graduating in 2007, Alex immediately got a job at NASA. He now carries one of the heaviest responsibilities at&nbsp;mission control: training space station crew members for space walks in giant swimming pools, then monitoring them in space.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="teaser-collection section-wrap collection--two-columns section-wrap--nipple-down">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Curriculum</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>You'll start by developing a solid background in math, science and general engineering. Then, you'll move on to aerospace courses covering:</p>
+<ul>
+<li>aerodynamics &ndash; fluid effects on a flight vehicle</li>
+<li>propulsion &ndash; systems associated with producing force or motion</li>
+<li>stability and control &ndash; vehicle behavior and systems required to control it</li>
+<li>structures &ndash; structural components of the flight vehicles</li>
+</ul>
+<p>Optional tracks in applied propulsion and space systems are available for students majoring in Aerospace Engineering.</p>
+<p><a href="http://catalog.wichita.edu/undergraduate/engineering/aerospace-engineering/departmental-honors-aerospace-engineering/">A departmental honors track is also available for this major</a>.&nbsp;</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="http://catalog.wichita.edu/undergraduate/engineering/aerospace-engineering/aerospace-engineering-bs/#requirementstext"> <span>View the curriculum</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Careers</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>WSU's vast industry connections&mdash;and experience-based learning for every major &mdash; give aerospace engineering students the chance to grow their professional network, build a resume and earn a paycheck, all while still in school, leading to dream careers with employers like:</p>
+<ul>
+<li>Boeing (space, commercial and military)</li>
+<li>Airbus, Cessna/Textron Aviation and Spirit AeroSystems</li>
+<li>NASA and SpaceX</li>
+<li>NASCAR</li>
+<li>U.S. Military</li>
+</ul>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="https://www.bls.gov/ooh/architecture-and-engineering/aerospace-engineers.htm"> <span>Learn more about careers in this field</span> </a></div>
+</div>
+</div>
+</div>
+</section>
+<table class="ou-snippet-section-collection-teaser-card"><caption>Teaser Card (Horizontal or Vertical)</caption>
+<tbody>
+<tr>
+<td colspan="2" data-select-list="Horizontal,Vertical">Vertical</td>
+</tr>
+<tr>
+<td><img src="{{f:22198539}}" alt="Similar Programs banner image. " width="1000" height="1000" /></td>
+<td>Similar Programs</td>
+</tr>
+<tr>
+<td><img title="Computer Engineering student and instructor. " src="{{f:22198539}}" alt="Computer Engineering student and instructor. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200508}}">Computer Engineering</a></td>
+</tr>
+<tr>
+<td><img title="Electrical Engineering students. " src="{{f:22198493}}" alt="Electrical Engineering students. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200834}}">Electrical Engineering</a></td>
+</tr>
+<tr>
+<td><img title="Mechanical Engineering students. " src="{{f:22198801}}" alt="Mechanical Engineering students. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200673}}">Mechanical Engineering</a></td>
+</tr>
+<tr>
+<td><img title="Mechanical Engineering students. " src="{{f:22198473}}" alt="Mechanical Engineering students. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200672}}">Mechanical Engineering (Minor)</a></td>
+</tr>
+<tr>
+<td><img title="Electrical Engineering students. " src="{{f:22198493}}" alt="Electrical Engineering students. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200834}}">Electrical Engineering</a></td>
+</tr>
+</tbody>
+</table></ouc:div>
+
+
+	<ouc:div label="additional-content" data-table-separator-options="" group="Everyone" button-text="Additional Content">
+		<ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="additional-content"/>
+
+		<table class="ou-snippet-generic-section"><caption>Snippet: Generic Section</caption>
+			<tbody>
+				<tr>
+					<td data-select-list="backgrounds">section-wrap--none</td>
+					<td data-select-list="arrows">&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<p>Content Here</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+	</ouc:div>
+
+</document>

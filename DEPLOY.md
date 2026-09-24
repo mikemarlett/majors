@@ -137,6 +137,25 @@ The netid comes from `onPremisesSamAccountName` (Graph `/me`, needs the
 the row in `majors_users` is matched by netid as with CAS. `auth/login.php?diag=1`
 reports the loader, the constants and the exact redirect URI to register.
 
+## 2d. Majors: schema + import from the CMS
+
+Once per database (www-test first; www when the tables are copied):
+
+```bash
+cd /data/www/config/majors
+MAJORS_SITE=www-test php bin/migrate.php          # or: mysql formshandlerdb < sql/004_majors_v2.sql
+MAJORS_SITE=www-test php bin/majors-import.php --dry-run
+MAJORS_SITE=www-test php bin/majors-import.php
+```
+
+The importer reads the program pages from the CMS (`www` site, staging) with
+the Modern Campus helpers that already live in `/data/www/config`
+(`modern_campus_helper_functions.php` + `modern_campus_config.php`), so it runs
+on any WSU box. ~1,000 link tags are resolved through the API on the first run
+and cached in `/tmp`; pass `--tags=/data/www/config/majors-cms-tags.json` to
+keep the cache between runs. Re-running updates what changed and retires
+programs whose page is gone (never deletes; degree maps keep their links).
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.

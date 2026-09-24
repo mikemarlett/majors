@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pcf-stylesheet path="/_resources/xsl/landing.xsl" title="HTML" extension="php"?>
+
+<!DOCTYPE document SYSTEM "http://commons.omniupdate.com/dtd/standard.dtd"> 
+
+<document xmlns:ouc="http://omniupdate.com/XSL/Variables">
+
+	<headcode></headcode> <!-- before closing head tag -->
+	<bodycode></bodycode> <!-- after opening body tag -->
+	<footcode></footcode> <!-- before closing body tag -->
+	<ouc:info><tcf>standard-landing.tcf</tcf><tmpl>standard-landing.tmpl</tmpl></ouc:info>
+
+	<ouc:properties label="metadata">
+		<title>Details: Supply Chain Analytics, Graduate Certificate, ENG</title>
+		<meta name="Description" content="The graduate certificate in supply chain analytics equips students with descriptive, predictive and prescriptive analytical skills and provides an extensive conceptual and applied engineering background to model and solve complex supply chain management and analytics problems." />
+		<meta name="Keywords" content="supply chain, analytics, supply chain analytics, supply chain management, Certificate - Graduate, Graduate Certificate, Graduate, Industrial, Systems and Manufacturing Engineering, College of Engineering" />
+	</ouc:properties>
+
+	<ouc:properties label="config">
+		<parameter name="heading" type="text" group="Everyone" prompt="Page Heading" alt="Optional - Please enter the page heading. If blank, the 'title' value above will be used.">Details: Supply Chain Analytics, Graduate Certificate</parameter>
+		<parameter section="Page Layout" name="options" type="checkbox" group="Everyone" prompt="Options" alt="Select Page Options">
+<option value="navigation" selected="false">Navigation</option>
+</parameter>	
+	</ouc:properties>
+
+	<ouc:div label="hero" group="Everyone" button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header Hero / CTA Section"/></ouc:div>
+	<ouc:div label="header-hero"  group="Everyone"  button="hide"><ouc:multiedit type="image" dependency="yes" prompt="Hero Image" alt="Select Hero Image" lockout="no" section="Header Hero Image *required"/><img src="" alt="" /></ouc:div>
+	<ouc:div label="hero-video"  group="Everyone"  button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Hero Video" alt="Select Hero Video" lockout="no" section="Header Hero Video *image required for mobile view"/></ouc:div>
+
+
+	<ouc:div label="cta" group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header CTA Image/Video Overlay"/></ouc:div>
+	<ouc:div label="cta-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="CTA Content" alt="Enter content"/></ouc:div>
+	<ouc:div label="cta-link-text" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="cta-link" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link" alt="Enter Link URL."/></ouc:div>
+
+	<ouc:div label="intro-panel"  group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Page Intro Panel"/></ouc:div>
+
+	<ouc:div label="intro-panel-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="Intro Panel" alt="Enter content"/></ouc:div><ouc:div label="intro-panel-background"  group="Everyone"  button="hide"><ouc:multiedit type="select" prompt="Panel Background" options="Wheat:section-wrap--wheat;Yellow:section-wrap--wsuyellow;Yellow with Arrows:section-wrap--arrows-bright;Light:section-wrap--shade-light;Gray:section-wrap--shade-medium;Gray with Dots:section-wrap--dots;Dark:section-wrap--shade-dark;Dark With Arrows:section-wrap--arrows-dark;None:section-wrap"/>section-wrap--wheat</ouc:div>
+	<ouc:div label="intro-panel-link-text-1" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text One" alt="Enter Link Text."/>Our Innovative Approach</ouc:div>
+	<ouc:div label="intro-panel-link-1" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link One" alt="Enter Link URL."/></ouc:div>
+
+
+	
+	<ouc:div label="intro-panel-link-text-2" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Two" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-2" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Two" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="intro-panel-link-text-3" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Three" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-3" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Three" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="teaser-content" group="Everyone" button-text="Teaser Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/></ouc:div>
+
+	<ouc:div label="maincontent" data-table-separator-options="" group="Everyone" button-text="Main Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/><table class="ou-snippet-generic-section-two-column"><caption>Snippet: Section For Program Card - Two Column Content</caption>
+<tbody>
+<tr>
+<td data-select-list="backgrounds">section-wrap--shade-light</td>
+<td data-select-list="arrows">&nbsp;</td>
+</tr>
+<tr>
+<td>
+<table class="ou-snippet-program-card"><caption>Snippet: Program Card</caption>
+<tbody>
+<tr>
+<td>Graduate Certificate</td>
+</tr>
+<tr>
+<td>Supply Chain Analytics</td>
+</tr>
+<tr>
+<td>
+<ul>
+<li><a href="{{f:22192582}}">All Programs</a></li>
+<li><a href="{{f:21723039}}">College of Engineering</a></li>
+<li><a href="{{f:22385150}}">Industrial, Systems and Manufacturing Engineering</a></li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<p>The graduate certificate in supply chain analytics equips students with descriptive, predictive and prescriptive analytical skills and provides an extensive conceptual and applied engineering background to model and solve complex supply chain management and analytics problems.</p>
+</td>
+</tr>
+<tr>
+<td>
+<h3 class="heading4">Learn how supply chain analytics is the right fit for you.</h3>
+<p><a class="button button--accent" href="mailto:deepak.gupta@wichita.edu?subject=Supply%20Chain%20Analytics%20graduate%20certificate%20page%20inquiry">Contact coordinator</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>&nbsp;
+<table class="ou-snippet-media-with-caption"><caption>Snippet: Media With Caption</caption>
+<thead>
+<tr>
+<td data-select-list="orientation">captioned-media--right</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="{{f:30130697}}" alt="Supply chain management students working on the plant floor" width="1400" height="1050" /></td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<section class="teaser-collection section-wrap collection--two-columns">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Curriculum</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>The certificate consists of 12 credit hours of coursework. Students will take required courses in supply chain management and analytics and two additional courses of their choice.</p>
+<p>Students in the <a href="{{f:22200830}}">Master of Science in Industrial Engineering</a> and <a href="{{f:22200677}}">Master of Engineering Management</a> programs are able to use the courses in this certificate as part of their degree.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="http://catalog.wichita.edu/graduate/engineering/industrial-manufacturing-engineering/certificate-supply-chain-analytics/#requirementstext"> <span>View the curriculum</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Admission to the program</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>There are two paths to admission to the program:</p>
+<ul>
+<li>For those already enrolled in graduate school, simply complete the <a href="{{f:25419877}}">Declaration of Intent to Pursue a Certificate Form</a>.</li>
+<li>Prospective students should apply using the Graduate School application for admission.</li>
+</ul>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="{{f:22379639}}"> <span>Graduate School Application</span></a></div>
+</div>
+</div>
+</div>
+</section></ouc:div>
+
+
+	<ouc:div label="additional-content" data-table-separator-options="" group="Everyone" button-text="Additional Content">
+		<ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="additional-content"/>
+
+		<table class="ou-snippet-generic-section"><caption>Snippet: Generic Section</caption>
+			<tbody>
+				<tr>
+					<td data-select-list="backgrounds">section-wrap--none</td>
+					<td data-select-list="arrows">&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<p>Content Here</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+	</ouc:div>
+
+</document>

@@ -136,6 +136,24 @@ staging site with `app/bin/mirror-fetch.php <remote_dir> <dest,dest> <names…>`
 binaries through `GET /pages/content`, since `_resources/images/` on the
 server is too large to copy whole).
 
+## Majors data model (since 2026-09-24)
+
+The CMS program pages under `/academics/majors/` are imported into the
+database, which is now the source the Majors pages render from:
+
+| table | holds |
+|---|---|
+| `majors_academic_programs` | one row per program, **stable ids** (degree maps point at them): name, credential (Major, Minor, Master's…), type (BS, MACC…), college/department (+ links), the Program Card (description, "Learn how…" buttons, hero image), meta tags, `basename` of the CMS page, `catalog_number` from the slug, `status` active/retired, CMS file date |
+| `majors_program_sections` | the page body in order: `teaser` (Curriculum, Careers, Admission…), `feature` (Inside the Program, with image), `similar`; each with headline, HTML body, links, image — or a `block_id` |
+| `majors_content_blocks` | text that appeared verbatim on many pages, stored once (Applied learning at Wichita State: 268 pages; Making your graduate education affordable: 92; each college's Admission paragraph…). A section that points at a block shows the block, so **editing the block changes every page that uses it** |
+| `majors_similar_programs` | from each page's Similar Programs card |
+| `majors_programs_content` | the old flat row per program, kept in step by the importer because `ai-meta.php` on www reads it |
+
+`app/bin/majors-import.php` does the import (parse the PCF source through the
+MC API, resolve `{{f:…}}` links, match rows by basename then by catalog
+number so renamed pages keep their id, retire the rest). Re-runs are safe.
+`docs/majors-reconciliation-2026-09-24.md` records what the first import found.
+
 ## Rebuilding the theme stylesheet
 
 The new design's compiled Tailwind only carries the utilities the theme's own

@@ -41,18 +41,71 @@ final class ProgramRenderer
                 'url'   => $this->layout->url('degree_maps/maps.php') . '?degree_map_id=' . (int) $m['id'],
             ];
         }
+        $pick = static fn (string $new, string $old): string => (string) (($program[$new] ?? '') !== '' ? $program[$new] : ($c[$old] ?? ''));
+        $buttons = $json($program['buttons'] ?? null);
+        if ($buttons === []) {
+            $buttons = array_map(static fn ($l) => ['text' => $l['link_text'] ?? '', 'href' => $l['href'] ?? '#'], $json($c['learn_how_links'] ?? null));
+        }
+        $crumbs = [];
+        foreach ([['college', 'college_url'], ['department', 'department_url']] as [$name, $url]) {
+            if (!empty($program[$url]) && !empty($program[$name])) {
+                $crumbs[] = ['text' => (string) $program[$name], 'href' => (string) $program[$url]];
+            }
+        }
+        if ($crumbs === []) {
+            $crumbs = array_values(array_filter(array_map(static fn ($l) => ['text' => $l['link_text'] ?? '', 'href' => $l['href'] ?? ''], $json($c['program_links'] ?? null)), static fn ($l) => $l['text'] !== 'All Programs'));
+        }
+        $sections = $program['sections'] ?? [];
+        if ($sections === [] && $c !== []) {
+            $sections = self::sectionsFromFlat($c);
+        }
         return $this->layout->render('majors/program', [
             'p'              => $program,
             'c'              => $c,
             'title'          => self::title($program),
+            'kind'           => (string) (($program['credential'] ?? '') !== '' ? $program['credential'] : ($program['program_simple_type'] ?? '')),
             'is_certificate' => str_contains((string) ($program['program_type'] ?? ''), 'Certificate'),
-            'program_links'  => $json($c['program_links'] ?? null),
-            'learn_how_links' => $json($c['learn_how_links'] ?? null),
+            'crumbs'         => $crumbs,
+            'description'    => $pick('description', 'description'),
+            'learn_how'      => $pick('learn_how', 'learn_how'),
+            'buttons'        => $buttons,
+            'image'          => $pick('image_url', 'main_image_url') !== '' ? [
+                'url' => $pick('image_url', 'main_image_url'), 'alt' => $pick('image_alt', 'main_image_alt'),
+                'caption' => $pick('image_caption', 'main_image_caption'), 'credit' => $pick('image_credit', 'main_image_credit'),
+            ] : null,
+            'sections'       => $sections,
             'degree_maps'    => $maps,
             'similar'        => $program['similar_programs'] ?? [],
             'nav_items'      => $this->sectionNav($program),
             'program_url'    => $this->layout->url('index.php') . '?id=',
         ]);
+    }
+
+    /** Sections for a program that only has the legacy flat row (pre-import data, fixtures). */
+    public static function sectionsFromFlat(array $c): array
+    {
+        $mk = static fn (string $kind, string $headline, string $body, ?string $lt, ?string $lu, ?array $img = null): array => [
+            'id' => 0, 'kind' => $kind, 'label' => $kind === 'feature' ? 'Inside the Program' : '', 'headline' => $headline, 'body' => $body,
+            'links' => $lt && $lu ? [['text' => $lt, 'href' => $lu]] : [], 'image' => $img, 'block_id' => null, 'shared' => false,
+        ];
+        $out = [];
+        if (!empty($c['wildcard_headline'])) {
+            $out[] = $mk('teaser', $c['wildcard_headline'], (string) ($c['wildcard_text'] ?? ''), $c['wildcard_link_text'] ?? null, $c['wildcard_link_url'] ?? null);
+        }
+        if (!empty($c['admissions_headline'])) {
+            $out[] = $mk('teaser', $c['admissions_headline'], (string) ($c['admissions_text'] ?? ''), $c['admissions_link_text'] ?? null, $c['admissions_link_url'] ?? null);
+        }
+        if (!empty($c['inside_the_program_headline'])) {
+            $out[] = $mk('feature', $c['inside_the_program_headline'], (string) ($c['inside_the_program_text'] ?? ''), $c['inside_the_program_link_text'] ?? null, $c['inside_the_program_link_url'] ?? null,
+                !empty($c['inside_the_program_image_url']) ? ['url' => $c['inside_the_program_image_url'], 'alt' => (string) ($c['inside_the_program_image_alt'] ?? '')] : null);
+        }
+        if (!empty($c['curriculum_text'])) {
+            $out[] = $mk('teaser', 'Curriculum', (string) $c['curriculum_text'], $c['curriculum_link_text'] ?? null, $c['curriculum_link_url'] ?? null);
+        }
+        if (!empty($c['careers_headline'])) {
+            $out[] = $mk('teaser', $c['careers_headline'], (string) ($c['careers_text'] ?? ''), $c['careers_link_text'] ?? null, $c['careers_link_url'] ?? null);
+        }
+        return $out;
     }
 
     public static function title(array $program): string

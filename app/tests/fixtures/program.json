@@ -45,7 +45,116 @@
     "meta_description": "Aerospace Engineering at Wichita State."
   },
   "similar_programs": [
-    {"id": 42, "academic_program": "Mechanical Engineering", "program_type": "Bachelor of Science", "program_simple_type": "Major", "main_image_url": "/academics/majors/_images/ME.jpg"},
-    {"id": 43, "academic_program": "Physics", "program_type": "Bachelor of Science", "program_simple_type": "Major", "main_image_url": null}
+    {
+      "id": 42,
+      "academic_program": "Mechanical Engineering",
+      "program_type": "Bachelor of Science",
+      "program_simple_type": "Major",
+      "main_image_url": "/academics/majors/_images/ME.jpg"
+    },
+    {
+      "id": 43,
+      "academic_program": "Physics",
+      "program_type": "Bachelor of Science",
+      "program_simple_type": "Major",
+      "main_image_url": null
+    }
+  ],
+  "credential": "Major",
+  "status": "active",
+  "basename": "aerospace_engineering_bs_41",
+  "description": "<p>Design, build and test aircraft and spacecraft.</p>",
+  "learn_how": "Learn how Aerospace Engineering is the right fit for you.",
+  "buttons": "[{\"text\":\"Request info\",\"href\":\"/about/rfi\"},{\"text\":\"Visit\",\"href\":\"/visit\"}]",
+  "image_url": "/academics/majors/_images/Aerospace_airbus.jpg",
+  "image_alt": "Students with an Airbus wing",
+  "image_caption": "Hands-on with industry partners.",
+  "image_credit": "WSU Strategic Communications",
+  "college_url": "/academics/engineering/",
+  "department_url": "/academics/engineering/aerospace/",
+  "sections": [
+    {
+      "id": 1,
+      "kind": "teaser",
+      "label": "",
+      "headline": "Applied learning",
+      "body": "<p>Every student completes an applied learning experience.</p>",
+      "links": [
+        {
+          "text": "Applied learning at WSU",
+          "href": "/academics/applied_learning/"
+        }
+      ],
+      "image": null,
+      "block_id": 7,
+      "shared": true
+    },
+    {
+      "id": 2,
+      "kind": "teaser",
+      "label": "",
+      "headline": "Admission to the Aerospace Engineering Program",
+      "body": "<p>Direct admission for qualified freshmen.</p>",
+      "links": [
+        {
+          "text": "Admission requirements",
+          "href": "/admissions/"
+        }
+      ],
+      "image": null,
+      "block_id": null,
+      "shared": false
+    },
+    {
+      "id": 3,
+      "kind": "feature",
+      "label": "Inside the Program",
+      "headline": "Wind tunnels and flight labs",
+      "body": "<p>Three wind tunnels on campus.</p>",
+      "links": [
+        {
+          "text": "See the labs",
+          "href": "/engineering/labs"
+        }
+      ],
+      "image": {
+        "url": "/academics/majors/_images/AMCG_ITP_800.jpg",
+        "alt": "Wind tunnel"
+      },
+      "block_id": null,
+      "shared": false
+    },
+    {
+      "id": 4,
+      "kind": "teaser",
+      "label": "",
+      "headline": "Curriculum",
+      "body": "<p>128 hours including a capstone design sequence.</p>",
+      "links": [
+        {
+          "text": "View the curriculum",
+          "href": "http://catalog.wichita.edu/aerospace"
+        }
+      ],
+      "image": null,
+      "block_id": null,
+      "shared": false
+    },
+    {
+      "id": 5,
+      "kind": "teaser",
+      "label": "",
+      "headline": "Careers in Aerospace Engineering",
+      "body": "<p>Wichita is the Air Capital of the World.</p>",
+      "links": [
+        {
+          "text": "Career outcomes",
+          "href": "/careers"
+        }
+      ],
+      "image": null,
+      "block_id": null,
+      "shared": false
+    }
   ]
 }

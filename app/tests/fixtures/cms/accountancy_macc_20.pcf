@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pcf-stylesheet path="/_resources/xsl/landing.xsl" title="HTML" extension="php"?>
+
+<!DOCTYPE document SYSTEM "http://commons.omniupdate.com/dtd/standard.dtd"> 
+
+<document xmlns:ouc="http://omniupdate.com/XSL/Variables">
+
+	<headcode></headcode> <!-- before closing head tag -->
+	<bodycode></bodycode> <!-- after opening body tag -->
+	<footcode></footcode> <!-- before closing body tag -->
+	<ouc:info><tcf>standard-landing.tcf</tcf><tmpl>standard-landing.tmpl</tmpl></ouc:info>
+
+	<ouc:properties label="metadata">
+		<title>Details: Accountancy, Master's, BUS</title>
+		<meta name="Description" content="The AACSB-accredited Master of Accountancy (MACC) program, from WSU's Barton School, combines an in-depth study of accountancy with broad exposure to all aspects of business and management—equipping you with the skills and knowledge you'll need for career advancement, or a career switch, in the public or private sector." />
+		<meta name="Keywords" content="Accountancy, MACC, Master&#039;s, Graduate, Accounting, W. Frank Barton School of Business" />
+	</ouc:properties>
+
+	<ouc:properties label="config">
+		<parameter name="heading" type="text" group="Everyone" prompt="Page Heading" alt="Optional - Please enter the page heading. If blank, the 'title' value above will be used.">Details: Accountancy, Master's</parameter>
+		<parameter section="Page Layout" name="options" type="checkbox" group="Everyone" prompt="Options" alt="Select Page Options">
+<option value="navigation" selected="false">Navigation</option>
+</parameter>	
+	</ouc:properties>
+
+	<ouc:div label="hero" group="Everyone" button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header Hero / CTA Section"/></ouc:div>
+	<ouc:div label="header-hero"  group="Everyone"  button="hide"><ouc:multiedit type="image" dependency="yes" prompt="Hero Image" alt="Select Hero Image" lockout="no" section="Header Hero Image *required"/><img src="" alt="" /></ouc:div>
+	<ouc:div label="hero-video"  group="Everyone"  button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Hero Video" alt="Select Hero Video" lockout="no" section="Header Hero Video *image required for mobile view"/></ouc:div>
+
+
+	<ouc:div label="cta" group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header CTA Image/Video Overlay"/></ouc:div>
+	<ouc:div label="cta-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="CTA Content" alt="Enter content"/></ouc:div>
+	<ouc:div label="cta-link-text" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="cta-link" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link" alt="Enter Link URL."/></ouc:div>
+
+	<ouc:div label="intro-panel"  group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Page Intro Panel"/></ouc:div>
+
+	<ouc:div label="intro-panel-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="Intro Panel" alt="Enter content"/></ouc:div><ouc:div label="intro-panel-background"  group="Everyone"  button="hide"><ouc:multiedit type="select" prompt="Panel Background" options="Wheat:section-wrap--wheat;Yellow:section-wrap--wsuyellow;Yellow with Arrows:section-wrap--arrows-bright;Light:section-wrap--shade-light;Gray:section-wrap--shade-medium;Gray with Dots:section-wrap--dots;Dark:section-wrap--shade-dark;Dark With Arrows:section-wrap--arrows-dark;None:section-wrap"/>section-wrap--wheat</ouc:div>
+	<ouc:div label="intro-panel-link-text-1" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text One" alt="Enter Link Text."/>Our Innovative Approach</ouc:div>
+	<ouc:div label="intro-panel-link-1" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link One" alt="Enter Link URL."/></ouc:div>
+
+
+	
+	<ouc:div label="intro-panel-link-text-2" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Two" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-2" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Two" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="intro-panel-link-text-3" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Three" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-3" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Three" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="teaser-content" group="Everyone" button-text="Teaser Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/></ouc:div>
+
+	<ouc:div label="maincontent" data-table-separator-options="" group="Everyone" button-text="Main Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/><table class="ou-snippet-generic-section-two-column"><caption>Snippet: Section For Program Card - Two Column Content</caption>
+<tbody>
+<tr>
+<td data-select-list="backgrounds">section-wrap--shade-light</td>
+<td data-select-list="arrows">&nbsp;</td>
+</tr>
+<tr>
+<td>
+<table class="ou-snippet-program-card"><caption>Snippet: Program Card</caption>
+<tbody>
+<tr>
+<td>Master's</td>
+</tr>
+<tr>
+<td>Accountancy</td>
+</tr>
+<tr>
+<td>
+<ul>
+<li><a href="{{f:22192582}}">All Programs</a></li>
+<li><a href="{{f:21727738}}">W. Frank Barton School of Business</a></li>
+<li><a href="{{d:3472935}}">Accounting</a></li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<p>The AACSB-accredited Master of Accountancy (MACC) program, from WSU's Barton School, combines an in-depth study of accountancy with broad exposure to all aspects of business and management &mdash; equipping you with the skills and knowledge you'll need for career advancement, or a career switch, in the public or private sector.</p>
+</td>
+</tr>
+<tr>
+<td>
+<h3 class="heading4">Learn how accountancy is the right fit for you.</h3>
+<table class="ou-snippet-generic-button-collection"><caption>Button Collection</caption>
+<tbody>
+<tr>
+<td data-select-list="buttons">landing-panel__buttons button-collection--accent-first</td>
+<td><a class="button" href="https://slate.wichita.edu/register/graduateschool">Request Info </a> <a class="button" href="https://my.wsu-info.org/apply-get-started">Start Your Application</a></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>&nbsp;
+<table class="ou-snippet-media-with-caption"><caption>Snippet: Media With Caption</caption>
+<thead>
+<tr>
+<td data-select-list="orientation">captioned-media--right</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img title="Accounting student in classroom." src="{{f:22198989}}" alt="Accounting student in classroom." /></td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<section class="teaser-collection section-wrap collection--two-columns">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Making your graduate education affordable</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>In addition to scholarships and financial aid, more than 30 percent of full-time graduate students hold assistantships or departmental fellowships amounting to more than $4 million each year.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="{{f:22379530}}"> <span>Financial Aid and Funding Opportunities</span> </a><a class=" link--rich" href="{{f:22391027}}"><span>Cost of Attendance</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Admission to the program</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>Full admission to the MACC professional curriculum requires:</p>
+<ol>
+<li>An undergraduate degree in accounting, or the functional equivalent, from an AACSB-accredited institution.</li>
+<li>An overall grade point average (GPA) of 3.20 on a 4.00 scale.</li>
+<li>A grade of <em>B</em> (3.0) or better in all undergraduate accounting courses.</li>
+</ol>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="http://catalog.wichita.edu/graduate/w-frank-barton-business/accounting/macc-master-accountancy/"> <span>Admission requirements</span> </a></div>
+</div>
+</div>
+</div>
+</section>
+<section class="teaser-collection section-wrap collection--two-columns section-wrap--nipple-down">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Curriculum</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>The MACC program requires a minimum of 30 hours depending on your academic background. Students without a bachelor's degree in accounting can expect to complete additional hours for their MACC degree.</p>
+<p>In addition to the traditional master's degree in accounting, the Barton School also offers two specialized concentrations: accounting information systems (AIS) and taxation.</p>
+<p>Courses are offered during the evening to accommodate adult learners.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="http://catalog.wichita.edu/graduate/w-frank-barton-business/accounting/macc-master-accountancy/#requirementstext"> <span>View the curriculum</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Careers</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>A graduate degree in accountancy from Wichita State's Barton School will help you take the next step in your career &mdash; while opening doors to new career possibilities.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="https://www.bls.gov/ooh/business-and-financial/accountants-and-auditors.htm#tab-1"> <span>Learn more about careers in this field</span> </a></div>
+</div>
+</div>
+</div>
+</section>
+<table class="ou-snippet-section-collection-teaser-card"><caption>Teaser Card (Horizontal or Vertical)</caption>
+<thead></thead>
+<tbody>
+<tr>
+<td colspan="2" data-select-list="Horizontal,Vertical">Vertical</td>
+</tr>
+<tr>
+<td><img title="Students in class. " src="{{f:22198776}}" alt="Students in class. " width="1000" height="1000" /></td>
+<td>Similar Programs</td>
+</tr>
+<tr>
+<td><img title="Students in class. " src="{{f:22198776}}" alt="Students in class. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200859}}">Business Administration (Master's)</a></td>
+</tr>
+<tr>
+<td><img title="Students in class. " src="{{f:22198957}}" alt="Students in class. " width="1000" height="1000" /></td>
+<td><a href="{{f:22200618}}">Economics and Quantitative Analysis (Master's)</a></td>
+</tr>
+</tbody>
+</table></ouc:div>
+
+
+	<ouc:div label="additional-content" data-table-separator-options="" group="Everyone" button-text="Additional Content">
+		<ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="additional-content"/>
+
+		<table class="ou-snippet-generic-section"><caption>Snippet: Generic Section</caption>
+			<tbody>
+				<tr>
+					<td data-select-list="backgrounds">section-wrap--none</td>
+					<td data-select-list="arrows">&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<p>Content Here</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+	</ouc:div>
+
+</document>

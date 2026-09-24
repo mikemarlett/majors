@@ -157,4 +157,71 @@ if (!in_array('idx_dm_program', $dmIdx, true)) {
     $run('ALTER TABLE `degree_maps` ADD INDEX `idx_dm_program` (`program_id`)');
 }
 
+// ---- Majors: InnoDB so the importer can run in one transaction ----
+foreach ($db->query("SELECT TABLE_NAME t FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'majors_%' AND ENGINE <> 'InnoDB'")->fetch_all(MYSQLI_ASSOC) as $t) {
+    $run("ALTER TABLE `{$t['t']}` ENGINE=InnoDB");
+}
+
+// ---- Majors v2: programs carry their own page content; sections + shared blocks ----
+$prog = $columns('majors_academic_programs');
+if ($prog !== []) {
+    $add = [
+        'basename'         => 'VARCHAR(200) NULL',
+        'catalog_number'   => 'INT UNSIGNED NULL',
+        'credential'       => 'VARCHAR(100) NULL',
+        'college_code'     => 'VARCHAR(10) NULL',
+        'status'           => "ENUM('active','retired') NOT NULL DEFAULT 'active'",
+        'description'      => 'MEDIUMTEXT NULL',
+        'learn_how'        => 'VARCHAR(255) NULL',
+        'buttons'          => 'TEXT NULL',
+        'image_url'        => 'VARCHAR(255) NULL',
+        'image_alt'        => 'TEXT NULL',
+        'image_caption'    => 'TEXT NULL',
+        'image_credit'     => 'VARCHAR(255) NULL',
+        'college_url'      => 'VARCHAR(255) NULL',
+        'department_url'   => 'VARCHAR(255) NULL',
+        'meta_description' => 'TEXT NULL',
+        'meta_keywords'    => 'TEXT NULL',
+        'cms_path'         => 'VARCHAR(255) NULL',
+        'cms_file_date'    => 'DATETIME NULL',
+        'imported_at'      => 'DATETIME NULL',
+    ];
+    foreach ($add as $col => $def) {
+        if (!in_array($col, $prog, true)) {
+            $run("ALTER TABLE `majors_academic_programs` ADD COLUMN `{$col}` {$def}");
+        }
+    }
+    if (!in_array('basename', $prog, true)) {
+        $run('UPDATE `majors_academic_programs` p JOIN `majors_programs_content` c ON c.`academic_program_id` = p.`id` SET p.`basename` = c.`basename` WHERE p.`basename` IS NULL');
+    }
+    if (!in_array('uq_majors_programs_basename', $indexes('majors_academic_programs'), true)) {
+        $run('ALTER TABLE `majors_academic_programs` ADD UNIQUE KEY `uq_majors_programs_basename` (`basename`)');
+    }
+}
+$run('CREATE TABLE IF NOT EXISTS `majors_content_blocks` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `slug` VARCHAR(80) NOT NULL,
+        `headline` VARCHAR(255) NOT NULL DEFAULT "",
+        `body` MEDIUMTEXT NULL,
+        `links` TEXT NULL,
+        `note` VARCHAR(255) NULL,
+        `updated_at` DATETIME NULL,
+        PRIMARY KEY (`id`), UNIQUE KEY `uq_blocks_slug` (`slug`)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$run('CREATE TABLE IF NOT EXISTS `majors_program_sections` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `program_id` INT UNSIGNED NOT NULL,
+        `position` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        `kind` VARCHAR(20) NOT NULL,
+        `label` VARCHAR(100) NOT NULL DEFAULT "",
+        `headline` VARCHAR(255) NULL,
+        `body` MEDIUMTEXT NULL,
+        `links` TEXT NULL,
+        `image_url` VARCHAR(255) NULL,
+        `image_alt` TEXT NULL,
+        `block_id` INT UNSIGNED NULL,
+        `updated_at` DATETIME NULL,
+        PRIMARY KEY (`id`), KEY `idx_sections_program` (`program_id`, `position`), KEY `idx_sections_block` (`block_id`)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+
 echo $dry ? "dry run complete\n" : "migration complete\n";

@@ -23,7 +23,7 @@ final class ProgramRepository
     public function colleges(): array
     {
         $out = [];
-        $res = $this->db->query('SELECT DISTINCT `college` FROM `majors_academic_programs` WHERE `college` <> "" AND `college` IS NOT NULL ORDER BY `college`');
+        $res = $this->db->query('SELECT DISTINCT `college` FROM `majors_academic_programs` WHERE `status` = "active" AND `college` <> "" AND `college` IS NOT NULL ORDER BY `college`');
         while ($r = $res->fetch_assoc()) {
             $out[] = (string) $r['college'];
         }
@@ -34,7 +34,7 @@ final class ProgramRepository
     public function departments(): array
     {
         $out = [];
-        $res = $this->db->query('SELECT DISTINCT `department` FROM `majors_academic_programs` WHERE `department` <> "" AND `department` IS NOT NULL ORDER BY `department`');
+        $res = $this->db->query('SELECT DISTINCT `department` FROM `majors_academic_programs` WHERE `status` = "active" AND `department` <> "" AND `department` IS NOT NULL ORDER BY `department`');
         while ($r = $res->fetch_assoc()) {
             $out[] = (string) $r['department'];
         }
@@ -49,13 +49,14 @@ final class ProgramRepository
      */
     public function all(): array
     {
-        $sql = 'SELECT s.`program` AS `academic_program`, m.`id`, m.`program_type`, m.`program_simple_type`, m.`college`, m.`department`,
+        $sql = 'SELECT s.`program` AS `academic_program`, m.`id`, m.`program_type`, m.`program_simple_type`, m.`credential`, m.`college`, m.`department`,
                        m.`online_learning`, m.`online_only`, m.`graduate`, m.`note`, m.`timestamp`
                   FROM `majors_academic_programs` m
                   JOIN (SELECT `academic_program` AS `program`, `id` FROM `majors_academic_programs`
                         UNION ALL
                         SELECT `sort_title` AS `program`, `id` FROM `majors_academic_programs` WHERE `sort_title` IS NOT NULL AND `sort_title` <> "") s
                     ON m.`id` = s.`id`
+                 WHERE m.`status` = "active"
                  ORDER BY s.`program`, m.`program_type`';
         return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
@@ -74,11 +75,11 @@ final class ProgramRepository
             $like   = '%' . $text . '%';
             $sql    = 'SELECT DISTINCT m1.* FROM `majors_academic_programs` m1
                        LEFT JOIN `majors_programs_content` m2 ON m1.`id` = m2.`academic_program_id`
-                       WHERE (m1.`academic_program` LIKE ? OR m1.`sort_title` LIKE ? OR m1.`department` LIKE ? OR m1.`note` LIKE ? OR m2.`meta_keywords` LIKE ?)';
+                       WHERE m1.`status` = "active" AND (m1.`academic_program` LIKE ? OR m1.`sort_title` LIKE ? OR m1.`department` LIKE ? OR m1.`note` LIKE ? OR m2.`meta_keywords` LIKE ?)';
             $types  = 'sssss';
             $params = [$like, $like, $like, $like, $like];
         } else {
-            $sql = 'SELECT m1.* FROM `majors_academic_programs` m1 WHERE 1';
+            $sql = 'SELECT m1.* FROM `majors_academic_programs` m1 WHERE m1.`status` = "active"';
         }
         if (!empty($f['college']) && $f['college'] !== 'all') {
             $sql   .= ' AND m1.`college` = ?';
@@ -125,8 +126,44 @@ final class ProgramRepository
             return null;
         }
         $row['content']          = $this->content($id) ?? [];
+        $row['sections']         = $this->sections($id);
         $row['similar_programs'] = $this->similar($id);
         return $row;
+    }
+
+    /**
+     * The page body in order. A section that points at a shared block takes
+     * its headline/body/links from the block (so editing the block changes
+     * every page that uses it); 'shared' says which.
+     *
+     * @return list<array{id:int,kind:string,label:string,headline:string,body:string,links:list<array{text:string,href:string}>,image:?array{url:string,alt:string},block_id:?int,shared:bool}>
+     */
+    public function sections(int $programId): array
+    {
+        $stmt = $this->db->prepare('SELECT s.`id`, s.`kind`, s.`label`, s.`block_id`, s.`image_url`, s.`image_alt`,
+                                           COALESCE(s.`headline`, b.`headline`, "") AS headline, COALESCE(s.`body`, b.`body`, "") AS body, COALESCE(s.`links`, b.`links`, "[]") AS links
+                                      FROM `majors_program_sections` s
+                                 LEFT JOIN `majors_content_blocks` b ON b.`id` = s.`block_id`
+                                     WHERE s.`program_id` = ? ORDER BY s.`position`');
+        $stmt->bind_param('i', $programId);
+        $stmt->execute();
+        $out = [];
+        foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $r) {
+            $links = json_decode((string) $r['links'], true);
+            $out[] = [
+                'id'       => (int) $r['id'],
+                'kind'     => (string) $r['kind'],
+                'label'    => (string) $r['label'],
+                'headline' => (string) $r['headline'],
+                'body'     => (string) $r['body'],
+                'links'    => is_array($links) ? array_values(array_filter($links, static fn ($l) => is_array($l) && ($l['href'] ?? '') !== '')) : [],
+                'image'    => (string) $r['image_url'] !== '' ? ['url' => (string) $r['image_url'], 'alt' => (string) $r['image_alt']] : null,
+                'block_id' => $r['block_id'] !== null ? (int) $r['block_id'] : null,
+                'shared'   => $r['block_id'] !== null,
+            ];
+        }
+        $stmt->close();
+        return $out;
     }
 
     /** @return array<string,mixed>|null */
@@ -183,10 +220,11 @@ final class ProgramRepository
         }
 
         $ids  = array_values(array_unique($ids));
-        $sql  = 'SELECT t1.`id`, t1.`academic_program`, t1.`program_type`, t1.`program_simple_type`, t2.`main_image_url`
+        $sql  = 'SELECT t1.`id`, t1.`academic_program`, t1.`program_type`, t1.`program_simple_type`, t1.`credential`,
+                        COALESCE(NULLIF(t1.`image_url`, ""), t2.`main_image_url`) AS main_image_url
                    FROM `majors_academic_programs` t1
                    LEFT JOIN `majors_programs_content` t2 ON t1.`id` = t2.`academic_program_id`
-                  WHERE t1.`id` IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
+                  WHERE t1.`status` = "active" AND t1.`id` IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
         $stmt->execute();
