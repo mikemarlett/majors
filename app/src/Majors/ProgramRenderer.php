@@ -24,6 +24,29 @@ final class ProgramRenderer
      */
     public function page(array $program, array $degreeMaps): string
     {
+        $parts = $this->parts($program, $degreeMaps);
+        return $parts['top'] . $parts['content'] . $parts['bottom'];
+    }
+
+    /**
+     * The page in the layout's three slots. A design that has a full-width
+     * program card / similar-programs band (templates majors/program_card and
+     * majors/program_similar) gets them in top / bottom; otherwise everything
+     * is in content.
+     *
+     * @return array{top:string,content:string,bottom:string}
+     */
+    public function parts(array $program, array $degreeMaps): array
+    {
+        $vars = $this->vars($program, $degreeMaps);
+        $top    = $this->layout->exists('majors/program_card') ? $this->layout->render('majors/program_card', $vars) : '';
+        $bottom = $this->layout->exists('majors/program_similar') ? $this->layout->render('majors/program_similar', $vars) : '';
+        return ['top' => $top, 'content' => $this->layout->render('majors/program', $vars + ['split' => $top !== '']), 'bottom' => $bottom];
+    }
+
+    /** @return array<string,mixed> template variables shared by the program templates */
+    private function vars(array $program, array $degreeMaps): array
+    {
         $c = $program['content'] ?? [];
         $json = static function (mixed $v): array {
             if (is_string($v) && $v !== '') {
@@ -59,7 +82,7 @@ final class ProgramRenderer
         if ($sections === [] && $c !== []) {
             $sections = self::sectionsFromFlat($c);
         }
-        return $this->layout->render('majors/program', [
+        return [
             'p'              => $program,
             'c'              => $c,
             'title'          => self::title($program),
@@ -78,7 +101,7 @@ final class ProgramRenderer
             'similar'        => $program['similar_programs'] ?? [],
             'nav_items'      => $this->sectionNav($program),
             'program_url'    => $this->layout->url('index.php') . '?id=',
-        ]);
+        ];
     }
 
     /** Sections for a program that only has the legacy flat row (pre-import data, fixtures). */

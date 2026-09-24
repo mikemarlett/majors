@@ -14,7 +14,7 @@
  *
  * The include fragments must therefore NOT be wrapped in anything.
  *
- * Variables: $content, $top (full-width strip under the title band), $title, $description, $head[], $foot[], $body_class, $user, $csrf,
+ * Variables: $content, $top (full-width strip under the title band), $bottom (full-width strip after the grid), $title, $description, $head[], $foot[], $body_class, $user, $csrf,
  *            $page_header, $nav_html, $section_nav (array{desktop,mobile}|null), $header_print, $chrome[]
  * @var \Majors\View\Layout $t
  */
@@ -69,15 +69,21 @@ $hasNav = $section_nav !== null || $nav_html !== '';
 			</div>
 		</div>
 		<div class="with-sidebar__main sidebar-up:col-[span_13_/_span_13] sidebar-up:order-first">
-			<div class="with-sidebar__main-inner-wrapper majors-content px-4 sidebar-up:px-0 pt-1 pb-12 space-y-8">
+			<div data-container-query-ancestor="true" class="!px-0 !border-x-0 with-sidebar__main-inner-wrapper majors-content px-4 sidebar-up:px-0 pt-1 pb-12 space-y-8">
 <?= $content ?>
 			</div>
 		</div>
 	</div>
+<?php if ($bottom !== ''): ?>
+	<div class="majors-bottom">
+<?= $bottom ?>
+	</div>
+<?php endif; ?>
 <?php else: ?>
 	<div class="container my-vertical-space majors-content space-y-8">
 <?= $content ?>
 	</div>
+<?= $bottom ?>
 <?php endif; ?>
 </main>
 <?= $chrome['footer'] ?>

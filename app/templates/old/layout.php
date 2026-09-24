@@ -43,6 +43,7 @@
 <?php endif; ?>
 <?= $top ?>
 <?= $content ?>
+<?= $bottom ?>
 </main>
 <!-- OU Search Ignore Start Here -->
 <?= $chrome['footer'] ?>

@@ -34,8 +34,10 @@ final class PublicMajorsController extends Controller
             if ($program === null) {
                 $this->notFound('That program could not be found.');
             }
-            $content = $renderer->page($program, $this->app->maps()->forProgram($id));
-            $this->page($content, [
+            $parts = $renderer->parts($program, $this->app->maps()->forProgram($id));
+            $this->page($parts['content'], [
+                'top'         => $parts['top'],
+                'bottom'      => $parts['bottom'],
                 'title'       => ProgramRenderer::title($program),
                 'page_header' => 'Details: ' . ProgramRenderer::title($program),
                 'nav_items'   => $renderer->sectionNav($program),
