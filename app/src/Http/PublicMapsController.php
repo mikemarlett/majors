@@ -59,6 +59,7 @@ final class PublicMapsController extends Controller
             $results = $layout->render('degree_maps/listing', [
                 'groups'    => $groups,
                 'link_base' => $layout->url('degree_maps/maps.php') . '?degree_map_id=',
+                'alpha_nav' => $order === 'alpha',
             ]);
         }
 

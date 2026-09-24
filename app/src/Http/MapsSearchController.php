@@ -57,7 +57,7 @@ final class MapsSearchController extends Controller
         $groups = $order === 'college' ? Listing::byCollege($rows) : Listing::byAlpha($rows);
         Json::send([
             'success' => true,
-            'results' => $note . $layout->render('degree_maps/listing', ['groups' => $groups, 'link_base' => $linkBase]),
+            'results' => $note . $layout->render('degree_maps/listing', ['groups' => $groups, 'link_base' => $linkBase, 'alpha_nav' => $order === 'alpha']),
             'count'   => count($rows),
         ]);
     }

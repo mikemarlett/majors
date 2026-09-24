@@ -79,6 +79,7 @@ final class AdminMapsController extends Controller
                 'link_base' => $layout->url('degree_maps/admin/maps.php') . '?degree_map_id=',
                 'flag_ids'  => $maps->duplicateIds($year), // same degree twice in one year: probably a double clone
                 'flag_text' => 'duplicate',
+                'alpha_nav' => $order === 'alpha',
             ]);
         }
 

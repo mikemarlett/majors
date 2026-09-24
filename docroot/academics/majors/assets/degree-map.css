@@ -101,11 +101,8 @@ body {
 .majors-new .dm-filters button { background: rgb(39 37 31); color: #fff; border: 0; cursor: pointer; font-weight: 700; padding: .75rem 1.5rem; margin: 0; transition: background-color .15s; }
 .majors-new .dm-filters button:hover, .majors-new .dm-filters button:focus { background: rgb(144 59 65); }
 .majors-new .dm-filters label:not(.sr-only) { display: block; font-size: .85rem; font-weight: 700; margin-bottom: .25rem; }
-.majors-new .dm-listing ul { list-style: none; margin: 0 0 1.5rem; padding: 0; }
-.majors-new .dm-listing li { padding: .5rem 0; border-bottom: 1px solid rgb(39 37 31 / .12); }
-.majors-new .dm-listing a, .majors-new .dm-view-switch a, .majors-new .majors-results-header a:not(.nc-button), .majors-new .dm-versions a { color: rgb(39 37 31); text-decoration: underline; text-decoration-thickness: 1px; }
-.majors-new .dm-listing a:hover, .majors-new .dm-view-switch a:hover { color: rgb(144 59 65); }
-.majors-new .dm-listing hr { border: 0; border-top: 1px solid rgb(39 37 31 / .15); margin: 2rem 0 1rem; }
+.majors-new .dm-view-switch a, .majors-new .majors-results-header a:not(.nc-button), .majors-new .dm-versions a { color: rgb(39 37 31); text-decoration: underline; text-decoration-thickness: 1px; }
+.majors-new .dm-view-switch a:hover { color: rgb(144 59 65); }
 /* Tables: the theme's .prose does the styling (the wrapper carries prose max-w-none);
    these only adjust what prose gets wrong for a degree map. */
 .majors-new .prose .dm-table { margin-top: 0; border: 1px solid rgb(167 167 167); border-collapse: collapse; }
