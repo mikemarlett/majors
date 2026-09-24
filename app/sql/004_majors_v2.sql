@@ -1,44 +1,78 @@
 -- 004: Majors v2 — programs carry their own page content; ordered sections;
 -- shared content blocks. Same result as the Majors part of bin/migrate.php.
--- Idempotent (information_schema guards). Then run:
+-- Idempotent (information_schema guards). Then run the importer:
 --   cd /data/www/config/majors && MAJORS_SITE=www-test php bin/majors-import.php
 --
 --   mysql formshandlerdb < /data/www/config/majors/sql/004_majors_v2.sql
 
--- InnoDB so the importer runs in one transaction
-SET @sql := IF((SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs') <> 'InnoDB', 'ALTER TABLE `majors_academic_programs` ENGINE=InnoDB', 'SELECT ''ok''');
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND ENGINE <> 'InnoDB') = 1, 'ALTER TABLE `majors_academic_programs` ENGINE=InnoDB', 'SELECT ''majors_academic_programs: InnoDB''');
 PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
-SET @sql := IF((SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_programs_content') <> 'InnoDB', 'ALTER TABLE `majors_programs_content` ENGINE=InnoDB', 'SELECT ''ok''');
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_programs_content' AND ENGINE <> 'InnoDB') = 1, 'ALTER TABLE `majors_programs_content` ENGINE=InnoDB', 'SELECT ''majors_programs_content: InnoDB''');
 PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
-SET @sql := IF((SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_similar_programs') <> 'InnoDB', 'ALTER TABLE `majors_similar_programs` ENGINE=InnoDB', 'SELECT ''ok''');
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_similar_programs' AND ENGINE <> 'InnoDB') = 1, 'ALTER TABLE `majors_similar_programs` ENGINE=InnoDB', 'SELECT ''majors_similar_programs: InnoDB''');
 PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
-SET @sql := IF((SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_departments') <> 'InnoDB', 'ALTER TABLE `majors_departments` ENGINE=InnoDB', 'SELECT ''ok''');
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_departments' AND ENGINE <> 'InnoDB') = 1, 'ALTER TABLE `majors_departments` ENGINE=InnoDB', 'SELECT ''majors_departments: InnoDB''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_department_content_key' AND ENGINE <> 'InnoDB') = 1, 'ALTER TABLE `majors_department_content_key` ENGINE=InnoDB', 'SELECT ''majors_department_content_key: InnoDB''');
 PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
 
--- new columns on majors_academic_programs
-SET @cols := (SELECT GROUP_CONCAT(COLUMN_NAME) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs');
-SET @sql := CONCAT('ALTER TABLE `majors_academic_programs` ',
-  IF(FIND_IN_SET('basename', @cols),         'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `basename` VARCHAR(200) NULL'), ', ',
-  IF(FIND_IN_SET('catalog_number', @cols),   'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `catalog_number` INT UNSIGNED NULL'), ', ',
-  IF(FIND_IN_SET('credential', @cols),       'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `credential` VARCHAR(100) NULL'), ', ',
-  IF(FIND_IN_SET('college_code', @cols),     'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `college_code` VARCHAR(10) NULL'), ', ',
-  IF(FIND_IN_SET('status', @cols),           'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `status` ENUM(''active'',''retired'') NOT NULL DEFAULT ''active'''), ', ',
-  IF(FIND_IN_SET('description', @cols),      'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `description` MEDIUMTEXT NULL'), ', ',
-  IF(FIND_IN_SET('learn_how', @cols),        'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `learn_how` VARCHAR(255) NULL'), ', ',
-  IF(FIND_IN_SET('buttons', @cols),          'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `buttons` TEXT NULL'), ', ',
-  IF(FIND_IN_SET('image_url', @cols),        'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `image_url` VARCHAR(255) NULL'), ', ',
-  IF(FIND_IN_SET('image_alt', @cols),        'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `image_alt` TEXT NULL'), ', ',
-  IF(FIND_IN_SET('image_caption', @cols),    'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `image_caption` TEXT NULL'), ', ',
-  IF(FIND_IN_SET('image_credit', @cols),     'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `image_credit` VARCHAR(255) NULL'), ', ',
-  IF(FIND_IN_SET('college_url', @cols),      'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `college_url` VARCHAR(255) NULL'), ', ',
-  IF(FIND_IN_SET('department_url', @cols),   'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `department_url` VARCHAR(255) NULL'), ', ',
-  IF(FIND_IN_SET('meta_description', @cols), 'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `meta_description` TEXT NULL'), ', ',
-  IF(FIND_IN_SET('meta_keywords', @cols),    'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `meta_keywords` TEXT NULL'), ', ',
-  IF(FIND_IN_SET('cms_path', @cols),         'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `cms_path` VARCHAR(255) NULL'), ', ',
-  IF(FIND_IN_SET('cms_file_date', @cols),    'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `cms_file_date` DATETIME NULL'), ', ',
-  IF(FIND_IN_SET('imported_at', @cols),      'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'ADD COLUMN `imported_at` DATETIME NULL'));
--- (a no-op MODIFY stands in for columns that already exist, so the statement stays valid)
-SET @sql := REPLACE(@sql, 'MODIFY `id` `id` INT UNSIGNED NOT NULL AUTO_INCREMENT', 'MODIFY `id` INT UNSIGNED NOT NULL AUTO_INCREMENT');
+-- new columns on majors_academic_programs (each added only if missing)
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'basename') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `basename` VARCHAR(200) NULL', 'SELECT ''basename: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'catalog_number') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `catalog_number` INT UNSIGNED NULL', 'SELECT ''catalog_number: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'credential') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `credential` VARCHAR(100) NULL', 'SELECT ''credential: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'college_code') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `college_code` VARCHAR(10) NULL', 'SELECT ''college_code: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'status') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `status` ENUM(''active'',''retired'') NOT NULL DEFAULT ''active''', 'SELECT ''status: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'description') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `description` MEDIUMTEXT NULL', 'SELECT ''description: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'learn_how') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `learn_how` VARCHAR(255) NULL', 'SELECT ''learn_how: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'buttons') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `buttons` TEXT NULL', 'SELECT ''buttons: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'image_url') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `image_url` VARCHAR(255) NULL', 'SELECT ''image_url: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'image_alt') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `image_alt` TEXT NULL', 'SELECT ''image_alt: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'image_caption') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `image_caption` TEXT NULL', 'SELECT ''image_caption: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'image_credit') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `image_credit` VARCHAR(255) NULL', 'SELECT ''image_credit: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'college_url') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `college_url` VARCHAR(255) NULL', 'SELECT ''college_url: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'department_url') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `department_url` VARCHAR(255) NULL', 'SELECT ''department_url: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'meta_description') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `meta_description` TEXT NULL', 'SELECT ''meta_description: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'meta_keywords') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `meta_keywords` TEXT NULL', 'SELECT ''meta_keywords: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'cms_path') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `cms_path` VARCHAR(255) NULL', 'SELECT ''cms_path: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'cms_file_date') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `cms_file_date` DATETIME NULL', 'SELECT ''cms_file_date: ok''');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_academic_programs' AND COLUMN_NAME = 'imported_at') = 0,
+  'ALTER TABLE `majors_academic_programs` ADD COLUMN `imported_at` DATETIME NULL', 'SELECT ''imported_at: ok''');
 PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
 
 UPDATE `majors_academic_programs` p JOIN `majors_programs_content` c ON c.`academic_program_id` = p.`id` SET p.`basename` = c.`basename` WHERE p.`basename` IS NULL OR p.`basename` = '';
