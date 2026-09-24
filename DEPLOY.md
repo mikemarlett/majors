@@ -172,6 +172,16 @@ MAJORS_SITE=www-test php bin/majors-catalog-seed.php --dry-run
 MAJORS_SITE=www-test php bin/majors-catalog-seed.php       # ~200 catalog fetches, ~1 min; add --overwrite to re-seed
 ```
 
+The web servers cannot reach catalog.wichita.edu, so in practice the seed runs
+on the sandbox and ships as SQL keyed by basename:
+
+```bash
+# sandbox
+MAJORS_SITE=www-test php bin/majors-catalog-seed.php --overwrite --sql=/srv/work/majors-backups/majors-catalog-seed-$(date +%Y%m%d).sql
+# server
+mysql formshandlerdb < majors-catalog-seed-YYYYMMDD.sql
+```
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.

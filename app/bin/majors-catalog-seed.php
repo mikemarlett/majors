@@ -8,6 +8,8 @@
  *   php bin/majors-catalog-seed.php --overwrite       # replaces existing values too
  *   php bin/majors-catalog-seed.php --cache=/dir      # reuse fetched pages (<md5 of url>.html)
  *   php bin/majors-catalog-seed.php --all             # not only graduate programs
+ *   php bin/majors-catalog-seed.php --sql=/path/seed.sql   # write UPDATEs keyed by basename instead of touching the DB
+ *                                                     (for boxes that cannot reach catalog.wichita.edu: run here, import there)
  *
  * The catalog URL comes from the program's own sections (the Curriculum link
  * marketing put on the page). Pages are fetched politely (~5/s) with a UA.
@@ -17,8 +19,12 @@ declare(strict_types=1);
 
 use Majors\Majors\CatalogSeeder;
 
-$opts  = getopt('', ['dry-run', 'overwrite', 'cache::', 'all', 'only::']);
+$opts  = getopt('', ['dry-run', 'overwrite', 'cache::', 'all', 'only::', 'sql::']);
 $dry   = isset($opts['dry-run']);
+$sqlOut = isset($opts['sql']) ? fopen((string) $opts['sql'], 'w') : null;
+if ($sqlOut) {
+    fwrite($sqlOut, "-- Graduate Program Details seeded from catalog.wichita.edu on " . date('Y-m-d H:i') . " (keyed by basename; safe to re-run)\n");
+}
 $over  = isset($opts['overwrite']);
 $cache = isset($opts['cache']) ? rtrim((string) $opts['cache'], '/') : sys_get_temp_dir() . '/majors-catalog';
 @mkdir($cache, 0775, true);
@@ -91,7 +97,10 @@ foreach ($programs as $p) {
         continue;
     }
     $n['updated']++;
-    if ($dry) {
+    if ($sqlOut) {
+        fprintf($sqlOut, "UPDATE `majors_academic_programs` SET `catalog_url` = '%s', `degree_title` = '%s', `credit_hours` = '%s' WHERE `basename` = '%s';\n",
+            $db->real_escape_string($new['catalog_url']), $db->real_escape_string($new['degree_title']), $db->real_escape_string($new['credit_hours']), $db->real_escape_string($p['basename']));
+    } elseif ($dry) {
         printf("  %-60s %-28s %s\n", $p['basename'], $new['degree_title'], $new['credit_hours'] !== '' ? $new['credit_hours'] . ' hrs' : '(no total)');
     } else {
         $stmt->bind_param('sssi', $new['catalog_url'], $new['degree_title'], $new['credit_hours'], $p['id']);
@@ -100,5 +109,9 @@ foreach ($programs as $p) {
 }
 foreach ($n as $k => $v) {
     printf("%-14s %d\n", $k, $v);
+}
+if ($sqlOut) {
+    fclose($sqlOut);
+    echo "SQL written to {$opts['sql']}\n";
 }
 echo $dry ? "dry run complete\n" : "seed complete\n";
