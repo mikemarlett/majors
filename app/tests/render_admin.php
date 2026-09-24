@@ -42,6 +42,14 @@ echo "[forms]\n";
 $hours = $forms->hoursForm($map);
 check(str_contains($hours, 'name="degree_map[hours][1][3]"') && str_contains($hours, 'value="3"'), 'hours form has the summer cell');
 check(str_contains($hours, 'name="hours_to_graduate"') && str_contains($hours, 'value="128"'), 'hours to graduate prefilled');
+// Unsaved year 1 → fields start at the course sums (3+5+3, 3+4-5, 3; year 21-22); saved year 2 keeps its values.
+$unsaved = $map;
+unset($unsaved['hours'][1]);
+$hf = $forms->hoursForm($unsaved);
+check(str_contains($hf, 'id="hours_1_1" value="11"') && str_contains($hf, 'id="hours_1_2" value="7-8"') && str_contains($hf, 'id="hours_1_3" value="3"'), 'unsaved semester fields pre-filled with course sums');
+check(str_contains($hf, 'id="hours_1_total" value="21-22"'), 'unsaved year total pre-filled with the sum');
+check(str_contains($hf, 'id="hours_2_1" value="15"') && str_contains($hf, 'id="hours_2_total" value="31"'), 'saved values untouched');
+check(str_contains($hf, 'id="hours_3_1" value=""') && !str_contains($hf, 'id="hours_3_1" value="15"'), 'years without courses stay blank (no invented 15)');
 
 $fn = $forms->footnotesForm($map);
 check(substr_count($fn, 'class="footnote-container"') === 3, 'three footnotes listed');
