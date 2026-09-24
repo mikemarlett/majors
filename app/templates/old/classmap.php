@@ -53,6 +53,7 @@ return [
     'divided_list'         => 'divided-list',
     'divided_list.item'    => 'divided-list__item',
 
+    'prose'                => '',
     'alert'                => 'alert-bar',
     'alert.emergency'      => 'alert-bar alert-bar--emergency',
     'alert.wrapper'        => 'alert-bar__wrapper',

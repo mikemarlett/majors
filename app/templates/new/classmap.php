@@ -82,4 +82,5 @@ return [
     'sr_only'              => 'sr-only',
     'icon'                 => 'inline-block w-5 h-5',
     'link.rich'            => 'nc-fancy-link',
+    'prose'                => 'prose',        // long-form text (help page)
 ];

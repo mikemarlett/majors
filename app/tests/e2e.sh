@@ -51,6 +51,8 @@ chk "$(GET -b $J "$B/degree_maps/admin/maps.php")" 200 "advisor admin page"; has
 CSRF=$(grep -o 'name="csrf-token" content="[a-f0-9]*"' $S/out.html | grep -o '[a-f0-9]\{64\}'); [ -n "$CSRF" ] && ok "csrf token present" || bad "csrf token"
 chk "$(GET -b $J "$B/_admin/index.php")" 403 "advisor blocked from majors admin"
 chk "$(GET -b $J "$B/degree_maps/admin/manage_users.php")" 403 "advisor blocked from users"
+chk "$(GET -b $J "$B/degree_maps/admin/help.php")" 200 "advisor help page"; has $S/out.html 'id="h-course"' 'help: add-a-course section'; has $S/out.html 'href="/academics/majors/degree_maps/admin/help.php"' 'help linked from admin bar'
+chk "$(curl -s -o /dev/null -w "%{http_code}" "$B/degree_maps/admin/help.php")" 302 "anonymous help redirects to sign-in"
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "advisor asks to edit current-year map"; hasnt $S/out.html 'id="degree-map-editor"' 'advisor gets the view, not the editor'

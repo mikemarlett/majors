@@ -9,7 +9,7 @@
 $here = (string) ($_SERVER['REQUEST_URI'] ?? '');
 $link = static function (string $path, string $label) use ($t, $here): string {
     $url     = $t->url($path);
-    $current = str_starts_with($here, dirname($url) . '/');
+    $current = str_starts_with($here, $url) || (basename($path) === 'maps.php' && str_starts_with($here, dirname($url) . '/') && !preg_match('~/admin/(help|manage_users)\.php~', $here));
     return '<a class="nc-chip-link' . ($current ? ' is-current' : '') . '" href="' . $t->e($url) . '"' . ($current ? ' aria-current="page"' : '') . '>' . $t->e($label) . '</a>';
 };
 ?>
@@ -27,6 +27,10 @@ $link = static function (string $path, string $label) use ($t, $here): string {
 <?php endif; ?>
 <?php if ($user->isSuperAdmin()): ?>
 			<?= $link('degree_maps/admin/manage_users.php', 'Users') ?>
+
+<?php endif; ?>
+<?php if ($user->canEditDegreeMaps()): ?>
+			<?= $link('degree_maps/admin/help.php', 'Help') ?>
 
 <?php endif; ?>
 			<a class="nc-chip-link majors-admin-bar__out" href="<?= $t->e($t->url('auth/logout.php')) ?>">Sign out</a>

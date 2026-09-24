@@ -152,6 +152,14 @@ body {
 .majors-new .majors-admin-bar__out { margin-left: .5rem; border-style: dashed; }
 .majors-new .ma-editor .button, .majors-new .ma-actions .button { display: inline-flex; align-items: center; gap: .4rem; }
 
+/* ---- advisors' help page ------------------------------------------------ */
+.majors-help { max-width: 70ch; }
+.majors-help__lead { font-size: 1.1em; }
+.majors-help__toc { margin: 1rem 0 2rem; padding: .75rem 1rem; background: rgb(0 0 0 / .04); font-size: .95em; line-height: 1.8; }
+.majors-help h2 { margin-top: 2rem; }
+.majors-help code { padding: 0 .3em; background: rgb(0 0 0 / .06); border-radius: 3px; font-size: .95em; }
+.majors-new .majors-help { max-width: none; }
+
 /* ---- print ---------------------------------------------------------------- */
 @media print {
 	@page { size: letter portrait; margin: 0.5in; }

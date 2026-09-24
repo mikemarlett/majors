@@ -18,6 +18,9 @@
 <?php if ($user->isSuperAdmin()): ?>
 		<a href="<?= $t->e($t->url('degree_maps/admin/manage_users.php')) ?>">Users</a>
 <?php endif; ?>
+<?php if ($user->canEditDegreeMaps()): ?>
+		<a href="<?= $t->e($t->url('degree_maps/admin/help.php')) ?>">Help</a>
+<?php endif; ?>
 		<a href="<?= $t->e($t->url('auth/logout.php')) ?>">Sign out</a>
 	</nav>
 	</div>
