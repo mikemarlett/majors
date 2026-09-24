@@ -48,7 +48,7 @@ $hasNav = $section_nav !== null || $nav_html !== '';
 	</div>
 <?php endif; ?>
 <?php if ($top !== ''): ?>
-	<div class="container majors-top">
+	<div class="majors-top">
 <?= $top ?>
 	</div>
 <?php endif; ?>

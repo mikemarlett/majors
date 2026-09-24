@@ -1,24 +1,21 @@
 <?php
 /**
- * Degree Maps search/select bar. Rendered by the layout in the full-width
- * "top" slot (new design: right under the page-title band, above the sidebar
- * grid, with the explainer as an "Instructions" accordion below the form in
- * the same band; old design: top of the main column, explainer above).
+ * Degree Maps search/select bar, one full-bleed slab rendered by the layout
+ * in the "top" slot (new design: right under the page-title band, above the
+ * sidebar grid, explainer as an "Instructions" accordion below the form; old
+ * design: top of the main column, explainer above the form).
  *
  * Variables: $order, $year, $years, $colleges, $college, $search_url, $self_url
  * @var \Majors\View\Layout $t
  */
 $new = $t->design() === 'new';
+ob_start();
 ?>
 <?php if (!$new): ?>
-<section class="<?= $t->cls('section.feature') ?> noprint">
-	<div class="<?= $t->cls('landing_panel') ?>">
+	<div class="<?= $t->cls('landing_panel') ?> dm-intro">
 		<p class="<?= $t->cls('landing_panel.text') ?>">Use the search field below to search the degree maps by name, college, department, or degree type. Choose a catalog year and college to narrow the list.</p>
 	</div>
-</section>
 <?php endif; ?>
-
-<section class="<?= $t->cls('section.shade') ?> noprint">
 	<div class="<?= $t->cls('filters') ?> dm-filters" id="dm-filters" data-search-url="<?= $t->e($search_url) ?>" data-self-url="<?= $t->e($self_url) ?>">
 		<form id="search_form" class="<?= $t->cls('filters.search') ?>" method="post" action="<?= $t->e($self_url) ?>">
 			<label class="<?= $t->cls('sr_only') ?>" for="searchList">Search</label>
@@ -51,7 +48,7 @@ $new = $t->design() === 'new';
 		</form>
 	</div>
 <?php if ($new): ?>
-	<div class="dm-help noprint" data-accordion="true">
+	<div class="dm-help" data-accordion="true">
 		<div data-accordion-panel="true">
 			<h2 data-accordion-heading="true">Instructions</h2>
 			<section data-accordion-section="true">
@@ -62,4 +59,4 @@ $new = $t->design() === 'new';
 		</div>
 	</div>
 <?php endif; ?>
-</section>
+<?php echo $t->partial('partials/slab', ['theme' => 'neutral-200', 'class' => 'noprint majors-slab--filters', 'body' => (string) ob_get_clean()]); ?>

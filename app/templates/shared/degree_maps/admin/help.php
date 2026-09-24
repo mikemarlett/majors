@@ -5,6 +5,7 @@
  */
 $mail = $contact !== '' ? '<a href="mailto:' . $t->e($contact) . '">' . $t->e($contact) . '</a>' : 'the web team';
 ?>
+<section class="<?= $t->cls('section') ?>">
 <div class="<?= $t->cls('prose') ?> majors-help">
 
 	<p class="majors-help__lead">Degree maps are the semester-by-semester plans students print from the public site. This page walks through adding a course, then covers everything else you can do in the editor and, at the end, what the editor does <em>not</em> do.</p>
@@ -105,3 +106,4 @@ $mail = $contact !== '' ? '<a href="mailto:' . $t->e($contact) . '">' . $t->e($c
 
 	<p>Questions, a locked map that must change, or a college that is missing from your account: <?= $mail ?>.</p>
 </div>
+</section>

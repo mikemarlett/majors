@@ -92,7 +92,7 @@ body {
    pages need are here, scoped to the new-design body class. Palette from the
    compiled theme: ink rgb(39 37 31), hover red rgb(144 59 65), Shocker yellow
    rgb(255 219 0), Inter type. */
-.majors-new .majors-content { padding-top: 1.5rem; padding-bottom: 3rem; }
+.majors-new .majors-content { padding-top: .25rem; padding-bottom: 3rem; }
 .majors-new .majors-content > * + * { margin-top: 2rem; }
 .majors-new .majors-band { background: rgb(245 244 242); padding: 1.25rem 1.5rem; }
 .majors-new .majors-note { border-left: 4px solid rgb(255 219 0); background: rgb(255 219 0 / .14); padding: 1rem 1.25rem; }
@@ -115,7 +115,10 @@ body {
 .majors-new .dm-listing hr { border: 0; border-top: 1px solid rgb(39 37 31 / .15); margin: 2rem 0 1rem; }
 /* Tables: the theme's .prose does the styling (the wrapper carries prose max-w-none);
    these only adjust what prose gets wrong for a degree map. */
-.majors-new .prose .dm-table { margin-top: 0; }
+.majors-new .prose .dm-table { margin-top: 0; border: 1px solid rgb(167 167 167); border-collapse: collapse; }
+.majors-new .prose .dm-table thead th { border-right: 1px solid rgb(255 255 255 / .18); }
+.majors-new .prose .dm-table tfoot tr { background: rgb(240 240 240); border-top: 2px solid rgb(56 56 56); }
+.majors-new .prose .dm-table tfoot th, .majors-new .prose .dm-table tfoot td { font-weight: 700; }
 .majors-new .prose .dm-table caption { caption-side: top; padding: 0; margin: 0 0 .5rem; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 1.25rem; color: rgb(39 37 31); }
 .majors-new .prose .dm-table thead th { color: #fff; }
 .majors-new .prose .dm-table tbody tr:nth-child(odd) { background: transparent; } /* prose stripes even rows; don't double up */
@@ -129,13 +132,26 @@ body {
 .majors-new .nc-chip-link { display: inline-block; padding: .25rem .75rem; border: 1px solid rgb(39 37 31 / .3); border-radius: 999px; font-size: .85rem; text-decoration: none; color: rgb(39 37 31); }
 .majors-new .nc-chip-link:hover { border-color: rgb(144 59 65); color: rgb(144 59 65); }
 /* full-width strip under the page-title band: help accordion + search/select */
-.majors-new .majors-top { padding-top: 1.5rem; }
-.majors-new .majors-top > * + * { margin-top: 1rem; }
-.majors-new .majors-top .majors-band { padding: 1.25rem 1.5rem; }
+/* top slot: full-bleed slabs stacked directly under the title band */
 .majors-new .majors-top .dm-filters { align-items: end; }
 .majors-new .majors-top .dm-filters form { margin: 0; }
 .majors-new .majors-top .dm-filters select { min-width: 14rem; }
-.majors-new .majors-top .dm-help { margin-top: 1.25rem; border-top: 1px solid rgb(39 37 31 / .12); padding-top: .5rem; }
+.majors-new .majors-top .dm-filters input, .majors-new .majors-top .dm-filters select { background: #fff; }
+.majors-new .majors-top .dm-help { margin-top: 1rem; border-top: 1px solid rgb(39 37 31 / .12); padding-top: .25rem; }
+.majors-new .majors-slab--actions .ma-actions { margin-top: .75rem; }
+.majors-new .majors-slab--actions .majors-results-header, .majors-new .majors-slab--actions p { margin: 0; }
+/* buttons on the dark actions slab */
+.majors-new [data-tw-theme="neutral-900"] .nc-button:not(.majors-accent):not(.majors-subtle) { background: #fff; color: rgb(39 37 31); }
+.majors-new [data-tw-theme="neutral-900"] .nc-button:not(.majors-accent):not(.majors-subtle):hover { background: rgb(255 219 0); }
+.majors-new [data-tw-theme="neutral-900"] .nc-button.majors-subtle { color: #fff; box-shadow: inset 0 0 0 2px rgb(255 255 255 / .8); }
+.majors-new [data-tw-theme="neutral-900"] .nc-button.majors-subtle:hover { background: rgb(232 0 0); box-shadow: none; }
+.majors-new [data-tw-theme="neutral-900"] .ma-note, .majors-new [data-tw-theme="neutral-900"] .help-block { color: rgb(225 225 225); }
+/* alerts (design-system GlobalAlert markup, see partials/alert.php) */
+.majors-new .majors-alert-slab { margin: 1.5rem 0; }
+.majors-new .majors-alert-slab .majors-slab__inner { padding: 1.5rem 0; }
+.majors-new .majors-alert__icon { mask-size: contain !important; -webkit-mask-size: contain !important; }
+.majors-new .majors-alert__title { font-size: 1.35rem; }
+.majors-new .majors-alert .prose ul { margin: 0; }
 .majors-new .dm-help [data-accordion-section-contents] p { max-width: 65ch; }
 /* map header: the logo is wide (4.4:1), so centre it against the two title lines */
 .majors-new .dm-header { align-items: center; gap: 1.5rem; margin-top: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgb(39 37 31 / .15); }

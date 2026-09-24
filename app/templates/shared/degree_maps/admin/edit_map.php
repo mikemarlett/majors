@@ -31,29 +31,13 @@ $plus   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="cur
 	<hr class="dm-rule dm-rule--header">
 
 <?php if ($map['note']): ?>
-	<div class="<?= $t->cls('alert') ?> dm-note">
-		<div class="<?= $t->cls('alert.wrapper') ?>">
-			<div class="<?= $t->cls('alert.icon') ?>"><?= $t->icon('design--info', 'icon', 'Note') ?></div>
-			<div class="<?= $t->cls('alert.message') ?>"><div class="<?= $t->cls('headline') ?>"><span class="<?= $t->cls('headline.head') ?>">Note</span></div><p><?= $t->e($map['note']) ?></p></div>
-		</div>
-	</div>
+<?= $t->partial('partials/alert', ['level' => 'info', 'title' => 'Note', 'class' => 'dm-note', 'body' => '<p>' . $t->e($map['note']) . '</p>']) ?>
 <?php endif; ?>
 
 <?php if ($sge_warnings): ?>
-	<div class="<?= $t->cls('alert.emergency') ?> ma-sge-warning" role="status">
-		<div class="<?= $t->cls('alert.wrapper') ?>">
-			<div class="<?= $t->cls('alert.icon') ?>"><?= $t->icon('design--exclamation-triangle', 'icon', 'Warning') ?></div>
-			<div class="<?= $t->cls('alert.message') ?>">
-				<div class="<?= $t->cls('headline') ?>"><span class="<?= $t->cls('headline.head') ?>">Check the general-education hours</span></div>
-				<ul>
-<?php foreach ($sge_warnings as $w): ?>
-					<li><?= $t->e($w) ?></li>
-<?php endforeach; ?>
-				</ul>
-				<p>Too many hours in a category is usually fine; the warning is there to help spot a mis-categorized course.</p>
-			</div>
-		</div>
-	</div>
+<?php $sgeBody = '<ul>' . implode('', array_map(static fn ($w) => '<li>' . $t->e($w) . '</li>', $sge_warnings)) . '</ul>'
+    . '<p>Too many hours in a category is usually fine; the warning is there to help spot a mis-categorized course.</p>'; ?>
+<?= $t->partial('partials/alert', ['level' => 'warning', 'title' => 'Check the general-education hours', 'class' => 'ma-sge-warning', 'attrs' => 'role="status"', 'body' => $sgeBody]) ?>
 <?php endif; ?>
 
 <?php foreach ($years as $y => $yr): ?>

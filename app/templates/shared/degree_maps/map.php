@@ -55,15 +55,7 @@ $logo       = str_starts_with($logo, '/') || str_starts_with($logo, 'http') ? $l
 <?php endif; ?>
 
 <?php if ($map['note'] !== ''): ?>
-	<div class="<?= $t->cls('alert') ?> dm-note">
-		<div class="<?= $t->cls('alert.wrapper') ?>">
-			<div class="<?= $t->cls('alert.icon') ?>"><?= $t->icon('design--info', 'icon', 'Note') ?></div>
-			<div class="<?= $t->cls('alert.message') ?>">
-				<div class="<?= $t->cls('headline') ?>"><span class="<?= $t->cls('headline.head') ?>">Note</span></div>
-				<p><?= $t->e($map['note']) ?></p>
-			</div>
-		</div>
-	</div>
+<?= $t->partial('partials/alert', ['level' => 'info', 'title' => 'Note', 'class' => 'dm-note', 'body' => '<p>' . $t->e($map['note']) . '</p>']) ?>
 <?php endif; ?>
 
 <?php foreach ($map['years'] as $i => $yr): ?>

@@ -83,12 +83,10 @@ final class AdminMapsController extends Controller
         }
 
         $csrf = $this->app->guard()->csrfToken();
-        $content = $layout->render('degree_maps/admin/page', [
+        $toolbar = $layout->render('degree_maps/admin/toolbar', [
             'user'          => $user,
-            'csrf'          => $csrf,
             'mode'          => $mode,
             'map'           => $map,
-            'results'       => $results,
             'order'         => $order,
             'year'          => $year,
             // Existing years plus next year, so a brand-new catalog year is reachable before its first map exists.
@@ -100,10 +98,14 @@ final class AdminMapsController extends Controller
             'editable_year' => $editableYear,
             'self_url'      => $layout->url('degree_maps/admin/maps.php'),
             'search_url'    => $layout->url('degree_maps/search.php'),
-            'flash'         => $r->strOrNull('flash'),
+        ]);
+        $content = $layout->render('degree_maps/admin/page', [
+            'results' => $results,
+            'flash'   => $r->strOrNull('flash'),
         ]);
 
         $this->page($content, [
+            'top'        => $toolbar,
             'title'      => $title,
             'page_header' => 'Edit Degree Maps',
             'user'       => $user,
