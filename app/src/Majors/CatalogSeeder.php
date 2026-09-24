@@ -68,13 +68,17 @@ final class CatalogSeeder
         }
         // A page can carry foundation/prerequisite lists under "Program Requirements"
         // before the degree's own list, so the most specific heading wins.
+        // Lists that are clearly not the degree itself (undergraduate foundation,
+        // prerequisites, leveling work) never count, whatever their heading says.
+        $own = array_values(array_filter($totals, static fn ($t) => !preg_match('/undergraduate|foundation|prerequisite|leveling|preparatory|background/i', $t['heading'])));
         foreach (['/curriculum/i', '/degree requirements/i', '/program requirements/i', '/^requirements$/i'] as $re) {
-            foreach ($totals as $t) {
+            foreach ($own as $t) {
                 if (preg_match($re, $t['heading'])) {
                     return $t['hours'];
                 }
             }
         }
+        $totals = $own !== [] ? $own : $totals;
         $best = $totals[0]['hours'];
         foreach ($totals as $t) {
             if ((int) $t['hours'] > (int) $best) {

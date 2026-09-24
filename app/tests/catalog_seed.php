@@ -20,6 +20,7 @@ $page = static fn (string $req, string $adm = ''): string => '<title>MACC - Mast
 $row = static fn (string $h): string => '<tr class="listsum"><td colspan="2">Total Credit Hours</td><td class="hourscol">' . $h . '</td></tr>';
 check(CatalogSeeder::extract($page('<h2>Program Requirements</h2>' . $row('73') . '<h3>Master of Accountancy Curriculum</h3>' . $row('30')))['credit_hours'] === '30', 'a Curriculum heading beats the foundation list under Program Requirements');
 check(CatalogSeeder::extract('<title>Doctor of Nursing Practice &lt; Catalog</title>')['degree_title'] === 'Doctor of Nursing Practice', 'short title without "in" is the degree');
+check(CatalogSeeder::extract($page('<h2>Program Requirements</h2><h3>Undergraduate Accounting/Business Curriculum</h3>' . $row('73') . '<h3>Master of Accountancy Curriculum</h3>' . $row('30')))['credit_hours'] === '30', 'an undergraduate foundation "curriculum" never counts (live MACC page)');
 check(CatalogSeeder::extract($page('<h2>Program Requirements</h2>' . $row('36') . '<h3>Track 1</h3>' . $row('4') . '<h3>Track 2</h3>' . $row('4')))['credit_hours'] === '36', 'Program Requirements total wins over track totals');
 check(CatalogSeeder::extract($page($row('88-91'), $row('9') . ' prerequisites'))['credit_hours'] === '88-91', 'admission-tab totals are ignored; ranges kept');
 check(CatalogSeeder::extract($page($row('30') . $row('30')))['credit_hours'] === '30', 'repeated equal totals');
