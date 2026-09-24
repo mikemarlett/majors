@@ -66,18 +66,26 @@ final class MapRenderer
                     ];
                     $i++;
                 }
-                $manual     = $hours[$yearNo][$s]['hours'] ?? 0;
-                $totals[$s] = $manual === null || $manual === '' ? 0 : $manual;
-                if ($manualYear === null || $manualYear === '') {
-                    $yearTotal += is_numeric($totals[$s]) ? (float) $totals[$s] : 0;
-                }
+                // Printed semester total: the value saved on the Hours form, or, when
+                // nothing was saved for this semester, the sum of the courses listed.
+                $manual     = $hours[$yearNo][$s]['hours'] ?? null;
+                $totals[$s] = $manual === null || trim((string) $manual) === ''
+                    ? HoursCalculator::semester($map['courses'], $yearNo, $s)
+                    : $manual;
             }
-            if ($manualYear !== null && $manualYear !== '') {
+            if ($manualYear !== null && trim((string) $manualYear) !== '') {
                 $yearTotal = $manualYear;
-            }
-            // Legacy override: semester 0 row = whole-year manual hours.
-            if (!empty($hours[$yearNo][0]['hours'])) {
-                $yearTotal = $hours[$yearNo][0]['hours'];
+            } elseif (!empty($hours[$yearNo][0]['hours'])) {
+                $yearTotal = $hours[$yearNo][0]['hours']; // legacy override: semester 0 row = whole-year manual hours
+            } else {
+                // Sum the semester totals; a course range like "2-4" keeps the year a range too.
+                $min = $max = 0.0;
+                foreach ($totals as $tv) {
+                    $r    = HoursCalculator::range($tv);
+                    $min += $r['floor'];
+                    $max += $r['ceiling'];
+                }
+                $yearTotal = HoursCalculator::format($min, $max);
             }
 
             $years[] = [

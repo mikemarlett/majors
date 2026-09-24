@@ -28,6 +28,14 @@ foreach (['old', 'new'] as $design) {
     check(str_contains($html, '<span class="dm-extra">Fall only</span>'), 'extra note rendered escaped');
     check(str_contains($html, 'Total hours for 1st year: <strong>34</strong>'), 'year 1 total summed from semester hours (16+15+3)');
     check(str_contains($html, 'Total hours for 2nd year: <strong>31</strong>'), 'year 2 uses manual year override');
+
+    // No saved hours for year 1 → the printed totals fall back to the course sums (3+5+3, 3+4-5, 3 → 21-22).
+    $unsaved = $map;
+    unset($unsaved['hours'][1]);
+    $h2 = $r->render($unsaved);
+    check(str_contains($h2, '<td class="dm-hours">11</td>') && str_contains($h2, '<td class="dm-hours">7-8</td>') && str_contains($h2, '<td class="dm-hours">3</td>'), 'unsaved semester totals computed from courses (ranges kept)');
+    check(str_contains($h2, 'Total hours for 1st year: <strong>21-22</strong>'), 'unsaved year total is the sum of computed semesters');
+    check(str_contains($h2, 'Total hours for 2nd year: <strong>31</strong>'), 'saved year override still wins');
     check(str_contains($html, '<strong>Note: </strong>Courses in <em>italics</em>'), 'order-0 footnote shown as note');
     check(str_contains($html, '<li id="footnote_11">'), 'numbered footnotes listed');
     check(str_contains($html, 'Hours needed to complete the degree: 128'), 'hours to graduate');
