@@ -24,15 +24,15 @@ $linkBase = 'rounded-full absolute top-1/2 left-1/2 -translate-y-1/2 -translate-
 	<p class="nc-heading text-2xl">No degree maps found.</p>
 <?php endif; ?>
 <?php if ($alpha_nav && $groups !== []): ?>
-	<nav data-nc-component="alpha-nav" data-tw-theme="neutral-200" aria-label="Jump to a letter" class="generic-slab mb-8 noprint">
-		<div class="generic-slab-inner !py-7">
+	<nav data-nc-component="alpha-nav" data-tw-theme="neutral-200" aria-label="Jump to a letter" class="generic-slab [--vertical-space-padding:1.75rem] mb-8 noprint">
+		<div class="generic-slab-inner theme-not-default:py-vertical-space-padding">
 			<div class="generic-slab-content-outer-wrapper relative conditional-container theme-not-default:container">
 				<div class="generic-slab-content-inner-wrapper flex flex-col gap-8">
 					<div class="generic-slab-component-wrapper">
 						<ul role="list" class="flex flex-wrap gap-2 text-lg/0">
 <?php foreach (array_merge(range('A', 'Z'), ['#']) as $letter): ?>
 <?php $id = $anchor($letter === '#' ? '0' : $letter); ?>
-							<li class="relative p-[1.125rem]">
+							<li class="relative p-[calc(18rem/16)]">
 <?php if (isset($present[$id])): ?>
 								<a href="#<?= $id ?>" class="<?= $linkBase ?> hocus:bg-theme-button-2-bg-color hocus:text-theme-button-2-text-color"<?= $letter === '#' ? ' aria-label="Numeric"' : '' ?>><?= $letter ?></a>
 <?php elseif ($letter !== '#'): ?>
