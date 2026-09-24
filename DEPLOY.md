@@ -156,6 +156,22 @@ and cached in `/tmp`; pass `--tags=/data/www/config/majors-cms-tags.json` to
 keep the cache between runs. Re-running updates what changed and retires
 programs whose page is gone (never deletes; degree maps keep their links).
 
+## 2e. Graduate Program Details from the catalog
+
+The graduate template's Program Details box (degree, modality, credit hours,
+entry term) starts from the catalog: `bin/majors-catalog-seed.php` reads each
+graduate program's catalog page (the Curriculum link marketing already put on
+the page) and fills `catalog_url`, `degree_title` and `credit_hours`. Modality,
+entry terms, the STEM flag and the coordinator are not in the catalog and are
+filled by marketing (columns on `majors_academic_programs`; editor to come).
+
+```bash
+cd /data/www/config/majors
+mysql formshandlerdb < sql/005_program_details.sql        # or bin/migrate.php again
+MAJORS_SITE=www-test php bin/majors-catalog-seed.php --dry-run
+MAJORS_SITE=www-test php bin/majors-catalog-seed.php       # ~200 catalog fetches, ~1 min; add --overwrite to re-seed
+```
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.

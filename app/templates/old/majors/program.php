@@ -3,7 +3,7 @@
  * One program's marketing page — current design (program-card / teaser
  * components), rendered from the program's ordered sections.
  *
- * Variables: $p (program row), $title, $kind, $crumbs, $description (HTML), $learn_how, $buttons (text/href),
+ * Variables: $p (program row), $title, $kind, $crumbs, $description (HTML), $learn_how, $buttons (text/href), $facts, $is_stem, $coordinator,
  *            $image (url/alt/caption/credit|null), $sections, $degree_maps (id/label/url), $similar, $program_url
  * @var \Majors\View\Layout $t
  */
@@ -53,7 +53,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 	<div class="program-card">
 		<div class="program-card__body">
 			<h2 class="headline-group">
-				<span class="superhead"><?= $t->e($kind) ?></span>
+				<span class="superhead"><?= $t->e($kind) ?><?php if ($is_stem): ?> · STEM Program<?php endif; ?></span>
 				<span class="head"><?= $t->e($p['academic_program']) ?></span>
 			</h2>
 <?php if ($crumbs): ?>
@@ -64,6 +64,16 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 			</ul></div>
 <?php endif; ?>
 			<div class="program-card__detail"><?= $description ?></div>
+<?php if ($facts): ?>
+			<dl class="majors-facts">
+<?php foreach ($facts as $f): ?>
+				<div><dt><?= $t->e($f['label']) ?></dt><dd><?= $t->e($f['value']) ?></dd></div>
+<?php endforeach; ?>
+			</dl>
+<?php endif; ?>
+<?php if ($coordinator): ?>
+			<p class="majors-coordinator">Questions? Contact <?= $coordinator['name'] !== '' ? 'Program Coordinator ' . $t->e($coordinator['name']) : 'the program' ?><?php if ($coordinator['email'] !== ''): ?> at <a href="mailto:<?= $t->e($coordinator['email']) ?>"><?= $t->e($coordinator['email']) ?></a><?php endif; ?><?php if ($coordinator['phone'] !== ''): ?> or call <?= $t->e($coordinator['phone']) ?><?php endif; ?>.</p>
+<?php endif; ?>
 <?php if ($learn_how !== ''): ?>
 			<div class="program-card__cta">
 				<h3 class="heading4"><?= $t->e($learn_how) ?></h3>

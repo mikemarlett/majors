@@ -185,6 +185,16 @@ if ($prog !== []) {
         'cms_path'         => 'VARCHAR(255) NULL',
         'cms_file_date'    => 'DATETIME NULL',
         'imported_at'      => 'DATETIME NULL',
+        // Program Details (graduate template): facts marketing fills or the catalog seeds
+        'catalog_url'       => 'VARCHAR(255) NULL',
+        'degree_title'      => 'VARCHAR(120) NULL',   // "PhD", "Master of Accountancy"… as the catalog names it
+        'credit_hours'      => 'VARCHAR(40) NULL',    // "84", "30–36", "30 / 36" (tracks)
+        'modality'          => 'VARCHAR(40) NULL',    // On Campus | Online | Hybrid
+        'entry_terms'       => 'VARCHAR(80) NULL',    // "Fall, Spring" | "Any"
+        'is_stem'           => 'TINYINT(1) NOT NULL DEFAULT 0',
+        'coordinator_name'  => 'VARCHAR(120) NULL',
+        'coordinator_email' => 'VARCHAR(120) NULL',
+        'coordinator_phone' => 'VARCHAR(40) NULL',
     ];
     foreach ($add as $col => $def) {
         if (!in_array($col, $prog, true)) {

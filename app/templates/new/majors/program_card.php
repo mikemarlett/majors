@@ -5,7 +5,7 @@
  * bottom arrowhead, full width under the page title. Markup follows
  * ProgramCard.twig / GenericSlab.twig / Figure.twig / ButtonLinkList.twig.
  *
- * Variables: $p, $kind, $crumbs, $description, $learn_how, $buttons, $image
+ * Variables: $p, $kind, $crumbs, $description, $learn_how, $buttons, $image, $facts (label/value), $is_stem, $coordinator (name/email/phone|null)
  * @var \Majors\View\Layout $t
  */
 ?>
@@ -29,7 +29,7 @@
 <?php if ($kind !== '' || $crumbs): ?>
 								<div class="order-first flex flex-col gap-4">
 <?php if ($kind !== ''): ?>
-									<div class="font-bold uppercase text-theme-heading-color text-lg/tight sm:text-size-xl md:text-2xl"><span class="sr-only">Program type: </span><?= $t->e($kind) ?></div>
+									<div class="flex flex-wrap items-center gap-x-4 gap-y-2 font-bold uppercase text-theme-heading-color text-lg/tight sm:text-size-xl md:text-2xl"><span><span class="sr-only">Program type: </span><?= $t->e($kind) ?></span><?php if ($is_stem): ?><span class="text-sm border-2 border-theme-text-color px-3 py-1 tracking-wide">STEM Program</span><?php endif; ?></div>
 <?php endif; ?>
 <?php if ($crumbs): ?>
 									<ul role="list" class="flex flex-wrap gap-x-6 sm:gap-x-4 gap-y-2.5 leading-none">
@@ -46,12 +46,22 @@
 <?php if ($learn_how !== ''): ?>
 								<p class="font-semibold text-lg/tight text-theme-heading-color"><?= $t->e($learn_how) ?></p>
 <?php endif; ?>
+<?php if ($facts): ?>
+								<dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 border-2 border-theme-text-color p-4 majors-facts">
+<?php foreach ($facts as $f): ?>
+									<div><dt class="text-xs font-bold uppercase tracking-wide text-theme-text-color/80"><?= $t->e($f['label']) ?></dt><dd class="font-display font-bold text-2xl leading-tight text-theme-heading-color"><?= $t->e($f['value']) ?></dd></div>
+<?php endforeach; ?>
+								</dl>
+<?php endif; ?>
 <?php if ($buttons): ?>
 								<div><div><ul role="list" class="flex flex-wrap flex-col gap-5 [&_.nc-button]:w-full md-xs:flex-row">
 <?php foreach ($buttons as $i => $b): ?>
 									<li><a<?= $i > 0 ? ' data-variant="2"' : '' ?> href="<?= $t->e($b['href'] ?? '#') ?>" class="nc-button"><span class="nc-button-text"><?= $t->e(trim((string) ($b['text'] ?? ''))) ?></span></a></li>
 <?php endforeach; ?>
 								</ul></div></div>
+<?php endif; ?>
+<?php if ($coordinator): ?>
+								<p class="text-base majors-coordinator">Questions? Contact <?= $coordinator['name'] !== '' ? 'Program Coordinator ' . $t->e($coordinator['name']) : 'the program' ?><?php if ($coordinator['email'] !== ''): ?> at <a class="underline text-theme-link-color hocus:text-theme-link-hocus-color" href="mailto:<?= $t->e($coordinator['email']) ?>"><?= $t->e($coordinator['email']) ?></a><?php endif; ?><?php if ($coordinator['phone'] !== ''): ?> or call <a class="underline text-theme-link-color hocus:text-theme-link-hocus-color" href="tel:<?= $t->e(preg_replace('/[^0-9+]/', '', $coordinator['phone'])) ?>"><?= $t->e($coordinator['phone']) ?></a><?php endif; ?>.</p>
 <?php endif; ?>
 							</div>
 						</div>

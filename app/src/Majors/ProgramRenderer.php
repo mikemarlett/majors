@@ -97,11 +97,32 @@ final class ProgramRenderer
                 'caption' => $pick('image_caption', 'main_image_caption'), 'credit' => $pick('image_credit', 'main_image_credit'),
             ] : null,
             'sections'       => $sections,
+            'facts'          => self::facts($program),
+            'is_stem'        => (bool) ($program['is_stem'] ?? false),
+            'coordinator'    => !empty($program['coordinator_name']) || !empty($program['coordinator_email']) ? [
+                'name' => (string) ($program['coordinator_name'] ?? ''), 'email' => (string) ($program['coordinator_email'] ?? ''), 'phone' => (string) ($program['coordinator_phone'] ?? ''),
+            ] : null,
             'degree_maps'    => $maps,
             'similar'        => $program['similar_programs'] ?? [],
             'nav_items'      => $this->sectionNav($program),
             'program_url'    => $this->layout->url('index.php') . '?id=',
         ];
+    }
+
+    /**
+     * The Program Details box (Strat Comm's graduate template): only the facts
+     * that are filled in, in a fixed order. @return list<array{label:string,value:string}>
+     */
+    public static function facts(array $program): array
+    {
+        $out = [];
+        foreach ([['degree_title', 'Degree'], ['modality', 'Modality'], ['credit_hours', 'Credit Hours'], ['entry_terms', 'Entry Term']] as [$col, $label]) {
+            $v = trim((string) ($program[$col] ?? ''));
+            if ($v !== '') {
+                $out[] = ['label' => $label, 'value' => $v];
+            }
+        }
+        return $out;
     }
 
     /** Sections for a program that only has the legacy flat row (pre-import data, fixtures). */

@@ -144,6 +144,7 @@ database, which is now the source the Majors pages render from:
 | table | holds |
 |---|---|
 | `majors_academic_programs` | one row per program, **stable ids** (degree maps point at them): name, credential (Major, Minor, Master's…), type (BS, MACC…), college/department (+ links), the Program Card (description, "Learn how…" buttons, hero image), meta tags, `basename` of the CMS page, `catalog_number` from the slug, `status` active/retired, CMS file date |
+| (same table) | the graduate template's **Program Details**: `catalog_url`, `degree_title`, `credit_hours` (seeded from the catalog by `app/bin/majors-catalog-seed.php`), `modality`, `entry_terms`, `is_stem`, `coordinator_*` (marketing) |
 | `majors_program_sections` | the page body in order: `teaser` (Curriculum, Careers, Admission…), `feature` (Inside the Program, with image), `similar`; each with headline, HTML body, links, image — or a `block_id` |
 | `majors_content_blocks` | text that appeared verbatim on many pages, stored once (Applied learning at Wichita State: 268 pages; Making your graduate education affordable: 92; each college's Admission paragraph…). A section that points at a block shows the block, so **editing the block changes every page that uses it** |
 | `majors_similar_programs` | from each page's Similar Programs card |

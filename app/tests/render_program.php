@@ -38,5 +38,11 @@ check(ProgramRenderer::title($program) === 'Aerospace Engineering, Major', 'page
 $lay = test_layout('new', ['image_base' => 'https://www.wichita.edu']);
 check($lay->img('/academics/majors/_images/x.jpg') === 'https://www.wichita.edu/academics/majors/_images/x.jpg' && $lay->img('https://cdn/x.jpg') === 'https://cdn/x.jpg', 'image_base prefixes relative content images only');
 check(str_contains((new ProgramRenderer($lay))->page($program, $maps), 'src="https://www.wichita.edu/academics/majors/_images/Aerospace_airbus.jpg"'), 'program page uses image_base');
+$grad = $program + ['degree_title' => 'PhD', 'credit_hours' => '84', 'modality' => 'On Campus', 'is_stem' => 1, 'coordinator_name' => 'Deana Beek', 'coordinator_email' => 'deana.beek@wichita.edu', 'coordinator_phone' => '316-978-3961'];
+foreach (['old', 'new'] as $design) {
+    $h = (new ProgramRenderer(test_layout($design)))->page($grad, $maps);
+    check(str_contains($h, 'Credit Hours') && str_contains($h, '>84<') && str_contains($h, 'On Campus') && !str_contains($h, 'Entry Term'), "$design: details box shows only the filled facts");
+    check(str_contains($h, 'STEM Program') && str_contains($h, 'mailto:deana.beek@wichita.edu') && str_contains($h, '316-978-3961'), "$design: STEM tag and coordinator strip");
+}
 
 finish();
