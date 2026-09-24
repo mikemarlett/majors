@@ -64,14 +64,15 @@ MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/
 MP() { curl -s -b $M -H "X-CSRF-Token: $MC" -X POST "$@"; }
 MA=$B/_admin/ajax.php
 NAME=$(Q "SELECT academic_program FROM majors_academic_programs WHERE id=$PROG")
-R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "credit_hours=99" --data-urlencode "modality=Online" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save_program" || bad "save_program: $R"
+DESC0=$(Q "SELECT description FROM majors_academic_programs WHERE id=$PROG")
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "credit_hours=99" --data-urlencode "modality=Online" --data-urlencode "description=<p>E2E description</p>" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save_program" || bad "save_program: $R"
 chk "$(Q "SELECT credit_hours FROM majors_academic_programs WHERE id=$PROG")" 99 "program facts saved"
+chk "$(Q "SELECT description FROM majors_programs_content WHERE academic_program_id=$PROG")" "<p>E2E description</p>" "flat row kept in step (ai-meta.php)"
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "modality=Sideways" "$MA?action=save_program"); echo "$R" | grep -q 'Modality must be' && ok "save_program validates modality" || bad "modality validation: $R"
-MP -d "program_id=$PROG&credit_hours=&modality=" --data-urlencode "academic_program=$NAME" "$MA?action=save_program" >/dev/null
+MP -d "program_id=$PROG&credit_hours=&modality=" --data-urlencode "academic_program=$NAME" --data-urlencode "description=$DESC0" "$MA?action=save_program" >/dev/null
 R=$(MP -d "program_id=$PROG&kind=teaser" "$MA?action=get_section_form"); echo "$R" | grep -q 'id="editSectionForm"' && ok "get_section_form" || bad "section form: $R"
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=teaser" --data-urlencode "headline=E2E card" --data-urlencode "body=<p>e2e body</p>" --data-urlencode "links[text][]=Go" --data-urlencode "links[href][]=/x" "$MA?action=save_section"); SEC=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC" ] && ok "save_section → $SEC" || bad "save_section: $R"; echo "$R" | grep -q 'E2E card' && ok "sections html returned" || bad "sections html"
 GET "$B/index.php?id=$PROG" >/dev/null; has $S/out.html 'E2E card' 'new section on the public page'; has $S/out.html 'href="/x"' 'section link on the public page'
-chk "$(Q "SELECT COUNT(*) FROM majors_programs_content WHERE academic_program_id=$PROG AND wildcard_headline='E2E card' OR (academic_program_id=$PROG AND careers_headline='E2E card')")" 1 "flat row kept in step" || true
 BLK=$(Q "SELECT id FROM majors_content_blocks ORDER BY id LIMIT 1")
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "kind=teaser" --data-urlencode "block_id=$BLK" "$MA?action=save_section"); echo "$R" | grep -q 'shared block' && ok "section switched to a shared block" || bad "attach block: $R"
 R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=detach_section"); echo "$R" | grep -q '"success":true' && ok "detach_section" || bad "detach: $R"
