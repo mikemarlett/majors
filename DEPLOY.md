@@ -21,8 +21,8 @@ Once per box:
 
 ```bash
 cd /data/www/config/majors/config
-cp app.www-dev.example.php  app.www-dev.php    # design => 'new'
-cp app.www-test.example.php app.www-test.php   # design => 'old' (nothing else to set)
+cp app.www-dev.example.php  app.www-dev.php    # design => 'new', image_base => 'https://www.wichita.edu'
+cp app.www-test.example.php app.www-test.php   # design => 'old', image_base => 'https://www.wichita.edu' (photos are published to www only)
 # app.local.php is not needed on the servers: the defaults already use
 # /data/www/config/functions.php and /data/www/config/phpCAS/config.php.
 ```

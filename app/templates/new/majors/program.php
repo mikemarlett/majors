@@ -70,7 +70,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 		</div>
 <?php if ($image): ?>
 		<figure class="md:basis-2/5 shrink-0">
-			<img class="w-full" src="<?= $t->e($image['url']) ?>" alt="<?= $t->e($image['alt']) ?>">
+			<img class="w-full" src="<?= $t->e($t->img($image['url'])) ?>" alt="<?= $t->e($image['alt']) ?>">
 <?php if ($image['caption'] !== '' || $image['credit'] !== ''): ?>
 			<figcaption class="text-sm text-neutral-500 mt-2"><?= $t->e($image['caption']) ?><?php if ($image['credit'] !== ''): ?> <span class="lowercase">— <?= $t->e($image['credit']) ?></span><?php endif; ?></figcaption>
 <?php endif; ?>
@@ -91,7 +91,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 <section class="vertical-rhythm-standard bg-neutral-200 p-6 majors-section" data-section="<?= (int) $s['id'] ?>">
 	<div class="flex flex-col gap-6 md:flex-row md:items-start">
 <?php if ($s['image']): ?>
-		<img class="w-full md:basis-1/3 shrink-0" src="<?= $t->e($s['image']['url']) ?>" alt="<?= $t->e($s['image']['alt']) ?>">
+		<img class="w-full md:basis-1/3 shrink-0" src="<?= $t->e($t->img($s['image']['url'])) ?>" alt="<?= $t->e($s['image']['alt']) ?>">
 <?php endif; ?>
 		<div>
 			<p class="<?= $t->cls('headline.super') ?>"><?= $t->e($s['label'] !== '' ? $s['label'] : 'Inside the Program') ?></p>
@@ -113,7 +113,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 <?php foreach ($similar as $s): ?>
 		<a class="block overflow-hidden border border-black/15 text-current no-underline hover:border-black/60" href="<?= $t->e($program_url . (int) $s['id']) ?>">
 <?php if (!empty($s['main_image_url'])): ?>
-			<img class="w-full aspect-[3/2] object-cover" src="<?= $t->e($s['main_image_url']) ?>" alt="">
+			<img class="w-full aspect-[3/2] object-cover" src="<?= $t->e($t->img($s['main_image_url'])) ?>" alt="">
 <?php endif; ?>
 			<span class="block p-4 font-bold"><?= $t->e($s['academic_program']) ?> <span class="font-normal text-neutral-500">(<?= $t->e($s['credential'] ?? $s['program_simple_type'] ?? $s['program_type']) ?>)</span></span>
 		</a>

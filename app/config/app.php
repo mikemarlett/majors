@@ -87,6 +87,10 @@ return [
 
     'site' => [
         'site_name' => 'Wichita State University',
+        // Program photos live in the CMS-published folders on www (/academics/majors/_images/…
+        // and other site folders). On boxes that don't receive those publishes (www-test,
+        // www-dev) set this to 'https://www.wichita.edu' so relative image URLs still load.
+        'image_base' => null,
         // Per design: the redesign (www-dev) does not ship /_resources/images/.
         'logo'      => [
             'old' => '/_resources/images/logo-blacktype.svg',

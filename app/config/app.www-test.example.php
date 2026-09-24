@@ -12,6 +12,7 @@
 declare(strict_types=1);
 
 return [
+    'site'   => ['image_base' => 'https://www.wichita.edu'],
     'design' => 'old',
     'auth'   => ['service_host' => 'www-test.wichita.edu'],
 ];

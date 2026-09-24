@@ -9,6 +9,7 @@
 declare(strict_types=1);
 
 return [
+    'site'   => ['image_base' => 'https://www.wichita.edu'],
     'auth'   => ['service_host' => 'www-dev.wichita.edu'],
     // The new NewCity/Tailwind design lives here: chrome from _resources/_theme/includes.
     'design' => 'new',

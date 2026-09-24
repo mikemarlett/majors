@@ -157,6 +157,13 @@ final class Layout
         return rtrim($this->baseUrl, '/') . '/' . ltrim($path, '/');
     }
 
+    /** A content image URL, prefixed with site.image_base when this box doesn't have the CMS-published photos. */
+    public function img(string $url): string
+    {
+        $base = $this->site('image_base', '');
+        return $base !== '' && str_starts_with($url, '/') ? rtrim($base, '/') . $url : $url;
+    }
+
     /** Cache-busted URL to a file in docroot/academics/majors/assets/. */
     public function asset(string $path): string
     {

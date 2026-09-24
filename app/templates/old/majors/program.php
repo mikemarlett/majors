@@ -79,7 +79,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 		<div class="program-card__image">
 			<div class="captioned-media captioned-media--right"><figure>
 				<div class="figure-wrapper">
-					<img src="<?= $t->e($image['url']) ?>" alt="<?= $t->e($image['alt']) ?>">
+					<img src="<?= $t->e($t->img($image['url'])) ?>" alt="<?= $t->e($image['alt']) ?>">
 <?php if ($image['credit'] !== ''): ?>
 					<cite class="cite--photo-credit"><?= $t->icon('design--camera') ?> <?= $t->e($image['credit']) ?></cite>
 <?php endif; ?>
@@ -104,7 +104,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 	<header class="section-header section-header--no-border"><h2><?= $t->e($s['label'] !== '' ? $s['label'] : 'Inside the Program') ?></h2></header>
 	<div class="teaser teaser--columned-intro">
 <?php if ($s['image']): ?>
-		<div class="teaser__image"><img src="<?= $t->e($s['image']['url']) ?>" alt="<?= $t->e($s['image']['alt']) ?>"></div>
+		<div class="teaser__image"><img src="<?= $t->e($t->img($s['image']['url'])) ?>" alt="<?= $t->e($s['image']['alt']) ?>"></div>
 <?php endif; ?>
 		<div class="teaser__body">
 			<div class="teaser__headline"><h3 class="headline-group"><span class="head"><?= $t->e($s['headline']) ?></span></h3></div>
@@ -123,12 +123,12 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 <?php foreach ($similar as $s): ?>
 		<a href="<?= $t->e($program_url . (int) $s['id']) ?>" class="teaser collection__item teaser--card-wide teaser--card">
 <?php if (!empty($s['main_image_url'])): ?>
-			<div class="teaser__image"><img src="<?= $t->e($s['main_image_url']) ?>" alt="" width="1000" height="1000"></div>
+			<div class="teaser__image"><img src="<?= $t->e($t->img($s['main_image_url'])) ?>" alt="" width="1000" height="1000"></div>
 <?php endif; ?>
 			<div class="teaser__body"><div class="teaser__headline"><div class="headline-group"><span class="head"><?= $t->e($s['academic_program']) ?> (<?= $t->e($s['credential'] ?? $s['program_simple_type'] ?? $s['program_type']) ?>)</span></div></div></div>
 		</a>
 <?php endforeach; ?>
 	</div>
-	<div class="section-wrap__image"><img src="<?= $t->e($image['url'] ?? '/_resources/images/wichita.jpg') ?>" alt="" width="1000" height="1000"></div>
+	<div class="section-wrap__image"><img src="<?= $t->e($t->img($image['url'] ?? '/_resources/images/wichita.jpg')) ?>" alt="" width="1000" height="1000"></div>
 </section>
 <?php endif; ?>

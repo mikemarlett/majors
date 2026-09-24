@@ -7,7 +7,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/src/Support/Autoloader.php';
 \Majors\Support\Autoloader::register('Majors\\', dirname(__DIR__) . '/src');
 
-function test_layout(string $design = 'old'): \Majors\View\Layout
+function test_layout(string $design = 'old', array $site = []): \Majors\View\Layout
 {
     $app = dirname(__DIR__);
     return new \Majors\View\Layout(
@@ -16,7 +16,7 @@ function test_layout(string $design = 'old'): \Majors\View\Layout
         new \Majors\View\Theme($app . '/dev/stub-docroot/_resources/' . ($design === 'new' ? '_theme/includes' : 'includes')),
         '/academics/majors',
         dirname($app) . '/docroot/academics/majors/assets',
-        ['site_name' => 'Test', 'logo' => '/logo.svg', 'sprite' => '/sprite.svg'],
+        $site + ['site_name' => 'Test', 'logo' => '/logo.svg', 'sprite' => '/sprite.svg'],
     );
 }
 

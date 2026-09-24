@@ -35,5 +35,8 @@ foreach (['old', 'new'] as $design) {
 
 check(ProgramRenderer::headline('online', 'College of Engineering', null, 'robot') === '"robot" in Online Degrees in College of Engineering', 'headline composition');
 check(ProgramRenderer::title($program) === 'Aerospace Engineering, Major', 'page title');
+$lay = test_layout('new', ['image_base' => 'https://www.wichita.edu']);
+check($lay->img('/academics/majors/_images/x.jpg') === 'https://www.wichita.edu/academics/majors/_images/x.jpg' && $lay->img('https://cdn/x.jpg') === 'https://cdn/x.jpg', 'image_base prefixes relative content images only');
+check(str_contains((new ProgramRenderer($lay))->page($program, $maps), 'src="https://www.wichita.edu/academics/majors/_images/Aerospace_airbus.jpg"'), 'program page uses image_base');
 
 finish();
