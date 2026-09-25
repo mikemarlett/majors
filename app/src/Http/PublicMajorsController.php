@@ -15,7 +15,7 @@ use Majors\Support\Request;
  *   index.php?order=college        grouped by college
  *   index.php?filter=online        undergrad | graduate | online | minors | certificates | badges
  *   index.php?college=...&department=...&search=...
- *   index.php?id=N                 one program's marketing page
+ *   index.php?program=<basename>   one program's marketing page (index.php?id=N redirects here)
  *
  * search.php (same controller, json=1) returns {results, title} for majors.js.
  */
@@ -28,12 +28,19 @@ final class PublicMajorsController extends Controller
         $renderer = new ProgramRenderer($layout);
         $isJson   = basename($r->path(), '.php') === 'search';
 
-        $id = $r->id('id');
-        if ($id !== null && !$isJson) {
-            $program = $programs->find($id);
+        // One program: ?program=<basename> is the public address; ?id=N (the old
+        // links) redirects to it so nothing that was bookmarked breaks.
+        $basename = $r->strOrNull('program');
+        $id       = $r->id('id');
+        if (($basename !== null || $id !== null) && !$isJson) {
+            $program = $basename !== null ? $programs->findByBasename($basename) : $programs->find((int) $id);
             if ($program === null) {
                 $this->notFound('That program could not be found.');
             }
+            if ($basename === null && (string) ($program['basename'] ?? '') !== '') {
+                $this->redirect($layout->programUrl($program), 301);
+            }
+            $id    = (int) $program['id'];
             $parts = $renderer->parts($program, $this->app->maps()->forProgram($id));
             $this->page($parts['content'], [
                 'top'         => $parts['top'],
@@ -81,7 +88,6 @@ final class PublicMajorsController extends Controller
             'groups'      => ProgramRenderer::group($rows, $order),
             'headline'    => $headline,
             'order'       => $order,
-            'link_base'   => $layout->url('index.php') . '?id=',
             'results_url' => $query !== '' ? $layout->url('index.php') . '?' . $query : null,
             'all_url'     => $layout->url('index.php'),
         ]);

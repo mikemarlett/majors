@@ -105,7 +105,6 @@ final class ProgramRenderer
             'degree_maps'    => $maps,
             'similar'        => $program['similar_programs'] ?? [],
             'nav_items'      => $this->sectionNav($program),
-            'program_url'    => $this->layout->url('index.php') . '?id=',
         ];
     }
 

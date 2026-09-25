@@ -131,7 +131,7 @@ if (!$mapsPlaced && $mapsHtml !== '') {
 	<header class="section-header section-header--centered section-header--no-border collection__header"><h2>Similar Programs</h2></header>
 	<div class="collection__items">
 <?php foreach ($similar as $s): ?>
-		<a href="<?= $t->e($program_url . (int) $s['id']) ?>" class="teaser collection__item teaser--card-wide teaser--card">
+		<a href="<?= $t->e($t->programUrl($s)) ?>" class="teaser collection__item teaser--card-wide teaser--card">
 <?php if (!empty($s['main_image_url'])): ?>
 			<div class="teaser__image"><img src="<?= $t->e($t->img($s['main_image_url'])) ?>" alt="" width="1000" height="1000"></div>
 <?php endif; ?>

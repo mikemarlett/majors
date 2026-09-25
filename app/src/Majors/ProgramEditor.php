@@ -44,19 +44,26 @@ final class ProgramEditor
             throw new RuntimeException('A program name is required.');
         }
         $cred = trim((string) ($d['credential'] ?? ''));
-        $base = $this->uniqueBasename(Importer::slug($name . ' ' . $cred) ?: 'program');
+        $type = trim((string) ($d['program_type'] ?? ''));
+        $base = self::cleanBasename((string) ($d['basename'] ?? ''));
+        $base = $this->uniqueBasename($base !== '' ? $base : self::basenameFor($name, $type, $cred));
         $this->exec('INSERT INTO `majors_academic_programs` (`academic_program`, `credential`, `program_simple_type`, `program_type`, `basename`, `status`, `graduate`, `sort_order`, `timestamp`)
                      VALUES (?, ?, ?, ?, ?, "active", ?, 0, NOW())', 'sssssi',
-            [$name, $cred, $cred, (string) ($d['program_type'] ?? $cred), $base, (int) (bool) ($d['graduate'] ?? preg_match("/Master|Doctor|Graduate|Postbacc/i", $cred))]);
+            [$name, $cred, $cred, $type !== '' ? $type : $cred, $base, (int) (bool) ($d['graduate'] ?? preg_match("/Master|Doctor|Graduate|Postbacc/i", $cred))]);
         $id = (int) $this->db->insert_id;
         $this->syncFlat($id);
         return $id;
     }
 
-    /** @param array<string,mixed> $d posted fields (only known ones are written) */
+    /**
+     * Partial update: only the posted keys are written, so a popover that
+     * posts one field leaves everything else alone.
+     *
+     * @param array<string,mixed> $d posted fields (only known ones are written)
+     */
     public function saveProgram(int $id, array $d): void
     {
-        if (trim((string) ($d['academic_program'] ?? '')) === '') {
+        if (array_key_exists('academic_program', $d) && trim((string) $d['academic_program']) === '') {
             throw new RuntimeException('The program name is required.');
         }
         $sets = [];
@@ -68,12 +75,12 @@ final class ProgramEditor
             }
             $v = trim((string) $d[$col]);
             if ($col === 'basename') {
-                $v = Importer::slug(str_replace('_', '-', $v)) !== '' ? preg_replace('/[^a-z0-9_]+/', '_', strtolower($v)) : '';
-                if ($v !== '' && $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$v, $id]) !== null) {
-                    throw new RuntimeException("Another program already uses the basename \"$v\".");
-                }
+                $v = self::cleanBasename($v);
                 if ($v === '') {
                     continue;
+                }
+                if ($this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$v, $id]) !== null) {
+                    throw new RuntimeException("Another program already uses the page name \"$v\".");
                 }
             }
             if ($col === 'modality' && !in_array($v, self::MODALITIES, true)) {
@@ -111,11 +118,39 @@ final class ProgramEditor
         $this->syncFlat($id);
     }
 
-    private function uniqueBasename(string $base): string
+    /**
+     * The page name a new program gets: <name>_<type>, e.g. data_science_ms,
+     * the way the CMS pages were named (they also carried a catalog number).
+     * Apostrophes vanish (bachelors_to_masters), accents are transliterated.
+     */
+    public static function basenameFor(string $name, string $type = '', string $credential = ''): string
     {
-        $base = preg_replace('/-+/', '_', $base) ?? $base;
+        $tail = trim($type) !== '' ? $type : $credential;
+        $base = self::cleanBasename($name . ' ' . $tail);
+        return $base !== '' ? $base : 'program';
+    }
+
+    /** Lower-case ASCII letters, digits and single underscores; '' when nothing is left. */
+    public static function cleanBasename(string $s): string
+    {
+        $s = str_replace(["'", "\u{2019}", "\u{2018}"], '', trim($s));
+        if (function_exists('iconv')) {
+            $t = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+            if (is_string($t) && $t !== '') {
+                $s = $t;
+            }
+        }
+        $s = strtolower(preg_replace('/[^A-Za-z0-9]+/', '_', $s) ?? '');
+        $s = trim(preg_replace('/_+/', '_', $s) ?? '', '_');
+        return mb_substr($s, 0, 120);
+    }
+
+    /** $base, or $base_2, $base_3… until no other program has it. */
+    public function uniqueBasename(string $base, ?int $exceptId = null): string
+    {
+        $base = self::cleanBasename($base) ?: 'program';
         $b    = $base;
-        for ($i = 2; $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ?', 's', [$b]) !== null; $i++) {
+        for ($i = 2; $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$b, (int) $exceptId]) !== null; $i++) {
             $b = $base . '_' . $i;
         }
         return $b;
@@ -205,6 +240,156 @@ final class ProgramEditor
             $this->exec('UPDATE `majors_program_sections` SET `position` = ? WHERE `id` = ? AND `program_id` = ?', 'iii', [$pos, (int) $id, $programId]);
         }
         $this->syncFlat($programId);
+    }
+
+    /**
+     * The section row, or an error when it is not this program's. Used by the
+     * in-place editor's per-field saves.
+     */
+    public function section(int $programId, int $sectionId): array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM `majors_program_sections` WHERE `id` = ? AND `program_id` = ?');
+        $stmt->bind_param('ii', $sectionId, $programId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ?: throw new RuntimeException('That section is not on this page (it may have been removed).');
+    }
+
+    /**
+     * Change only the given fields of a section that owns its text
+     * (headline, body, label, links, image_url, image_alt). A shared section
+     * refuses: edit the block, or detach first.
+     *
+     * @param array<string,mixed> $fields
+     */
+    public function updateSection(int $programId, int $sectionId, array $fields): void
+    {
+        $row = $this->section($programId, $sectionId);
+        $sets = [];
+        $types = '';
+        $vals = [];
+        foreach (['headline' => 255, 'label' => 100, 'image_url' => 255, 'image_alt' => 65000, 'body' => 16000000] as $col => $max) {
+            if (!array_key_exists($col, $fields)) {
+                continue;
+            }
+            if ($row['block_id'] !== null && in_array($col, ['headline', 'body'], true)) {
+                throw new SharedSectionException('This text is shared with other pages. Edit the shared block, or customize this page first.');
+            }
+            $sets[] = "`$col` = ?";
+            $types .= 's';
+            $vals[] = mb_substr(trim((string) $fields[$col]), 0, $max);
+        }
+        if (array_key_exists('links', $fields)) {
+            if ($row['block_id'] !== null) {
+                throw new SharedSectionException('The links are part of the shared text. Edit the shared block, or customize this page first.');
+            }
+            $sets[] = '`links` = ?';
+            $types .= 's';
+            $vals[] = json_encode(self::links($fields['links']), JSON_UNESCAPED_SLASHES);
+        }
+        if ($sets === []) {
+            return;
+        }
+        $sets[] = '`updated_at` = NOW()';
+        $this->exec('UPDATE `majors_program_sections` SET ' . implode(', ', $sets) . ' WHERE `id` = ? AND `program_id` = ?', $types . 'ii', [...$vals, $sectionId, $programId]);
+        $this->syncFlat($programId);
+    }
+
+    /** Change only the given fields of a shared block (headline, body, links); every page using it changes. */
+    public function updateBlock(int $blockId, array $fields): void
+    {
+        $this->block($blockId) ?? throw new RuntimeException('That shared block no longer exists.');
+        $sets = [];
+        $types = '';
+        $vals = [];
+        foreach (['headline' => 255, 'body' => 16000000] as $col => $max) {
+            if (array_key_exists($col, $fields)) {
+                $sets[] = "`$col` = ?";
+                $types .= 's';
+                $vals[] = mb_substr(trim((string) $fields[$col]), 0, $max);
+            }
+        }
+        if (array_key_exists('links', $fields)) {
+            $sets[] = '`links` = ?';
+            $types .= 's';
+            $vals[] = json_encode(self::links($fields['links']), JSON_UNESCAPED_SLASHES);
+        }
+        if ($sets === []) {
+            return;
+        }
+        $sets[] = '`updated_at` = NOW()';
+        $this->exec('UPDATE `majors_content_blocks` SET ' . implode(', ', $sets) . ' WHERE `id` = ?', $types . 'i', [...$vals, $blockId]);
+        foreach ($this->blockUsers($blockId) as $p) {
+            $this->syncFlat($p['id']);
+        }
+    }
+
+    /**
+     * A new section right after $afterId (0 = at the end), with a visible
+     * default so it can be clicked and edited in place. @return int new id
+     */
+    public function insertSectionAfter(int $programId, int $afterId, array $d): int
+    {
+        if (empty($d['headline']) && empty($d['body']) && empty($d['block_id'])) {
+            $d['headline'] = ($d['kind'] ?? 'teaser') === 'feature' ? 'New feature' : 'New card';
+            $d['body']     = '<p>Click to write the text.</p>';
+        }
+        if (($d['kind'] ?? 'teaser') === 'feature' && empty($d['label'])) {
+            $d['label'] = 'Inside the Program';
+        }
+        $id  = $this->saveSection($programId, null, $d);
+        $ids = $this->sectionIds($programId);
+        if ($afterId > 0 && in_array($afterId, $ids, true)) {
+            $ids = array_values(array_diff($ids, [$id]));
+            array_splice($ids, array_search($afterId, $ids, true) + 1, 0, [$id]);
+            $this->reorderSections($programId, $ids);
+        }
+        return $id;
+    }
+
+    /** Swap a section with its neighbour ('up' | 'down'). */
+    public function moveSection(int $programId, int $sectionId, string $dir): void
+    {
+        $this->section($programId, $sectionId);
+        $ids = $this->sectionIds($programId);
+        $i   = array_search($sectionId, $ids, true);
+        $j   = $dir === 'up' ? $i - 1 : $i + 1;
+        if ($i === false || $j < 0 || $j >= count($ids)) {
+            return;
+        }
+        [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
+        $this->reorderSections($programId, $ids);
+    }
+
+    /** Point a section at a shared block (its own text is dropped; kind, label and image stay). */
+    public function swapSectionBlock(int $programId, int $sectionId, int $blockId): void
+    {
+        $this->section($programId, $sectionId);
+        $this->block($blockId) ?? throw new RuntimeException('That shared block no longer exists.');
+        $this->exec('UPDATE `majors_program_sections` SET `block_id` = ?, `headline` = NULL, `body` = NULL, `links` = NULL, `updated_at` = NOW() WHERE `id` = ? AND `program_id` = ?', 'iii', [$blockId, $sectionId, $programId]);
+        $this->syncFlat($programId);
+    }
+
+    /** @return list<int> section ids in page order */
+    public function sectionIds(int $programId): array
+    {
+        $stmt = $this->db->prepare('SELECT `id` FROM `majors_program_sections` WHERE `program_id` = ? ORDER BY `position`, `id`');
+        $stmt->bind_param('i', $programId);
+        $stmt->execute();
+        $ids = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'id'));
+        $stmt->close();
+        return $ids;
+    }
+
+    /** @return array<int,int> block id => number of sections using it */
+    public function blockUseCounts(): array
+    {
+        $out = [];
+        foreach ($this->db->query('SELECT `block_id`, COUNT(*) AS n FROM `majors_program_sections` WHERE `block_id` IS NOT NULL GROUP BY `block_id`')->fetch_all(MYSQLI_ASSOC) as $r) {
+            $out[(int) $r['block_id']] = (int) $r['n'];
+        }
+        return $out;
     }
 
     // ---- similar programs --------------------------------------------------------

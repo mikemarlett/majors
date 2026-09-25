@@ -61,6 +61,16 @@ final class AjaxKernel extends Controller
         'get_block_form'      => [ProgramActions::class,   'blockForm',         ['marketing'],            'ANY',  false],
         'save_block'          => [ProgramActions::class,   'saveBlock',         ['marketing'],            'POST', true],
         'delete_block'        => [ProgramActions::class,   'deleteBlock',       ['marketing'],            'POST', true],
+        // in-place editor
+        'render_program'      => [ProgramActions::class,   'render',            ['marketing'],            'GET',  false],
+        'get_settings_form'   => [ProgramActions::class,   'settingsForm',      ['marketing'],            'GET',  false],
+        'list_images'         => [ProgramActions::class,   'listImages',        ['marketing'],            'GET',  false],
+        'basename_preview'    => [ProgramActions::class,   'basenamePreview',   ['marketing'],            'GET',  false],
+        'save_section_fields' => [ProgramActions::class,   'saveSectionFields', ['marketing'],            'POST', true],
+        'save_block_fields'   => [ProgramActions::class,   'saveBlockFields',   ['marketing'],            'POST', true],
+        'add_section'         => [ProgramActions::class,   'addSection',        ['marketing'],            'POST', true],
+        'move_section'        => [ProgramActions::class,   'moveSection',       ['marketing'],            'POST', true],
+        'swap_section_block'  => [ProgramActions::class,   'swapSectionBlock',  ['marketing'],            'POST', true],
 
         // users (super admins only)
         'get_users'           => [UserActions::class,      'list',              ['super_admin'],          'GET',  false],

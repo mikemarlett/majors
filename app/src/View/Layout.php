@@ -158,6 +158,25 @@ final class Layout
         return rtrim($this->baseUrl, '/') . '/' . ltrim($path, '/');
     }
 
+    /**
+     * Public URL of a program page. Programs are addressed by their basename
+     * (the CMS page's name, unique); only a row without one falls back to ?id=.
+     *
+     * @param array<string,mixed> $p a program row (basename, id)
+     */
+    public function programUrl(array $p): string
+    {
+        $b = (string) ($p['basename'] ?? '');
+        return $this->url('index.php') . ($b !== '' ? '?program=' . rawurlencode($b) : '?id=' . (int) ($p['id'] ?? 0));
+    }
+
+    /** The in-place editor for a program (same key as the public page). */
+    public function editUrl(array $p): string
+    {
+        $b = (string) ($p['basename'] ?? '');
+        return $this->url('_admin/program.php') . ($b !== '' ? '?program=' . rawurlencode($b) : '?id=' . (int) ($p['id'] ?? 0));
+    }
+
     /** A content image URL, prefixed with site.image_base when this box doesn't have the CMS-published photos. */
     public function img(string $url): string
     {

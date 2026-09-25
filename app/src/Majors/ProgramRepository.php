@@ -49,7 +49,7 @@ final class ProgramRepository
      */
     public function all(): array
     {
-        $sql = 'SELECT s.`program` AS `academic_program`, m.`id`, m.`program_type`, m.`program_simple_type`, m.`credential`, m.`college`, m.`department`,
+        $sql = 'SELECT s.`program` AS `academic_program`, m.`id`, m.`basename`, m.`program_type`, m.`program_simple_type`, m.`credential`, m.`college`, m.`department`,
                        m.`online_learning`, m.`online_only`, m.`graduate`, m.`note`, m.`timestamp`
                   FROM `majors_academic_programs` m
                   JOIN (SELECT `academic_program` AS `program`, `id` FROM `majors_academic_programs`
@@ -114,7 +114,7 @@ final class ProgramRepository
         return $rows;
     }
 
-    /** @return array<string,mixed>|null program row with 'content' and 'similar_programs' */
+    /** @return array<string,mixed>|null program row with 'content', 'sections' and 'similar_programs' */
     public function find(int $id): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM `majors_academic_programs` WHERE `id` = ? LIMIT 1');
@@ -122,9 +122,26 @@ final class ProgramRepository
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         $stmt->close();
-        if (!$row) {
+        return $row ? $this->hydrate($row) : null;
+    }
+
+    /** The public key: the CMS page's basename (unique). @return array<string,mixed>|null */
+    public function findByBasename(string $basename): ?array
+    {
+        if ($basename === '') {
             return null;
         }
+        $stmt = $this->db->prepare('SELECT * FROM `majors_academic_programs` WHERE `basename` = ? LIMIT 1');
+        $stmt->bind_param('s', $basename);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ? $this->hydrate($row) : null;
+    }
+
+    private function hydrate(array $row): array
+    {
+        $id = (int) $row['id'];
         $row['content']          = $this->content($id) ?? [];
         $row['sections']         = $this->sections($id);
         $row['similar_programs'] = $this->similar($id);
@@ -220,7 +237,7 @@ final class ProgramRepository
         }
 
         $ids  = array_values(array_unique($ids));
-        $sql  = 'SELECT t1.`id`, t1.`academic_program`, t1.`program_type`, t1.`program_simple_type`, t1.`credential`,
+        $sql  = 'SELECT t1.`id`, t1.`basename`, t1.`academic_program`, t1.`program_type`, t1.`program_simple_type`, t1.`credential`,
                         COALESCE(NULLIF(t1.`image_url`, ""), t2.`main_image_url`) AS main_image_url
                    FROM `majors_academic_programs` t1
                    LEFT JOIN `majors_programs_content` t2 ON t1.`id` = t2.`academic_program_id`
@@ -241,16 +258,34 @@ final class ProgramRepository
         return $out;
     }
 
-    /** Admin listing: every program with its content timestamp and similar count. @return list<array<string,mixed>> */
+    /**
+     * Admin listing: every program with its content timestamp, section count
+     * and the curated similar programs (id and name, for the control panel's
+     * popover), active first.
+     *
+     * @return list<array<string,mixed>> each with 'similar' => list<array{id:int,name:string}>
+     */
     public function adminList(): array
     {
         $sql = 'SELECT m.*,
-                       (SELECT COUNT(*) FROM `majors_similar_programs` s WHERE s.`main_academic_program_id` = m.`id`) AS `similar_count`,
                        (SELECT COUNT(*) FROM `majors_program_sections` x WHERE x.`program_id` = m.`id`) AS `section_count`,
                        (m.`description` IS NOT NULL AND m.`description` <> "") AS `has_description`,
                        (m.`image_url` IS NOT NULL AND m.`image_url` <> "") AS `has_image`
                   FROM `majors_academic_programs` m
-                 ORDER BY (m.`status` = "retired"), m.`college`, m.`department`, m.`academic_program`, m.`program_type`';
-        return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
+                 ORDER BY (m.`status` = "retired"), m.`academic_program`, m.`program_type`';
+        $rows = $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
+        $similar = [];
+        $res = $this->db->query('SELECT s.`main_academic_program_id` AS pid, p.`id`, p.`academic_program` FROM `majors_similar_programs` s
+                                   JOIN `majors_academic_programs` p ON p.`id` = s.`similar_academic_program_id`
+                                  ORDER BY s.`main_academic_program_id`, s.`id`');
+        while ($r = $res->fetch_assoc()) {
+            $similar[(int) $r['pid']][] = ['id' => (int) $r['id'], 'name' => (string) $r['academic_program']];
+        }
+        foreach ($rows as &$row) {
+            $row['similar']       = $similar[(int) $row['id']] ?? [];
+            $row['similar_count'] = count($row['similar']);
+        }
+        unset($row);
+        return $rows;
     }
 }

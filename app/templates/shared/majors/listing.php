@@ -1,7 +1,7 @@
 <?php
 /**
  * Programs listing (A–Z or by college) with the results header.
- * Variables: $groups, $headline, $order, $link_base, $results_url (nullable), $all_url
+ * Variables: $groups, $headline, $order, $results_url (nullable), $all_url
  * @var \Majors\View\Layout $t
  */
 ?>
@@ -30,7 +30,7 @@
 	</div>
 	<ul>
 <?php foreach ($g['items'] as $p): ?>
-		<li><a href="<?= $t->e($link_base . (int) $p['id']) ?>"><?= $t->e($p['academic_program']) ?></a> — <?= $t->e($p['program_type']) ?></li>
+		<li><a href="<?= $t->e($t->programUrl($p)) ?>"><?= $t->e($p['academic_program']) ?></a> — <?= $t->e($p['program_type']) ?></li>
 <?php endforeach; ?>
 	</ul>
 <?php endforeach; ?>

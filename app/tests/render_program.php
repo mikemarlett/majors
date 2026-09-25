@@ -22,15 +22,15 @@ foreach (['old', 'new'] as $design) {
     check(str_contains($html, 'degree_maps/maps.php?degree_map_id=922') && str_contains($html, '’25-’26'), 'degree map links with short year label');
     check(str_contains($html, 'Wind tunnels and flight labs'), 'inside the program');
     check(str_contains($html, 'Careers in Aerospace Engineering'), 'careers');
-    check(str_contains($html, 'Mechanical Engineering') && str_contains($html, '?id=42'), 'similar programs linked');
+    check(str_contains($html, 'Mechanical Engineering') && str_contains($html, '?program=mechanical_engineering_bs_42') && str_contains($html, '?id=43'), 'similar programs linked by basename, id only when there is none');
     check(isset($r->sectionNav($program)['Degrees from College of Engineering']), 'section nav gets college entry');
     check(!str_contains($html, 'STUB SITE HEADER'), 'no chrome in body');
 
     $groups = ProgramRenderer::group([$program, ['id' => 9, 'academic_program' => 'Biology', 'program_type' => 'BA', 'college' => 'Fairmount College']], 'alpha');
     check(count($groups) === 2 && $groups[0]['label'] === 'A' && $groups[1]['label'] === 'B', 'alpha grouping');
     $list = $layout->render('majors/listing', ['groups' => $groups, 'headline' => 'All Degrees', 'order' => 'alpha',
-        'link_base' => '/academics/majors/index.php?id=', 'results_url' => '/academics/majors/index.php?filter=online', 'all_url' => '/academics/majors/index.php']);
-    check(str_contains($list, 'Link to These Results') && str_contains($list, '?id=41'), 'listing header and links');
+        'results_url' => '/academics/majors/index.php?filter=online', 'all_url' => '/academics/majors/index.php']);
+    check(str_contains($list, 'Link to These Results') && str_contains($list, '?program=aerospace_engineering_bs_41') && str_contains($list, '?id=9'), 'listing header and links by basename');
 }
 
 check(ProgramRenderer::headline('online', 'College of Engineering', null, 'robot') === '"robot" in Online Degrees in College of Engineering', 'headline composition');

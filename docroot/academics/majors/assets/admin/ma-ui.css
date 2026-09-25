@@ -1,0 +1,97 @@
+/*
+ * Shared admin UI (ma-ui.js): popovers, toasts, small forms and buttons.
+ * Design neutral: only app-owned classes, works under body.majors-old and
+ * body.majors-new (the redesign's Tailwind reset strips form-control styling,
+ * so every control is styled here).
+ */
+:root {
+	--ma-ink: #27251f;
+	--ma-ink-soft: #55534d;
+	--ma-line: rgba(39, 37, 31, 0.25);
+	--ma-yellow: #ffdb00;
+	--ma-red: #e80000;
+	--ma-red-dark: #903b41;
+	--ma-paper: #fff;
+	--ma-shade: #f5f4f2;
+	--ma-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+	--ma-font: Inter, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---- buttons -------------------------------------------------------------- */
+.ma-btn {
+	display: inline-flex; align-items: center; gap: .35rem; margin: 0; padding: .45rem .9rem;
+	border: 0; border-radius: 2px; background: var(--ma-ink); color: #fff; font: 700 .85rem/1.2 var(--ma-font);
+	text-decoration: none; cursor: pointer; white-space: nowrap; transition: background-color .15s, color .15s;
+}
+.ma-btn:hover, .ma-btn:focus-visible { background: var(--ma-red-dark); color: #fff; }
+.ma-btn--accent { background: var(--ma-yellow); color: var(--ma-ink); }
+.ma-btn--accent:hover, .ma-btn--accent:focus-visible { background: var(--ma-ink); color: #fff; }
+.ma-btn--danger { background: var(--ma-red); color: #fff; }
+.ma-btn--danger:hover, .ma-btn--danger:focus-visible { background: var(--ma-red-dark); }
+.ma-btn--ghost { background: transparent; color: var(--ma-ink); box-shadow: inset 0 0 0 1px var(--ma-line); }
+.ma-btn--ghost:hover, .ma-btn--ghost:focus-visible { background: var(--ma-shade); color: var(--ma-ink); }
+.ma-btn--small { padding: .3rem .6rem; font-size: .78rem; }
+.ma-btn[disabled] { opacity: .5; cursor: default; }
+.ma-btn-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .75rem; }
+.ma-btn-row .ma-spacer { flex: 1 1 auto; }
+
+/* ---- fields --------------------------------------------------------------- */
+.ma-field { display: flex; flex-direction: column; gap: .2rem; margin: 0 0 .6rem; font-family: var(--ma-font); }
+.ma-field > label { font-size: .8rem; font-weight: 700; color: var(--ma-ink); margin: 0; display: block; }
+.ma-field input[type="text"], .ma-field input[type="url"], .ma-field input[type="email"], .ma-field input[type="search"], .ma-field input[type="number"],
+.ma-field textarea, .ma-field select {
+	display: block; width: 100%; box-sizing: border-box; margin: 0; padding: .45rem .55rem;
+	border: 1px solid #8a8a8a; border-radius: 2px; background: #fff; color: #1f1f1f; font: 400 .95rem/1.3 var(--ma-font);
+}
+.ma-field select { appearance: auto; -webkit-appearance: auto; }
+.ma-field input:focus, .ma-field textarea:focus, .ma-field select:focus { outline: 2px solid var(--ma-yellow); outline-offset: 1px; }
+.ma-field--check { flex-direction: row; align-items: center; gap: .45rem; font-size: .9rem; font-weight: 400; }
+.ma-field--check input[type="checkbox"] { width: 1rem; height: 1rem; margin: 0; }
+.ma-help { font-size: .78rem; color: var(--ma-ink-soft); }
+.ma-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .75rem; }
+.ma-grid-2 > .ma-field--span { grid-column: 1 / -1; }
+.ma-list-edit { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .6rem; }
+.ma-list-edit__row { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: .35rem; align-items: center; }
+.ma-list-edit__row input { margin: 0; padding: .4rem .5rem; border: 1px solid #8a8a8a; border-radius: 2px; background: #fff; font: 400 .9rem/1.3 var(--ma-font); min-width: 0; width: 100%; box-sizing: border-box; }
+.ma-list-edit__row input:focus { outline: 2px solid var(--ma-yellow); outline-offset: 1px; }
+.ma-list-edit__add { align-self: flex-start; }
+.ma-error { color: var(--ma-red); font: 600 .85rem/1.3 var(--ma-font); margin: .25rem 0; }
+
+/* ---- popover -------------------------------------------------------------- */
+.ma-popover {
+	position: absolute; z-index: 10050; box-sizing: border-box; width: 26rem; max-width: calc(100vw - 24px);
+	background: var(--ma-paper); color: var(--ma-ink); border: 1px solid var(--ma-line); border-top: 4px solid var(--ma-yellow);
+	box-shadow: var(--ma-shadow); font: 400 .95rem/1.4 var(--ma-font); text-align: left;
+}
+.ma-popover--above { border-top-width: 1px; border-bottom: 4px solid var(--ma-yellow); }
+.ma-popover:focus { outline: none; }
+.ma-popover__title { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem .9rem; border-bottom: 1px solid var(--ma-line); font-weight: 700; font-size: .95rem; }
+.ma-popover__close, .ma-toast__close { border: 0; background: transparent; color: var(--ma-ink-soft); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 .25rem; margin: 0; }
+.ma-popover__close:hover, .ma-toast__close:hover { color: var(--ma-red); }
+.ma-popover__body { padding: .8rem .9rem .9rem; max-height: min(70vh, 40rem); overflow: auto; }
+.ma-popover--wide { width: 40rem; }
+.ma-popover p { margin: 0 0 .6rem; font-size: .9rem; }
+
+/* ---- toasts --------------------------------------------------------------- */
+.ma-toasts { position: fixed; z-index: 10060; right: 1rem; bottom: 1rem; display: flex; flex-direction: column; gap: .5rem; max-width: min(28rem, calc(100vw - 2rem)); }
+.ma-toast {
+	display: flex; align-items: center; gap: .75rem; padding: .6rem .8rem; background: var(--ma-ink); color: #fff;
+	border-left: 4px solid var(--ma-yellow); box-shadow: var(--ma-shadow); font: 500 .9rem/1.3 var(--ma-font);
+}
+.ma-toast--error { border-left-color: var(--ma-red); }
+.ma-toast__undo { margin-left: auto; border: 0; background: var(--ma-yellow); color: var(--ma-ink); font: 700 .8rem/1 var(--ma-font); padding: .35rem .6rem; border-radius: 2px; cursor: pointer; }
+.ma-toast__undo:hover { background: #fff; }
+.ma-toast__close { color: #ccc; }
+
+/* ---- image picker (in-place editor and control panel share it) ---------- */
+.ma-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: .4rem; max-height: 18rem; overflow: auto; padding: .25rem; border: 1px solid var(--ma-line); background: var(--ma-shade); }
+.ma-pick-grid button { display: block; margin: 0; padding: 0; border: 2px solid transparent; background: #fff; cursor: pointer; text-align: left; font: 400 .7rem/1.2 var(--ma-font); color: var(--ma-ink); }
+.ma-pick-grid button:hover, .ma-pick-grid button:focus-visible { border-color: var(--ma-yellow); outline: none; }
+.ma-pick-grid button.is-current { border-color: var(--ma-ink); }
+.ma-pick-grid img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.ma-pick-grid span { display: block; padding: .15rem .25rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ma-pick-empty { padding: 1rem; color: var(--ma-ink-soft); font-size: .85rem; }
+.ma-preview { max-width: 100%; max-height: 10rem; display: block; margin: 0 0 .5rem; border: 1px solid var(--ma-line); }
+
+/* the old design colours every <button> as a site button; keep ours ours */
+.majors-old .ma-btn, .majors-old .ma-popover button, .majors-old .ma-toast button { font-family: var(--ma-font); text-transform: none; letter-spacing: 0; }

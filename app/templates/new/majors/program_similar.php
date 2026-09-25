@@ -2,7 +2,7 @@
 /**
  * New design: Similar Programs as the Image Card Grid organism (full width
  * after the sidebar grid, neutral-900, centred heading, wide cards).
- * Variables: $similar, $program_url
+ * Variables: $similar
  * @var \Majors\View\Layout $t
  */
 if (!$similar) {
@@ -21,7 +21,7 @@ if (!$similar) {
 					<ul data-card-style="wide" role="list" class="group/image-cards grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-11 lg-xs:data-[card-style=tall]:grid-cols-2 md:data-[card-style=tall]:grid-cols-3 lg:data-[card-style=tall]:grid-cols-4">
 <?php foreach ($similar as $s): ?>
 						<li>
-							<a href="<?= $t->e($program_url . (int) $s['id']) ?>" class="nc-image-card group/fancy-link-outer-link flex flex-col xs:flex-row xs:items-stretch xs:group-data-[card-style=tall]/image-cards:flex-col h-full">
+							<a href="<?= $t->e($t->programUrl($s)) ?>" class="nc-image-card group/fancy-link-outer-link flex flex-col xs:flex-row xs:items-stretch xs:group-data-[card-style=tall]/image-cards:flex-col h-full">
 								<div class="xs:w-1/3 xs:self-stretch xs:group-data-[card-style=tall]/image-cards:w-full shrink-0 descendants:size-full [&_img]:object-cover overflow-hidden">
 									<div class="will-change-transform transition-transform group-hocus/fancy-link-outer-link:scale-110">
 <?php if (!empty($s['main_image_url'])): ?>

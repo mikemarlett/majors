@@ -50,7 +50,8 @@
       "academic_program": "Mechanical Engineering",
       "program_type": "Bachelor of Science",
       "program_simple_type": "Major",
-      "main_image_url": "/academics/majors/_images/ME.jpg"
+      "main_image_url": "/academics/majors/_images/ME.jpg",
+      "basename": "mechanical_engineering_bs_42"
     },
     {
       "id": 43,

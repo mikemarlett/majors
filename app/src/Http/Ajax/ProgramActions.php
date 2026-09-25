@@ -7,7 +7,9 @@ namespace Majors\Http\Ajax;
 use Majors\Auth\User;
 use Majors\Kernel;
 use Majors\Majors\ProgramEditor;
+use Majors\Majors\ProgramRenderer;
 use Majors\Majors\ProgramRepository;
+use Majors\Majors\SharedSectionException;
 use Majors\Support\Request;
 use RuntimeException;
 
@@ -34,9 +36,34 @@ final class ProgramActions
     {
         try {
             return $fn();
+        } catch (SharedSectionException $e) {
+            throw new ActionException($e->getMessage(), 409);
         } catch (RuntimeException $e) {
             throw new ActionException($e->getMessage(), 422);
         }
+    }
+
+    /**
+     * The program page re-rendered with editing markers, for the in-place
+     * editor to swap in after a change. @return array{parts:array{top:string,content:string,bottom:string},title:string}
+     */
+    private function parts(int $programId): array
+    {
+        $p = $this->programs->find($programId) ?? throw new ActionException('Program not found.', 404);
+        $r = new ProgramRenderer($this->app->layout());
+        return ['parts' => $r->parts($p, $this->app->maps()->forProgram($programId), true, $this->editor->blockUseCounts()), 'title' => ProgramRenderer::title($p)];
+    }
+
+    /** The subset of $keys that were posted (so a popover's partial save writes only its own fields). @return array<string,mixed> */
+    private static function posted(array $keys): array
+    {
+        $out = [];
+        foreach ($keys as $k) {
+            if (array_key_exists($k, $_POST)) {
+                $out[$k] = $_POST[$k];
+            }
+        }
+        return $out;
     }
 
     // ---- programs ----
@@ -48,22 +75,81 @@ final class ProgramActions
     public function create(Request $r, User $user): array
     {
         return $this->guard(function () use ($r) {
-            $id = $this->editor->create(['academic_program' => $r->str('academic_program'), 'credential' => $r->str('credential'), 'program_type' => $r->str('program_type'), 'graduate' => $r->int('graduate')]);
-            return ['success' => true, 'program_id' => $id, 'redirect' => $this->app->layout()->url('_admin/program.php') . '?id=' . $id . '&flash=' . rawurlencode('Program created. Fill in the card, then add sections.')];
+            $id = $this->editor->create(['academic_program' => $r->str('academic_program'), 'credential' => $r->str('credential'), 'program_type' => $r->str('program_type'),
+                'graduate' => $r->int('graduate'), 'basename' => $r->str('basename')]);
+            $p  = $this->programs->find($id) ?? [];
+            return ['success' => true, 'program_id' => $id, 'redirect' => $this->app->layout()->editUrl($p) . '&flash=' . rawurlencode('Program created. Click anything on the page to write it.')];
         });
     }
 
+    /** GET: the page name a new program would get. */
+    public function basenamePreview(Request $r, User $user): array
+    {
+        $b = $r->str('basename') !== '' ? ProgramEditor::cleanBasename($r->str('basename')) : ProgramEditor::basenameFor($r->str('academic_program'), $r->str('program_type'), $r->str('credential'));
+        return ['success' => true, 'basename' => $this->editor->uniqueBasename($b)];
+    }
+
+    /**
+     * Partial save: only the posted fields change. Flags (checkboxes) are
+     * written only when posted, as 0/1 — the in-place forms always post them
+     * explicitly, and a form that wants absent boxes to mean "off" posts
+     * flags_form=1 with the list of flags it showed.
+     */
     public function saveProgram(Request $r, User $user): array
     {
         $p = $this->program($r);
         return $this->guard(function () use ($r, $p) {
             $d = $_POST;                       // the whole form; the editor only writes known fields
             foreach (['graduate', 'certificate', 'minor', 'badge', 'online_learning', 'online_only', 'is_stem'] as $flag) {
-                $d[$flag] = $r->int($flag);    // unchecked boxes are absent → 0
+                if (array_key_exists($flag, $d)) {
+                    $d[$flag] = $r->int($flag);
+                } elseif (in_array($flag, (array) ($d['flags_form'] ?? []), true)) {
+                    $d[$flag] = 0;             // shown as a checkbox and left unchecked
+                }
             }
             $this->editor->saveProgram((int) $p['id'], $d);
-            return ['success' => true, 'message' => 'Saved.'];
+            return ['success' => true, 'message' => 'Saved.'] + $this->parts((int) $p['id']);
         });
+    }
+
+    /** GET: the page re-rendered with editing markers. */
+    public function render(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return ['success' => true] + $this->parts((int) $p['id']);
+    }
+
+    /** GET: the Page settings dialog (fields that are not on the page). */
+    public function settingsForm(Request $r, User $user): string
+    {
+        $p = $this->program($r);
+        return $this->app->layout()->render('majors/admin/inplace/settings_form', [
+            'program'     => $p,
+            'cms_url'     => !empty($p['cms_path']) ? 'https://www.wichita.edu' . preg_replace('/\.pcf$/', '.php', (string) $p['cms_path']) : '',
+            'degree_maps' => $this->app->maps()->forProgram((int) $p['id']),
+            'maps_url'    => $this->app->layout()->url('degree_maps/admin/maps.php') . '?degree_map_id=',
+        ]);
+    }
+
+    /** GET: photos already on the site (docroot/academics/majors/_images), newest first. */
+    public function listImages(Request $r, User $user): array
+    {
+        $dir = rtrim($this->app->webRoot, '/') . '/_images';
+        $q   = mb_strtolower($r->str('q'));
+        $out = [];
+        if (is_dir($dir)) {
+            foreach (scandir($dir, SCANDIR_SORT_NONE) ?: [] as $f) {
+                if ($f[0] === '.' || !preg_match('/\.(jpe?g|png|gif|webp)$/i', $f) || !is_file("$dir/$f")) {
+                    continue;
+                }
+                if ($q !== '' && !str_contains(mb_strtolower($f), $q)) {
+                    continue;
+                }
+                $out[] = ['name' => $f, 'url' => '/academics/majors/_images/' . rawurlencode($f), 'mtime' => (int) filemtime("$dir/$f")];
+            }
+        }
+        usort($out, static fn ($a, $b) => $b['mtime'] <=> $a['mtime'] ?: strcmp($a['name'], $b['name']));
+        return ['success' => true, 'images' => array_slice($out, 0, 400), 'total' => count($out)];
     }
 
     // ---- sections ----
@@ -103,14 +189,14 @@ final class ProgramActions
     {
         $p = $this->program($r);
         $this->editor->detachSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
-        return ['success' => true, 'html' => $this->sectionsHtml((int) $p['id'])];
+        return ['success' => true, 'html' => $this->sectionsHtml((int) $p['id'])] + $this->parts((int) $p['id']);
     }
 
     public function deleteSection(Request $r, User $user): array
     {
         $p = $this->program($r);
         $this->editor->deleteSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
-        return ['success' => true, 'html' => $this->sectionsHtml((int) $p['id'])];
+        return ['success' => true, 'html' => $this->sectionsHtml((int) $p['id'])] + $this->parts((int) $p['id']);
     }
 
     public function saveSectionOrder(Request $r, User $user): array
@@ -118,7 +204,62 @@ final class ProgramActions
         $p   = $this->program($r);
         $ids = array_map('intval', (array) ($_POST['order'] ?? []));
         $this->editor->reorderSections((int) $p['id'], $ids);
-        return ['success' => true];
+        return ['success' => true] + $this->parts((int) $p['id']);
+    }
+
+    // ---- in-place editor: per-field saves and structure ----
+
+    /** Only the posted fields of a section that owns its text; 409 when it shows a shared block. */
+    public function saveSectionFields(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return $this->guard(function () use ($r, $p) {
+            $sid = $r->id('section_id') ?? throw new ActionException('Missing section_id.');
+            $this->editor->updateSection((int) $p['id'], $sid, self::posted(['headline', 'body', 'label', 'links', 'image_url', 'image_alt']));
+            return ['success' => true, 'message' => 'Saved.'] + $this->parts((int) $p['id']);
+        });
+    }
+
+    /** Only the posted fields of a shared block; every page that uses it changes. program_id says which page to re-render. */
+    public function saveBlockFields(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return $this->guard(function () use ($r, $p) {
+            $bid = $r->id('block_id') ?? throw new ActionException('Missing block_id.');
+            $this->editor->updateBlock($bid, self::posted(['headline', 'body', 'links']));
+            $uses = $this->editor->blockUseCounts()[$bid] ?? 0;
+            return ['success' => true, 'message' => "Saved on all $uses pages.", 'uses' => $uses] + $this->parts((int) $p['id']);
+        });
+    }
+
+    /** A new card / feature (or a section showing a shared block) right after a section (after=0: at the end). */
+    public function addSection(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return $this->guard(function () use ($r, $p) {
+            $id = $this->editor->insertSectionAfter((int) $p['id'], $r->int('after'), [
+                'kind' => $r->str('kind') ?: 'teaser', 'block_id' => $r->id('block_id'), 'label' => $r->str('label'),
+            ]);
+            return ['success' => true, 'section_id' => $id] + $this->parts((int) $p['id']);
+        });
+    }
+
+    public function moveSection(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return $this->guard(function () use ($r, $p) {
+            $this->editor->moveSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'), $r->enum('dir', ['up', 'down'], 'down'));
+            return ['success' => true] + $this->parts((int) $p['id']);
+        });
+    }
+
+    public function swapSectionBlock(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return $this->guard(function () use ($r, $p) {
+            $this->editor->swapSectionBlock((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'), $r->id('block_id') ?? throw new ActionException('Missing block_id.'));
+            return ['success' => true] + $this->parts((int) $p['id']);
+        });
     }
 
     private function sectionsHtml(int $programId): string
@@ -132,7 +273,8 @@ final class ProgramActions
     {
         $p = $this->program($r);
         $this->editor->saveSimilar((int) $p['id'], array_map('intval', (array) ($_POST['similar'] ?? [])));
-        return ['success' => true, 'message' => 'Similar programs saved.'];
+        $fresh = $this->programs->find((int) $p['id']) ?? [];
+        return ['success' => true, 'message' => 'Similar programs saved.', 'similar' => array_map(static fn ($s) => ['id' => (int) $s['id'], 'name' => (string) $s['academic_program']], $fresh['similar_programs'] ?? [])] + $this->parts((int) $p['id']);
     }
 
     // ---- shared blocks ----
