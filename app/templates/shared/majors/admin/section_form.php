@@ -41,7 +41,7 @@ $isNew = empty($s['id']);
 			<div class="ma-col-6"><label for="s_img_alt">Photo alt text</label><input type="text" id="s_img_alt" name="image_alt" value="<?= $t->e($s['image']['alt'] ?? '') ?>"></div>
 		</div>
 		<div class="modal-buttons">
-			<button type="submit" class="<?= $t->cls('button') ?>">Save section</button>
+			<button type="submit" class="<?= $t->cls('button.accent') ?>">Save section</button>
 			<button type="button" class="<?= $t->cls('button') ?> cancelBtn" data-modal="editSectionModal">Cancel</button>
 		</div>
 	</form>

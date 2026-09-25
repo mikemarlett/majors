@@ -44,6 +44,9 @@
 .majors-new.majors-admin .majors-content > * + * { margin-top: 1.5rem; }
 .majors-admin .ma-editor-head { margin-top: .5rem; }
 .ma-link-row .ma-link-remove { flex: 0 0 auto; white-space: nowrap; }
+.ma-links-edit > .ma-link-add { align-self: flex-start; }
+/* [hidden] must win over our own display rules (.ma-row is flex) on both designs */
+.majors-admin [hidden] { display: none !important; }
 .majors-new.majors-admin .nc-button, .majors-new.majors-admin button.nc-button { cursor: pointer; }
 .majors-new.majors-admin .ma-section { background: #fff; }
 .ma-icon { width: 1.25rem; height: 1.25rem; vertical-align: middle; }
@@ -94,7 +97,7 @@ span.calculated_hours.warning { background: #ff8a00; color: #000; }
 .ui-button-primary { background: #0073aa !important; color: #fff !important; }
 .ui-button-danger { background: #bb4935 !important; color: #fff !important; margin-left: auto; }
 #advanced h3 { font-size: 1rem; margin: 1rem 0 0.5rem; cursor: pointer; }
-.select2-container { z-index: 10001; }
+.select2-container--open, .select2-dropdown { z-index: 10001; }   /* only the open dropdown floats above dialogs */
 
 /* users */
 .ma-users-table th, .ma-users-table td { padding: 0.4rem 0.6rem; vertical-align: top; }

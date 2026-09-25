@@ -29,7 +29,7 @@ $links = json_decode((string) ($b['links'] ?? '[]'), true) ?: [];
 		<label for="b_note">Note (for editors)</label>
 		<input type="text" id="b_note" name="note" value="<?= $t->e($b['note'] ?? '') ?>" maxlength="255">
 		<div class="modal-buttons">
-			<button type="submit" class="<?= $t->cls('button') ?>">Save block</button>
+			<button type="submit" class="<?= $t->cls('button.accent') ?>">Save block</button>
 			<button type="button" class="<?= $t->cls('button') ?> cancelBtn" data-modal="editBlockModal">Cancel</button>
 		</div>
 	</form>
