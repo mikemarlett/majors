@@ -207,7 +207,7 @@ final class Importer
         $graduate = (int) (in_array('Graduate', $kw, true) || preg_match("/Master|Doctor|\\bGraduate Certificate|Postbacc|Post Master|Specialist/i", $cred));
         $isCert   = (int) str_contains($cred, 'Certificate');
         $isMinor  = (int) ($cred === 'Minor');
-        $isBadge  = (int) stripos($cred, 'Badge') !== false;
+        $isBadge  = (int) (stripos($cred, 'Badge') !== false);
         $online   = $row === null ? (int) (bool) preg_grep('/^online$/i', $kw) : null; // keep the existing flag on updates
         $img      = $p['image'] ?? [];
         $vals = [
