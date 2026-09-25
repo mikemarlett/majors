@@ -22,9 +22,9 @@ final class ProgramRenderer
      * @param array<string,mixed> $program from ProgramRepository::find()
      * @param list<array<string,mixed>> $degreeMaps header rows linked to the program
      */
-    public function page(array $program, array $degreeMaps): string
+    public function page(array $program, array $degreeMaps, bool $editing = false, array $blockUses = []): string
     {
-        $parts = $this->parts($program, $degreeMaps);
+        $parts = $this->parts($program, $degreeMaps, $editing, $blockUses);
         return $parts['top'] . $parts['content'] . $parts['bottom'];
     }
 
@@ -34,18 +34,22 @@ final class ProgramRenderer
      * majors/program_similar) gets them in top / bottom; otherwise everything
      * is in content.
      *
+     * With $editing the same templates add the in-place editor's markers and
+     * placeholders (see EditMarks); $blockUses (block id => pages) feeds the
+     * "shared by N pages" badges.
+     *
      * @return array{top:string,content:string,bottom:string}
      */
-    public function parts(array $program, array $degreeMaps): array
+    public function parts(array $program, array $degreeMaps, bool $editing = false, array $blockUses = []): array
     {
-        $vars = $this->vars($program, $degreeMaps);
+        $vars = $this->vars($program, $degreeMaps, $editing, $blockUses);
         $top    = $this->layout->exists('majors/program_card') ? $this->layout->render('majors/program_card', $vars) : '';
         $bottom = $this->layout->exists('majors/program_similar') ? $this->layout->render('majors/program_similar', $vars) : '';
         return ['top' => $top, 'content' => $this->layout->render('majors/program', $vars + ['split' => $top !== '']), 'bottom' => $bottom];
     }
 
     /** @return array<string,mixed> template variables shared by the program templates */
-    private function vars(array $program, array $degreeMaps): array
+    private function vars(array $program, array $degreeMaps, bool $editing = false, array $blockUses = []): array
     {
         $c = $program['content'] ?? [];
         $json = static function (mixed $v): array {
@@ -85,6 +89,8 @@ final class ProgramRenderer
         return [
             'p'              => $program,
             'c'              => $c,
+            'editing'        => $editing,
+            'ed'             => new EditMarks($editing, $blockUses),
             'title'          => self::title($program),
             'kind'           => (string) (($program['credential'] ?? '') !== '' ? $program['credential'] : ($program['program_simple_type'] ?? '')),
             'is_certificate' => str_contains((string) ($program['program_type'] ?? ''), 'Certificate'),

@@ -20,7 +20,8 @@ ENG2027=$(Q "SELECT id FROM degree_maps WHERE college='College of Engineering' A
 FAM_OLD=$(Q "SELECT d.id FROM degree_maps d JOIN (SELECT major,degree_type,college FROM degree_maps GROUP BY 1,2,3 HAVING COUNT(DISTINCT academic_year)=4 LIMIT 1) f USING(major,degree_type,college) WHERE d.academic_year=2024 LIMIT 1")
 FAM_NEW=$(Q "SELECT d.id FROM degree_maps d JOIN degree_maps o ON o.id=$FAM_OLD AND d.major=o.major AND d.degree_type=o.degree_type AND d.college=o.college ORDER BY d.academic_year DESC, d.id DESC LIMIT 1")
 LAS2027=$(Q "SELECT id FROM degree_maps WHERE college LIKE 'Fairmount%' AND academic_year=2027 ORDER BY id LIMIT 1")
-PROG=$(Q "SELECT academic_program_id FROM majors_programs_content WHERE description<>'' AND main_image_url<>'' LIMIT 1")
+PROG=$(Q "SELECT p.id FROM majors_academic_programs p WHERE p.status='active' AND p.basename<>'' AND p.description<>'' AND p.image_url<>'' ORDER BY p.id LIMIT 1")
+PBN=$(Q "SELECT basename FROM majors_academic_programs WHERE id=$PROG")
 echo "ids: eng2027=$ENG2027 famOld=$FAM_OLD famNew=$FAM_NEW las2027=$LAS2027 program=$PROG"
 
 echo "[public degree maps]"
@@ -38,7 +39,7 @@ chk "$(GET -X POST -d "searchList=A&selected_year=2027" "$B/degree_maps/search.p
 echo "[public majors]"
 chk "$(GET "$B/index.php")" 200 "programs listing"; has $S/out.html 'All Degrees' 'headline'; has $S/out.html 'majors-jump' 'jump nav'
 chk "$(GET "$B/index.php?order=college&filter=online")" 200 "filtered"; has $S/out.html 'Online Degrees' 'filter headline'
-chk "$(GET "$B/index.php?id=$PROG")" 200 "program page"; grep -qE 'program-card|majors-program-intro' $S/out.html && ok "program page body (either design)" || bad "program page body"
+chk "$(GET "$B/index.php?program=$PBN")" 200 "program page"; grep -qE 'program-card|majors-program-intro' $S/out.html && ok "program page body (either design)" || bad "program page body"
 chk "$(GET "$B/search.php?filter=graduate")" 200 "majors search json"; has $S/out.html '"title":"Graduate Degrees"' 'json title'
 
 echo "[auth gating]"
@@ -56,38 +57,59 @@ chk "$(curl -s -o /dev/null -w "%{http_code}" "$B/degree_maps/admin/help.php")" 
 
 echo "[majors editor]"
 M=$(mktemp); curl -s -o /dev/null -c $M -b $M -L "$B/auth/login.php?as=mia.marketing@wichita.edu&return=/academics/majors/_admin/index.php"
-chk "$(GET -b $M "$B/_admin/index.php")" 200 "marketing: inventory"; has $S/out.html 'href="/academics/majors/_admin/program.php?id=' 'inventory has Edit links'
-chk "$(GET -b $M "$B/_admin/program.php?id=$PROG")" 200 "marketing: editor page"; has $S/out.html 'id="programForm"' 'program form'; has $S/out.html 'id="sectionList"' 'sections list'
+chk "$(GET -b $M "$B/_admin/index.php")" 200 "marketing: control panel"; has $S/out.html 'id="programs_table"' 'programs table'; has $S/out.html 'ma-panel-toolbar' 'panel toolbar'; has $S/out.html 'data-similar-btn' 'similar popover buttons'; has $S/out.html "href=\"/academics/majors/_admin/program.php?program=$PBN\"" 'Edit links by basename'
+chk "$(GET -b $M "$B/_admin/program.php?program=$PBN")" 200 "marketing: in-place editor by basename"; has $S/out.html 'data-ma-part="card"' 'card part'; has $S/out.html 'data-ma-part="content"' 'content part'; has $S/out.html 'data-ma-part="similar"' 'similar part'; has $S/out.html 'data-ma-edit-bar' 'edit bar'; has $S/out.html 'data-ma-tools' 'section tools'; has $S/out.html 'data-ma-html="description"' 'description editable'; has $S/out.html 'data-ma-form="image"' 'photo form'; has $S/out.html 'admin/inplace.js' 'editor script'
+chk "$(GET -b $M "$B/_admin/program.php?id=$PROG")" 200 "marketing: in-place editor by id"
+chk "$(GET -b $M "$B/_admin/program.php?new=1")" 200 "marketing: new program form"; has $S/out.html 'data-ma-new-program' 'new program form'
 chk "$(GET -b $M "$B/_admin/blocks.php")" 200 "marketing: shared blocks page"; has $S/out.html 'id="blocks_table"' 'blocks table'
 chk "$(GET -b $J "$B/_admin/program.php?id=$PROG")" 403 "advisor blocked from the editor"
-MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//'); GET -b $M "$B/_admin/program.php?id=$PROG" >/dev/null; MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//')
-MP() { curl -s -b $M -H "X-CSRF-Token: $MC" -X POST "$@"; }
+chk "$(GET "$B/index.php?program=$PBN")" 200 "public page by basename"; hasnt $S/out.html 'data-ma-' 'no editing markers on the public page'
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?id=$PROG")" "301 $B/index.php?program=$PBN" "?id redirects to the basename address"
+chk "$(GET "$B/index.php?program=no_such_program_zz")" 404 "unknown basename"
+GET -b $M "$B/_admin/program.php?id=$PROG" >/dev/null; MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//')
+MP() { curl -s -b $M -H "X-CSRF-Token: $MC" "$@"; }
 MA=$B/_admin/ajax.php
 NAME=$(Q "SELECT academic_program FROM majors_academic_programs WHERE id=$PROG")
 DESC0=$(Q "SELECT description FROM majors_academic_programs WHERE id=$PROG")
-R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "credit_hours=99" --data-urlencode "modality=Online" --data-urlencode "description=<p>E2E description</p>" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save_program" || bad "save_program: $R"
+FLAGS0=$(Q "SELECT CONCAT_WS(',',COALESCE(graduate,'n'),COALESCE(online_learning,'n'),COALESCE(certificate,'n'),is_stem) FROM majors_academic_programs WHERE id=$PROG")
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "credit_hours=99" --data-urlencode "modality=Online" --data-urlencode "description=<p>E2E description</p>" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save_program" || bad "save_program: $R"; echo "$R" | grep -q '"parts":{' && ok "save_program returns the re-rendered parts" || bad "parts missing"
 chk "$(Q "SELECT credit_hours FROM majors_academic_programs WHERE id=$PROG")" 99 "program facts saved"
+chk "$(Q "SELECT CONCAT_WS(',',COALESCE(graduate,'n'),COALESCE(online_learning,'n'),COALESCE(certificate,'n'),is_stem) FROM majors_academic_programs WHERE id=$PROG")" "$FLAGS0" "partial save leaves the flags alone"
 chk "$(Q "SELECT description FROM majors_programs_content WHERE academic_program_id=$PROG")" "<p>E2E description</p>" "flat row kept in step (ai-meta.php)"
-R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" --data-urlencode "modality=Sideways" "$MA?action=save_program"); echo "$R" | grep -q 'Modality must be' && ok "save_program validates modality" || bad "modality validation: $R"
-MP -d "program_id=$PROG&credit_hours=&modality=" --data-urlencode "academic_program=$NAME" --data-urlencode "description=$DESC0" "$MA?action=save_program" >/dev/null
-R=$(MP -d "program_id=$PROG&kind=teaser" "$MA?action=get_section_form"); echo "$R" | grep -q 'id="editSectionForm"' && ok "get_section_form" || bad "section form: $R"
-R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=teaser" --data-urlencode "headline=E2E card" --data-urlencode "body=<p>e2e body</p>" --data-urlencode "links[text][]=Go" --data-urlencode "links[href][]=/x" "$MA?action=save_section"); SEC=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC" ] && ok "save_section → $SEC" || bad "save_section: $R"; echo "$R" | grep -q 'E2E card' && ok "sections html returned" || bad "sections html"
-GET "$B/index.php?id=$PROG" >/dev/null; has $S/out.html 'E2E card' 'new section on the public page'; has $S/out.html 'href="/x"' 'section link on the public page'
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "modality=Sideways" "$MA?action=save_program"); echo "$R" | grep -q 'Modality must be' && ok "save_program validates modality" || bad "modality validation: $R"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=" "$MA?action=save_program"); echo "$R" | grep -q 'name is required' && ok "save_program refuses an empty name" || bad "empty name: $R"
+MP -d "program_id=$PROG&credit_hours=&modality=" --data-urlencode "description=$DESC0" "$MA?action=save_program" >/dev/null
+R=$(curl -s -b $M "$MA?action=render_program&program_id=$PROG"); echo "$R" | grep -q '"parts":{' && ok "render_program" || bad "render_program: $R"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=teaser" --data-urlencode "headline=E2E card" --data-urlencode "body=<p>e2e body</p>" --data-urlencode "links[text][]=Go" --data-urlencode "links[href][]=/x" "$MA?action=save_section"); SEC=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC" ] && ok "save_section → $SEC" || bad "save_section: $R"; echo "$R" | grep -q 'E2E card' && ok "parts carry the new card" || bad "parts html"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "headline=E2E card renamed" "$MA?action=save_section_fields"); echo "$R" | grep -q '"success":true' && ok "save_section_fields" || bad "save_section_fields: $R"
+chk "$(Q "SELECT CONCAT(headline,'|',body) FROM majors_program_sections WHERE id=$SEC")" "E2E card renamed|<p>e2e body</p>" "per-field save changed only the headline"
 BLK=$(Q "SELECT id FROM majors_content_blocks ORDER BY id LIMIT 1")
-R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "kind=teaser" --data-urlencode "block_id=$BLK" "$MA?action=save_section"); echo "$R" | grep -q 'shared block' && ok "section switched to a shared block" || bad "attach block: $R"
+R=$(MP -d "program_id=$PROG&section_id=$SEC&block_id=$BLK" "$MA?action=swap_section_block"); echo "$R" | grep -q '"success":true' && ok "swap_section_block" || bad "swap: $R"
+chk "$(Q "SELECT block_id=$BLK AND headline IS NULL FROM majors_program_sections WHERE id=$SEC")" 1 "section now shows the shared block"
+chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "headline=x" "$MA?action=save_section_fields")" 409 "per-field save refused on a shared section"
 R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=detach_section"); echo "$R" | grep -q '"success":true' && ok "detach_section" || bad "detach: $R"
 chk "$(Q "SELECT block_id IS NULL AND headline<>'' FROM majors_program_sections WHERE id=$SEC")" 1 "detached section owns the block's text"
-FIRST=$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG ORDER BY position LIMIT 1")
-R=$(MP -d "program_id=$PROG&order[]=$SEC&order[]=$FIRST" "$MA?action=save_section_order"); echo "$R" | grep -q '"success":true' && ok "save_section_order" || bad "order: $R"
-chk "$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG ORDER BY position LIMIT 1")" "$SEC" "section moved first"
-R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section" || bad "delete: $R"
+R=$(MP -d "program_id=$PROG&kind=feature&after=$SEC" "$MA?action=add_section"); SEC2=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC2" ] && ok "add_section after → $SEC2" || bad "add_section: $R"
+chk "$(Q "SELECT (SELECT position FROM majors_program_sections WHERE id=$SEC2) = (SELECT position FROM majors_program_sections WHERE id=$SEC) + 1")" 1 "new section sits right after"
+chk "$(Q "SELECT CONCAT(kind,'|',label) FROM majors_program_sections WHERE id=$SEC2")" "feature|Inside the Program" "new feature has the band label"
+R=$(MP -d "program_id=$PROG&section_id=$SEC2&dir=up" "$MA?action=move_section"); echo "$R" | grep -q '"success":true' && ok "move_section" || bad "move: $R"
+chk "$(Q "SELECT (SELECT position FROM majors_program_sections WHERE id=$SEC2) < (SELECT position FROM majors_program_sections WHERE id=$SEC)")" 1 "section moved up"
+OTHER_SEC=$(Q "SELECT id FROM majors_program_sections WHERE program_id<>$PROG LIMIT 1")
+chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$OTHER_SEC" --data-urlencode "headline=x" "$MA?action=save_section_fields")" 422 "another program's section is refused"
+R=$(MP -d "program_id=$PROG&section_id=$SEC2" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (feature)" || bad "delete: $R"
+R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (card)" || bad "delete: $R"
 R=$(curl -s -b $M "$MA?action=program_search&q=engineering"); echo "$R" | grep -q '"results":\[{' && ok "program_search" || bad "search: $R"
 OTHER=$(Q "SELECT id FROM majors_academic_programs WHERE status='active' AND id<>$PROG ORDER BY id LIMIT 1")
-R=$(MP -d "program_id=$PROG&similar[]=$OTHER" "$MA?action=save_similar"); echo "$R" | grep -q '"success":true' && ok "save_similar" || bad "similar: $R"
-R=$(MP --data-urlencode "headline=E2E block" --data-urlencode "body=<p>shared</p>" "$MA?action=save_block"); NB=$(echo "$R" | grep -o '"block_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$NB" ] && ok "save_block → $NB" || bad "save_block: $R"
-R=$(MP -d "block_id=$BLK" "$MA?action=delete_block"); echo "$R" | grep -q 'is used on' && ok "delete_block refuses a used block" || bad "delete used block: $R"
-R=$(MP -d "block_id=$NB" "$MA?action=delete_block"); echo "$R" | grep -q '"success":true' && ok "delete_block (unused)" || bad "delete block: $R"
+SIM0=$(Q "SELECT GROUP_CONCAT(similar_academic_program_id ORDER BY id) FROM majors_similar_programs WHERE main_academic_program_id=$PROG")
+R=$(MP -d "program_id=$PROG&similar[]=$OTHER" "$MA?action=save_similar"); echo "$R" | grep -q '"success":true' && ok "save_similar" || bad "similar: $R"; echo "$R" | grep -q "\"similar\":\[{\"id\":$OTHER" && ok "save_similar returns the list" || bad "similar list"
+SIMARGS=""; for id in ${SIM0//,/ }; do SIMARGS="$SIMARGS -d similar[]=$id"; done; [ -n "$SIM0" ] && MP -d "program_id=$PROG" $SIMARGS "$MA?action=save_similar" >/dev/null || MP -d "program_id=$PROG&similar[]=" "$MA?action=save_similar" >/dev/null
+chk "$(Q "SELECT COALESCE(GROUP_CONCAT(similar_academic_program_id ORDER BY id),'') FROM majors_similar_programs WHERE main_academic_program_id=$PROG")" "$SIM0" "similar programs restored"
+R=$(curl -s -b $M "$MA?action=list_images"); echo "$R" | grep -q '"images":\[' && ok "list_images" || bad "list_images: $R"
+R=$(curl -s -b $M "$MA?action=basename_preview&academic_program=$(printf %s "$NAME" | sed 's/ /%20/g')&program_type=E2E"); echo "$R" | grep -q '"basename":"' && ok "basename_preview" || bad "basename_preview: $R"
+R=$(curl -s -b $M "$MA?action=basename_preview&basename=$PBN"); echo "$R" | grep -q "\"basename\":\"${PBN}_2\"" && ok "basename_preview avoids a taken name" || bad "basename uniqueness: $R"
+chk "$(GET -b $M "$MA?action=get_settings_form&program_id=$PROG")" 200 "settings form"; has $S/out.html 'data-ma-settings-form' 'settings form markup'
 R=$(MP --data-urlencode "academic_program=E2E Test Program" --data-urlencode "credential=Minor" "$MA?action=new_program"); NP=$(echo "$R" | grep -o '"program_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$NP" ] && ok "new_program → $NP" || bad "new_program: $R"
+chk "$(Q "SELECT basename FROM majors_academic_programs WHERE id=$NP")" "e2e_test_program_minor" "new program gets <name>_<credential> as its page name"; echo "$R" | grep -q 'program.php?program=e2e_test_program_minor' && ok "redirect goes to the in-place editor by basename" || bad "redirect: $R"
 Q "DELETE FROM majors_programs_content WHERE academic_program_id=$NP; DELETE FROM majors_academic_programs WHERE id=$NP" >/dev/null
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'

@@ -52,7 +52,6 @@ final class AjaxKernel extends Controller
         'program_search'      => [ProgramActions::class,   'search',            ['marketing'],            'GET',  false],
         'new_program'         => [ProgramActions::class,   'create',            ['marketing'],            'POST', true],
         'save_program'        => [ProgramActions::class,   'saveProgram',       ['marketing'],            'POST', true],
-        'get_section_form'    => [ProgramActions::class,   'sectionForm',       ['marketing'],            'ANY',  false],
         'save_section'        => [ProgramActions::class,   'saveSection',       ['marketing'],            'POST', true],
         'detach_section'      => [ProgramActions::class,   'detachSection',     ['marketing'],            'POST', true],
         'delete_section'      => [ProgramActions::class,   'deleteSection',     ['marketing'],            'POST', true],

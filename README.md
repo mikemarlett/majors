@@ -99,6 +99,10 @@ open "http://127.0.0.1:8080/academics/majors/auth/login.php?as=you@wichita.edu"
 php app/tests/run.php
 ```
 
+`app/tests/e2e.sh` runs the HTTP checks against the real local database, and
+`app/tests/browser/inplace-drive.js` clicks through the in-place editor in
+headless Chromium (see its header for setup).
+
 The dev router serves `app/dev/stub-docroot` as the docroot (stand-in site
 includes for both designs) and `docroot/academics/majors` at its real URL.
 
@@ -165,10 +169,48 @@ what `/_resources/_theme/tailwind.css` on the site should be.
 
 ## Majors editor (marketing role)
 
-- `_admin/index.php` — inventory with status, section counts, Edit links, New program, Shared blocks.
-- `_admin/program.php?id=N` — the editor: program fields and flags, the Program Card (description, "Learn how…", buttons, photo), Program Details (degree, modality, credit hours, entry term, STEM, coordinator, catalog link), meta tags; the ordered sections (drag to reorder; cards and features; a section can use a shared block, or Customize to take its own copy); similar programs (search picker); linked degree maps.
-- `_admin/blocks.php` — shared content blocks; saving one changes every page that uses it; a block in use cannot be deleted.
-- Rich text is CKEditor 5 (classic build from jsdelivr) on the HTML fields, falling back to a plain textarea. Every save refreshes the legacy flat row so `ai-meta.php` on www stays right.
+Programs are addressed by their **page name** (`basename`, the CMS page's
+name, unique): `index.php?program=aerospace_engineering_bs_101`. The old
+`index.php?id=N` links redirect (301) to that address. A new program gets
+`<name>_<type>` (e.g. `data_science_ms`), made unique with `_2`, `_3`… and
+editable before it is created; Page settings can change it later (old links
+then break, and the importer matches on it).
+
+- `_admin/index.php` — the **control panel**: every program in one table.
+  Sort any column; filter by search, level (undergraduate/graduate),
+  credential, college, status and "needs attention" (no text, no photo, no
+  sections, no similar programs, online); the view is bookmarkable (`#…`).
+  Two things are edited right there: status (active/retired) and the similar
+  programs (a popover with remove and search-to-add). Everything else is on
+  the page.
+- `_admin/program.php?program=<basename>` — the **in-place editor**: the
+  public page itself (same templates and site chrome, both designs) with an
+  editing layer. Click a headline or a paragraph and type (rich text uses
+  CKEditor 5 in place: select text for bold/italic/link, the ⋮ handle at
+  the left of a paragraph for lists and headings); click the program type,
+  the college/department links, the buttons, the photo, the details box or
+  the coordinator line and a small form opens next to it; empty optional
+  things show a dashed placeholder only editors see. Every section has a tool
+  strip (move up/down, add after, and a ⋯ menu with Customize / Use shared
+  text / Remove); an "Add a section" bar closes the column; similar programs
+  are removed with × on the card and added from the "+ Add a similar
+  program" tile. **Page settings** (edit bar) holds what is not on the page:
+  sort-as, page name, listing note, status, listing flags, search-engine
+  description and keywords, catalog link. Every change saves as you go
+  (Enter or click away; Esc cancels) and the server answers with the
+  re-rendered page, so what you see is what the public gets; text changes get
+  an **Undo** in the toast.
+- Shared text (a section that uses a shared block) is badged "Shared text ·
+  N pages". Clicking it asks whether to edit it for all N pages or to
+  customize this page only (which gives the page its own copy).
+- `_admin/blocks.php` — the shared content blocks themselves; a block in use
+  cannot be deleted.
+- Photos: the photo form accepts any address and can browse the photos
+  already in `docroot/academics/majors/_images` (thumbnails come from
+  `site.image_base` on boxes without the CMS-published files). Where new
+  photos should be uploaded is still to be decided with marketing.
+- Every save refreshes the legacy flat row so `ai-meta.php` on www stays
+  right. Design notes: `docs/inplace-editor-design.md`.
 
 ## Next phase
 

@@ -1,5 +1,5 @@
-/* Majors editor: program form, ordered sections (with shared blocks), similar programs, shared-blocks page.
- * Talks to _admin/ajax.php?action=…; the CSRF token rides in the X-CSRF-Token header. */
+/* Shared-blocks page (_admin/blocks.php): the block dialog with CKEditor 5 classic on the text.
+ * Program pages are edited in place by inplace.js. Talks to _admin/ajax.php?action=…; the CSRF token rides in the X-CSRF-Token header. */
 (function ($) {
 	'use strict';
 	var cfg = window.MajorsAdmin || {};
@@ -60,89 +60,6 @@
 			close: function () { destroyEditors(this); $(this).dialog('destroy').remove(); } });
 	}
 	$(document).on('click', '.cancelBtn', function (e) { e.preventDefault(); var id = $(this).data('modal'); if (id) { $('#' + id).dialog('close'); } });
-
-	// ---- new program ----
-	$('#newProgramForm').on('submit', function (e) {
-		e.preventDefault();
-		$.post(url('new_program'), $(this).serialize()).done(function (r) {
-			if (r.success && r.redirect) { window.location = r.redirect; } else { fail('Could not create the program', r); }
-		}).fail(function (xhr) { fail('Could not create the program', null, xhr); });
-	});
-
-	// ---- program form ----
-	var $pf = $('#programForm');
-	if ($pf.length) {
-		enhance($pf);
-		$pf.on('submit', function (e) {
-			e.preventDefault();
-			syncEditors($pf);
-			status($pf, 'Saving…', true);
-			$.post(url('save_program'), $pf.serialize()).done(function (r) {
-				if (r.success) { status($pf, 'Saved.', true); } else { status($pf, r.message || 'Not saved', false); }
-			}).fail(function (xhr) { status($pf, (xhr.responseJSON && xhr.responseJSON.message) || 'Not saved (HTTP ' + xhr.status + ')', false); });
-		});
-	}
-
-	// ---- sections ----
-	var programId = $('#sectionList').data('program-id') || $pf.data('program-id');
-	function initSortable() {
-		if (!$.fn.sortable) { return; }
-		$('#sectionList').sortable({ handle: '.drag-handle', axis: 'y', placeholder: 'sortable-placeholder', update: function () {
-			var order = $('#sectionList .ma-section').map(function () { return $(this).data('section-id'); }).get();
-			$.post(url('save_section_order'), { program_id: programId, order: order }).fail(function (xhr) { fail('Could not save the order', null, xhr); });
-		} });
-	}
-	function replaceSections(html) { $('#sectionsWrap').html(html); initSortable(); }
-	initSortable();
-
-	function openSection(data) {
-		$.ajax({ url: url('get_section_form'), method: 'POST', data: $.extend({ program_id: programId }, data), dataType: 'html' }).done(function (html) {
-			openDialog('editSectionModal', html, 820, function () {
-				var $m = $(this);
-				function refresh() {
-					var shared = $m.find('#s_block').val() !== '';
-					$m.find('.ma-own-text').prop('hidden', shared);
-					$m.find('.ma-feature-only').prop('hidden', $m.find('#s_kind').val() !== 'feature');
-				}
-				$m.find('#s_block, #s_kind').on('change', refresh);
-				refresh();
-			});
-		}).fail(function (xhr) { fail('Could not open the section', null, xhr); });
-	}
-	$(document).on('click', '.add-section', function () { openSection({ kind: $(this).data('kind') }); });
-	$(document).on('click', '.edit-section', function () { openSection({ section_id: $(this).data('section-id') }); });
-	$(document).on('submit', '#editSectionForm', function (e) {
-		e.preventDefault();
-		syncEditors(this);
-		$.post(url('save_section'), $(this).serialize()).done(function (r) {
-			if (r.success) { $('#editSectionModal').dialog('close'); replaceSections(r.html); } else { fail('Could not save the section', r); }
-		}).fail(function (xhr) { fail('Could not save the section', null, xhr); });
-	});
-	$(document).on('click', '.delete-section', function () {
-		if (!confirm('Remove this section from the page?')) { return; }
-		$.post(url('delete_section'), { program_id: programId, section_id: $(this).data('section-id') }).done(function (r) {
-			if (r.success) { replaceSections(r.html); } else { fail('Could not remove the section', r); }
-		}).fail(function (xhr) { fail('Could not remove the section', null, xhr); });
-	});
-	$(document).on('click', '.detach-section', function () {
-		if (!confirm('Copy the shared text into this page so it can be edited here? Later changes to the shared block will no longer reach this page.')) { return; }
-		$.post(url('detach_section'), { program_id: programId, section_id: $(this).data('section-id') }).done(function (r) {
-			if (r.success) { replaceSections(r.html); } else { fail('Could not customize the section', r); }
-		}).fail(function (xhr) { fail('Could not customize the section', null, xhr); });
-	});
-
-	// ---- similar programs ----
-	var $sim = $('#f_similar');
-	if ($sim.length && $.fn.select2) {
-		$sim.select2({ width: '100%', minimumInputLength: 2, ajax: { url: cfg.search, dataType: 'json', delay: 200,
-			data: function (params) { return { q: params.term }; }, processResults: function (r) { return { results: r.results || [] }; } } });
-	}
-	$('#similarForm').on('submit', function (e) {
-		e.preventDefault();
-		var $f = $(this);
-		$.post(url('save_similar'), $f.serialize()).done(function (r) { status($f, r.success ? 'Saved.' : (r.message || 'Not saved'), !!r.success); })
-			.fail(function (xhr) { status($f, 'Not saved (HTTP ' + xhr.status + ')', false); });
-	});
 
 	// ---- shared blocks page ----
 	function openBlock(id) {

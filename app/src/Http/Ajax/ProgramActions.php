@@ -153,26 +153,6 @@ final class ProgramActions
     }
 
     // ---- sections ----
-    public function sectionForm(Request $r, User $user): string
-    {
-        $p  = $this->program($r);
-        $id = $r->id('section_id');
-        $section = null;
-        foreach ($p['sections'] as $s) {
-            if ($id !== null && $s['id'] === $id) {
-                $section = $s;
-            }
-        }
-        if ($id !== null && $section === null) {
-            throw new ActionException('Section not found.', 404);
-        }
-        // For a shared section, show the block's text read-only (editing happens on the block).
-        return $this->app->layout()->render('majors/admin/section_form', [
-            'program' => $p, 'section' => $section, 'blocks' => $this->editor->blocks(), 'kinds' => ProgramEditor::KINDS,
-            'default_kind' => $r->str('kind') !== '' ? $r->str('kind') : 'teaser',
-        ]);
-    }
-
     public function saveSection(Request $r, User $user): array
     {
         $p = $this->program($r);
@@ -181,7 +161,7 @@ final class ProgramActions
                 'kind' => $r->str('kind'), 'label' => $r->str('label'), 'headline' => $r->str('headline'), 'body' => (string) ($_POST['body'] ?? ''),
                 'links' => $_POST['links'] ?? [], 'image_url' => $r->str('image_url'), 'image_alt' => $r->str('image_alt'), 'block_id' => $r->id('block_id'),
             ]);
-            return ['success' => true, 'section_id' => $id, 'html' => $this->sectionsHtml((int) $p['id'])];
+            return ['success' => true, 'section_id' => $id] + $this->parts((int) $p['id']);
         });
     }
 
@@ -189,14 +169,14 @@ final class ProgramActions
     {
         $p = $this->program($r);
         $this->editor->detachSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
-        return ['success' => true, 'html' => $this->sectionsHtml((int) $p['id'])] + $this->parts((int) $p['id']);
+        return ['success' => true] + $this->parts((int) $p['id']);
     }
 
     public function deleteSection(Request $r, User $user): array
     {
         $p = $this->program($r);
         $this->editor->deleteSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
-        return ['success' => true, 'html' => $this->sectionsHtml((int) $p['id'])] + $this->parts((int) $p['id']);
+        return ['success' => true] + $this->parts((int) $p['id']);
     }
 
     public function saveSectionOrder(Request $r, User $user): array
@@ -260,12 +240,6 @@ final class ProgramActions
             $this->editor->swapSectionBlock((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'), $r->id('block_id') ?? throw new ActionException('Missing block_id.'));
             return ['success' => true] + $this->parts((int) $p['id']);
         });
-    }
-
-    private function sectionsHtml(int $programId): string
-    {
-        $p = $this->programs->find($programId) ?? [];
-        return $this->app->layout()->render('majors/admin/sections', ['program' => $p, 'sections' => $p['sections'] ?? []]);
     }
 
     // ---- similar ----

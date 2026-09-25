@@ -132,3 +132,60 @@ span.calculated_hours.warning { background: #ff8a00; color: #000; }
 .ma-save-status { margin-left: .75rem; font-size: .9rem; }
 .ck-editor__editable { min-height: 8rem; }
 .majors-new .ma-section { border-color: rgb(39 37 31 / .2); }
+
+/* ---- control panel ------------------------------------------------------- */
+/* _admin/index.php (majors-admin.js): filter toolbar, sortable headers, flag pills,
+   the in-place status select and the similar-programs button + popover. Both designs;
+   .majors-admin prefixes win over the admin's own block-label / full-width-control rules
+   and over the old theme's styling of bare <button>s. */
+.ma-panel-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem .75rem; margin: 1rem 0 .75rem; padding: .6rem .75rem .7rem; background: #f5f4f2; border: 1px solid rgba(39, 37, 31, .15); }
+.majors-admin .ma-panel-toolbar label.ma-panel-toolbar__field { display: flex; flex-direction: column; gap: .15rem; flex: 0 1 auto; margin: 0; font-size: .78rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: .03em; color: #55534d; }
+.majors-admin .ma-panel-toolbar label.ma-panel-toolbar__search { flex: 1 1 16rem; min-width: 12rem; }
+.majors-admin .ma-panel-toolbar input[type="search"], .majors-admin .ma-panel-toolbar select { display: block; width: 100%; margin: 0; padding: .4rem .5rem; font-size: .9rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: #1f1f1f; }
+.majors-admin .ma-panel-toolbar select { width: auto; max-width: 16rem; }
+.ma-panel-toolbar__meta { display: flex; align-items: center; gap: .75rem; margin-left: auto; padding-bottom: .45rem; font-size: .85rem; white-space: nowrap; }
+.ma-panel-count { color: #55534d; }
+.majors-admin .ma-panel-reset, .majors-admin .ma-panel-reset:hover, .majors-admin .ma-panel-reset:focus { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: #1f1f1f; font: inherit; font-size: .85rem; text-decoration: underline; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.majors-admin .ma-panel-reset:hover, .majors-admin .ma-panel-reset:focus-visible { color: #bb4935; }
+
+/* sortable headers: the button looks like the header text; the arrow follows aria-sort */
+.ma-panel-table th { white-space: nowrap; }
+.majors-admin .ma-sort, .majors-admin .ma-sort:hover, .majors-admin .ma-sort:focus { display: inline-flex; align-items: center; gap: .25rem; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; text-align: left; line-height: inherit; cursor: pointer; }
+.ma-sort::after { content: "\2195"; font-size: .8em; opacity: .35; }
+.ma-sort:hover::after, .ma-sort:focus-visible::after { opacity: .8; }
+th[aria-sort="ascending"] .ma-sort::after { content: "\25B2"; opacity: 1; }
+th[aria-sort="descending"] .ma-sort::after { content: "\25BC"; opacity: 1; }
+.majors-admin .ma-sort:focus-visible { outline: 2px solid #ffc217; outline-offset: 2px; }
+
+/* cells */
+.ma-panel-table td { vertical-align: top; }
+.ma-panel-table .ma-col-program { min-width: 14rem; }
+.ma-program__sub { display: block; font-size: .8rem; line-height: 1.3; color: #55534d; }
+.ma-program__note { font-style: italic; }
+.ma-flag-list { display: flex; flex-wrap: wrap; gap: .2rem; }
+.ma-flag { display: inline-block; padding: 0 .45rem; border-radius: 999px; background: #e6e4e1; color: #27251f; font-size: .72rem; font-weight: 600; line-height: 1.5; letter-spacing: .01em; white-space: nowrap; }
+.ma-panel-table .ma-danger, .ma-panel-table .ma-warning { display: block; font-size: .78rem; font-weight: 600; line-height: 1.3; white-space: nowrap; }
+.ma-panel-table .ma-warning { color: #8a5a00; }
+.ma-panel-table tr.is-retired > td:not(.ma-col-status):not(.ma-col-edit) { opacity: .55; }
+.ma-panel-table tr.is-retired .ma-col-program a { text-decoration: line-through; }
+
+/* status: a compact select that saves on change */
+.majors-admin .ma-status-select { display: inline-block; width: auto; margin: 0; padding: .2rem .3rem; font-size: .85rem; line-height: 1.2; }
+.majors-admin .ma-status-select[disabled] { opacity: .6; }
+
+/* similar programs: the count is the button that opens the popover */
+.majors-admin .ma-similar-btn, .majors-admin .ma-similar-btn:focus { display: inline-flex; align-items: center; justify-content: center; min-width: 2.2rem; margin: 0; padding: .1rem .55rem; border: 1px solid rgba(39, 37, 31, .35); border-radius: 999px; background: #fff; box-shadow: none; color: #27251f; font-family: inherit; font-size: .82rem; font-weight: 600; line-height: 1.4; letter-spacing: 0; text-transform: none; cursor: pointer; }
+.majors-admin .ma-similar-btn.is-empty { color: #55534d; border-style: dashed; }
+.majors-admin .ma-similar-btn:hover, .majors-admin .ma-similar-btn:focus-visible { background: #27251f; border-color: #27251f; color: #fff; }
+.ma-similar__list { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.ma-similar__item { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .3rem 0; border-bottom: 1px solid rgba(39, 37, 31, .12); font-size: .9rem; }
+.ma-similar__name { flex: 1 1 auto; min-width: 0; }
+.ma-similar__empty { padding: .3rem 0; color: #55534d; font-size: .85rem; }
+.majors-admin .ma-similar__remove, .majors-admin .ma-similar__remove:focus { flex: 0 0 auto; margin: 0; padding: 0 .4rem; border: 0; border-radius: 2px; background: transparent; box-shadow: none; color: #55534d; font-family: inherit; font-size: 1.1rem; line-height: 1.3; text-transform: none; cursor: pointer; }
+.majors-admin .ma-similar__remove:hover, .majors-admin .ma-similar__remove:focus-visible { background: #e80000; color: #fff; }
+.ma-similar__add-field { margin-bottom: .25rem; }
+.ma-similar__results { list-style: none; margin: 0; padding: 0; max-height: 14rem; overflow: auto; }
+.majors-admin .ma-similar__add, .majors-admin .ma-similar__add:focus { display: block; width: 100%; margin: 0; padding: .35rem .5rem; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #27251f; font-family: inherit; font-size: .9rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; text-align: left; text-transform: none; cursor: pointer; }
+.majors-admin .ma-similar__add::before { content: "+ "; color: #55534d; }
+.majors-admin .ma-similar__add:hover, .majors-admin .ma-similar__add:focus-visible { background: #fff5d6; }
+.ma-similar__status { min-height: 1.2em; margin-top: .25rem; }

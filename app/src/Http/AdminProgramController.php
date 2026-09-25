@@ -9,9 +9,9 @@ use Majors\Majors\ProgramRenderer;
 use Majors\Support\Request;
 
 /**
- * _admin/program.php?id=N — the marketing editor for one program: its
- * Program Card and details, the ordered sections (shared blocks attach
- * here), and similar programs. ?new=1 shows the small create form.
+ * _admin/program.php?program=<basename> (or ?id=N) — the in-place editor:
+ * the public program page, rendered by the same templates with editing
+ * markers, plus the editor's scripts. ?new=1 shows the small create form.
  */
 final class AdminProgramController extends Controller
 {
@@ -21,49 +21,75 @@ final class AdminProgramController extends Controller
         $layout = $this->app->layout();
         $csrf   = $this->app->guard()->csrfToken();
         $db     = $this->app->db();
+        $editor = new ProgramEditor($db);
 
         $head = [
             '<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">',
-            '<link rel="stylesheet" href="' . $layout->e($layout->asset('jquery-ui-1.14.1/jquery-ui.min.css')) . '">',
-            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css">',
-            '<link rel="stylesheet" href="' . $layout->e($layout->asset('admin.css')) . '">',
+            '<link rel="stylesheet" href="' . $layout->e($layout->asset('admin/ma-ui.css')) . '">',
+            '<link rel="stylesheet" href="' . $layout->e($layout->asset('admin/inplace.css')) . '">',
         ];
-        $foot = [
-            '<script>window.jQuery || document.write(\'<script src="https://code.jquery.com/jquery-3.7.1.min.js"><\/script>\')</script>',
-            '<script src="' . $layout->e($layout->asset('jquery-ui-1.14.1/jquery-ui.min.js')) . '"></script>',
-            '<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>',
-            '<script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.4.2/build/ckeditor.js"></script>',
-            '<script>window.MajorsAdmin = ' . json_encode(['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf, 'search' => $layout->url('_admin/ajax.php') . '?action=program_search'], JSON_UNESCAPED_SLASHES) . ';</script>',
-            '<script src="' . $layout->e($layout->asset('admin/program-edit.js')) . '" defer></script>',
-        ];
-        $common = ['user' => $user, 'csrf' => $csrf, 'body_class' => 'majors-admin', 'head' => $head, 'foot' => $foot];
+        $common = ['user' => $user, 'csrf' => $csrf, 'head' => $head];
 
         if ($r->int('new') === 1) {
-            $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf]), ['title' => 'New program', 'page_header' => 'New program'] + $common);
+            $foot = [
+                '<script>window.MajorsAdmin = ' . json_encode(['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf], JSON_UNESCAPED_SLASHES) . ';</script>',
+                '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
+                '<script src="' . $layout->e($layout->asset('admin/inplace.js')) . '" defer></script>',
+            ];
+            $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf, 'public_base' => $layout->url('index.php') . '?program=']), [
+                'title' => 'New program', 'page_header' => 'New program', 'body_class' => 'majors-admin', 'foot' => $foot,
+            ] + $common);
             return;
         }
-        $id      = $r->id('id') ?? $this->notFound('Which program? Add ?id= to the address.');
-        $program = $this->app->programs()->find($id) ?? $this->notFound('That program could not be found.');
-        $colleges = array_column($db->query('SELECT `name` FROM `majors_colleges` ORDER BY `name`')->fetch_all(MYSQLI_ASSOC), 'name');
-        $departments = $db->query('SELECT c.`name` AS college, d.`department` FROM `majors_departments` d JOIN `majors_colleges` c ON c.`id` = d.`college_id` ORDER BY c.`name`, d.`department`')->fetch_all(MYSQLI_ASSOC);
-        $editor  = new ProgramEditor($db);
 
-        $content = $layout->render('majors/admin/program', [
-            'program'     => $program,
-            'sections'    => $program['sections'],
-            'similar'     => $program['similar_programs'],
+        $basename = $r->strOrNull('program');
+        $program  = $basename !== null ? $this->app->programs()->findByBasename($basename) : null;
+        if ($program === null) {
+            $id      = $r->id('id') ?? $this->notFound('Which program? Open one from the Majors admin list.');
+            $program = $this->app->programs()->find($id) ?? $this->notFound('That program could not be found.');
+        }
+        $pid      = (int) $program['id'];
+        $renderer = new ProgramRenderer($layout);
+        $parts    = $renderer->parts($program, $this->app->maps()->forProgram($pid), true, $editor->blockUseCounts());
+        $blocks   = array_map(static fn (array $b) => ['id' => (int) $b['id'], 'headline' => (string) ($b['headline'] ?: $b['slug']), 'uses' => (int) $b['uses']], $editor->blocks());
+        $colleges = array_column($db->query('SELECT `name` FROM `majors_colleges` ORDER BY `name`')->fetch_all(MYSQLI_ASSOC), 'name');
+        $departments = array_column($db->query('SELECT DISTINCT `department` FROM `majors_departments` ORDER BY `department`')->fetch_all(MYSQLI_ASSOC), 'department');
+
+        $config = [
+            'ajax'        => $layout->url('_admin/ajax.php'),
+            'csrf'        => $csrf,
+            'programId'   => $pid,
+            'title'       => ProgramRenderer::title($program),
+            'imageBase'   => $layout->site('image_base', ''),
+            'publicUrl'   => $layout->programUrl($program),
+            'blocks'      => $blocks,
             'colleges'    => $colleges,
             'departments' => $departments,
-            'blocks'      => $editor->blocks(),
+            'credentials' => ['Major', 'Minor', "Master's", 'Doctorate', 'Graduate Certificate', 'Undergraduate Certificate', "Bachelor's to Master's", 'Badge', 'Field Major', 'Postbaccalaureate'],
             'modalities'  => ProgramEditor::MODALITIES,
-            'facts'       => ProgramRenderer::facts($program),
-            'public_url'  => $layout->url('index.php') . '?id=' . (int) $program['id'],
-            'cms_url'     => !empty($program['cms_path']) ? 'https://www.wichita.edu' . preg_replace('/\.pcf$/', '.php', (string) $program['cms_path']) : '',
-            'degree_maps' => $this->app->maps()->forProgram((int) $program['id']),
-            'maps_url'    => $layout->url('degree_maps/admin/maps.php') . '?degree_map_id=',
-            'flash'       => $r->strOrNull('flash'),
-            'csrf'        => $csrf,
+        ];
+        $foot = [
+            // balloon-block build: formatting balloon on a selection, plus the block handle (⋮) for lists and headings
+            '<script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-balloon-block@41.4.2/build/ckeditor.js"></script>',
+            '<script>window.MajorsAdmin = ' . json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';</script>',
+            '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
+            '<script src="' . $layout->e($layout->asset('admin/inplace.js')) . '" defer></script>',
+        ];
+        $editBar = $layout->render('majors/admin/inplace/edit_bar', [
+            'program'    => $program,
+            'public_url' => $layout->programUrl($program),
+            'blocks_url' => $layout->url('_admin/blocks.php'),
+            'index_url'  => $layout->url('_admin/index.php'),
         ]);
-        $this->page($content, ['title' => 'Edit: ' . ProgramRenderer::title($program), 'page_header' => 'Edit program'] + $common);
+        $this->page($parts['content'], [
+            'top'          => $editBar . $parts['top'],
+            'bottom'       => $parts['bottom'],
+            'title'        => 'Editing: ' . ProgramRenderer::title($program),
+            'page_header'  => 'Details: ' . ProgramRenderer::title($program),
+            'nav_items'    => $renderer->sectionNav($program),
+            'header_print' => true,
+            'body_class'   => 'majors-admin majors-inplace',
+            'foot'         => $foot,
+        ] + $common);
     }
 }

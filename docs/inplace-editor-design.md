@@ -1,6 +1,6 @@
 # Majors in-place editor — design (branch `inplace-editor`)
 
-Status: design for review, 2026-09-25. Replaces the form-based editor on
+Status: built on the `inplace-editor` branch, 2026-09-25 (this document was the design; deviations are noted inline). Replaces the form-based editor on
 `_admin/program.php` with a page that *is* the finished program page, plus a
 control-panel index. Both site designs (old = www/www-test, new = www-dev).
 Desktop first; mobile only has to not break.
@@ -84,10 +84,12 @@ Every editable thing saves itself; there is no page-level Save button.
   paste-as-text). Enter or blur saves when changed; Esc restores. The old
   value is kept client-side; the "Saved" toast has **Undo** for 15 s, which
   re-posts the old value.
-- **Rich text**: click → `BalloonEditor.create(el)` with bold, italic, link,
-  bulleted/numbered list, h3 heading, undo/redo. Leaving the editor (its
-  `ui.focusTracker` goes false, so the balloon toolbar and link form count as
-  inside) saves when `getData()` changed; Esc restores. Undo as above.
+- **Rich text**: click → `BalloonEditor.create(el)` (the balloon-*block*
+  build: bold/italic/link in the selection balloon, lists and headings on the
+  ⋮ block handle, undo/redo). Leaving the editor (its `ui.focusTracker` goes
+  false — the balloon and link form count as inside — or a pointer-down
+  anywhere outside it) saves when `getData()` changed; Esc restores. Undo as
+  above.
 - **Popover forms**: Save/Cancel buttons; Save posts only that form's fields.
 - **Structural** actions (add/move/remove section, detach, swap block,
   similar add/remove) post immediately; Remove asks for confirmation.
@@ -140,9 +142,10 @@ nodes are simply visible.
 - `assets/admin/majors-admin.js` — the control panel: sort (string / number
   / date, `aria-sort`), filters, count, status select (`save_program`),
   similar popover (`program_search` + `save_similar`).
-- Libraries: CKEditor 5 balloon build pinned to the same version as the
-  classic build already used (`@ckeditor/ckeditor5-build-balloon@41.4.2`,
-  jsdelivr); no jQuery/jQuery UI needed by the new pages.
+- Libraries: CKEditor 5 balloon-block build pinned to the same version as
+  the classic build the shared-blocks page uses
+  (`@ckeditor/ckeditor5-build-balloon-block@41.4.2`, jsdelivr); no
+  jQuery/jQuery UI needed by the new pages.
 
 ## Tests
 

@@ -156,6 +156,14 @@ and cached in `/tmp`; pass `--tags=/data/www/config/majors-cms-tags.json` to
 keep the cache between runs. Re-running updates what changed and retires
 programs whose page is gone (never deletes; degree maps keep their links).
 
+## 2f. In-place editor (no schema change)
+
+The in-place editor and the control panel need no migration: `basename` is
+already unique on `majors_academic_programs`. Deploy the app bundle and the
+docroot bundle as usual; the editor loads CKEditor 5 (balloon-block build)
+from jsdelivr, so the editors' browsers need to reach `cdn.jsdelivr.net`.
+Old `index.php?id=N` links keep working (301 to `?program=<basename>`).
+
 ## 2e. Graduate Program Details from the catalog
 
 The graduate template's Program Details box (degree, modality, credit hours,
