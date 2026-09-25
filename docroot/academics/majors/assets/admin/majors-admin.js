@@ -116,19 +116,23 @@
 	}
 
 	/* ---- URL hash: the view is bookmarkable ------------------------------- */
+	/* The view state lives in the query string (?level=graduate&status=all), not the hash: the old
+	   theme's footcode runs $(location.hash) on load and throws on "#key=value". */
 	function writeHash(f) {
 		var p = new URLSearchParams();
 		FILTERS.forEach(function (k) { if (f[k] !== DEFAULTS[k] && f[k] !== '') { p.set(k, f[k]); } });
 		if (sort.key !== DEFAULT_SORT.key || sort.dir !== DEFAULT_SORT.dir) { p.set('sort', sort.key); p.set('dir', sort.dir); }
 		var h = p.toString();
-		if (window.location.hash.replace(/^#/, '') === h) { return; }
+		if (window.location.search.replace(/^\?/, '') === h) { return; }
 		try {
-			window.history.replaceState(null, '', window.location.pathname + window.location.search + (h ? '#' + h : ''));
+			window.history.replaceState(null, '', window.location.pathname + (h ? '?' + h : '') + window.location.hash);
 		} catch (e) { /* ignore */ }
 	}
 
 	function readHash() {
-		var p = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+		var q = window.location.search.replace(/^\?/, '');
+		if (q === '' && /^#[a-z_]+=/.test(window.location.hash)) { q = window.location.hash.replace(/^#/, ''); }   // bookmarks from before the switch
+		var p = new URLSearchParams(q);
 		FILTERS.forEach(function (k) {
 			var c = controls[k];
 			if (!c) { return; }
@@ -166,7 +170,7 @@
 		applySort();
 		writeHash(readFilters());
 	});
-	window.addEventListener('hashchange', function () { readHash(); applySort(); applyFilters(); });
+	window.addEventListener('popstate', function () { readHash(); applySort(); applyFilters(); });
 
 	/* ---- status: saves on change ----------------------------------------- */
 	tbody.addEventListener('change', function (e) {

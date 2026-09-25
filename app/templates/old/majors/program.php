@@ -34,7 +34,7 @@ $teaser = static function (array $s, string $extra = '') use ($t, $links, $ed, $
     return '<div class="teaser collection__item majors-section" data-section="' . (int) $s['id'] . '"' . ($s['shared'] ? ' data-shared="1"' : '') . $ed->scope($s) . '>'
         . $t->partial('majors/admin/inplace/section_tools', ['s' => $s, 'ed' => $ed])
         . '<div class="teaser__body">'
-        . '<div class="teaser__headline"><h3 class="headline-group"><span class="head"' . $ed->text('headline', $s['headline']) . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</span></h3></div>'
+        . '<div class="teaser__headline"><h3 class="headline-group"><span class="head"' . $ed->text('headline', $s['headline'], 'Click to write the headline') . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</span></h3></div>'
         . '<div class="teaser__editorial"' . $ed->html('body', $s['body']) . '>' . $ed->showHtml($s['body'], 'Click to write the text.') . '</div>' . $linksHtml . $extra . '</div></div>';
 };
 $groups = [];
@@ -101,7 +101,7 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 <?php endif; ?>
 <?php if ($learn_how !== '' || $editing): ?>
 			<div class="program-card__cta">
-				<h3 class="heading4"<?= $ed->text('learn_how', $learn_how) ?>><?= $ed->show($learn_how, 'Add the "Learn how…" line') ?></h3>
+				<h3 class="heading4"<?= $ed->text('learn_how', $learn_how, 'Add the "Learn how…" line') ?>><?= $ed->show($learn_how, 'Add the "Learn how…" line') ?></h3>
 <?php if ($buttons): ?>
 				<div class="button-collection landing-panel__buttons button-collection--accent-first"<?= $buttonsForm ?>>
 <?php foreach ($buttons as $b): ?>
@@ -138,14 +138,14 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 
 <?php foreach ($groups as $i => $g): ?>
 <?php if ($g['type'] === 'cards'): ?>
-<section class="teaser-collection section-wrap collection--two-columns<?= $i === count($groups) - 1 ? ' section-wrap--nipple-down' : '' ?>"<?= $part ?>><div class="collection__items">
+<section class="teaser-collection section-wrap collection--two-columns<?= $i === count($groups) - 1 && !$editing ? ' section-wrap--nipple-down' : '' ?>"<?= $part ?>><div class="collection__items">
 	<?= implode("\n\t", $g['html']) ?>
 </div></section>
 <?php else: ?>
 <?php $s = $g['s']; $imgForm = $ed->form('section-image', ['image_url' => (string) ($s['image']['url'] ?? ''), 'image_alt' => (string) ($s['image']['alt'] ?? '')]); $linksForm = $ed->form('links', ['links' => $s['links']]); ?>
 <section class="section-wrap section-wrap--wheat majors-section" data-section="<?= (int) $s['id'] ?>"<?= $ed->scope($s) . $part ?>>
 <?= $t->partial('majors/admin/inplace/section_tools', ['s' => $s, 'ed' => $ed]) ?>
-	<header class="section-header section-header--no-border"><h2<?= $ed->text('label', $s['label']) ?>><?= $t->e($s['label'] !== '' ? $s['label'] : 'Inside the Program') ?></h2></header>
+	<header class="section-header section-header--no-border"><h2<?= $ed->text('label', $s['label'], 'Inside the Program') ?>><?= $t->e($s['label'] !== '' ? $s['label'] : 'Inside the Program') ?></h2></header>
 	<div class="teaser teaser--columned-intro">
 <?php if ($s['image']): ?>
 		<div class="teaser__image"<?= $imgForm ?>><img src="<?= $t->e($t->img($s['image']['url'])) ?>" alt="<?= $t->e($s['image']['alt']) ?>"></div>
@@ -153,7 +153,7 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 		<div class="teaser__image"><?= $ed->placeholder('Add a photo', $imgForm, 'ma-ph--photo') ?></div>
 <?php endif; ?>
 		<div class="teaser__body">
-			<div class="teaser__headline"><h3 class="headline-group"><span class="head"<?= $ed->text('headline', $s['headline']) ?>><?= $ed->show($s['headline'], 'Click to write the headline') ?></span></h3></div>
+			<div class="teaser__headline"><h3 class="headline-group"><span class="head"<?= $ed->text('headline', $s['headline'], 'Click to write the headline') ?>><?= $ed->show($s['headline'], 'Click to write the headline') ?></span></h3></div>
 			<div class="teaser__editorial"<?= $ed->html('body', $s['body']) ?>><?= $ed->showHtml($s['body'], 'Click to write the text.') ?></div>
 <?php if ($s['links']): ?>
 			<div<?= $linksForm ?>><?= $links($s['links']) ?></div>
@@ -165,7 +165,10 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 </section>
 <?php endif; ?>
 <?php endforeach; ?>
+<?php $nipple = $editing && $groups !== [] && $groups[array_key_last($groups)]['type'] === 'cards'; ?>
+<?php if ($nipple): ?><section class="section-wrap section-wrap--nipple-down ma-add-bar-wrap"><?php endif; ?>
 <?= $t->partial('majors/admin/inplace/add_bar', ['ed' => $ed, 'empty' => $sections === []]) ?>
+<?php if ($nipple): ?></section><?php endif; ?>
 
 <?php if ($similar || $editing): ?>
 <section class="teaser-collection section-wrap section-wrap--shade-dark section-wrap--image-background-texturize collection--two-columns collection--two-columns-early-break"<?= $editing ? ' data-ma-part="similar" data-ma-scope="similar"' : '' ?>>

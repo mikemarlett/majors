@@ -67,9 +67,12 @@
 			var isJson = ct.indexOf('application/json') !== -1;
 			return (isJson ? res.json() : res.text()).then(function (payload) {
 				if (res.status === 401) {
+					exported.signedOut = true;                     // pages drop their "unsaved work" prompt
 					window.alert('Your session has expired. Please sign in again.');
-					window.location.reload();
-					throw new Error('Signed out');
+					var login = isJson && payload && payload.login;
+					if (login) { window.location.href = login + (login.indexOf('?') === -1 ? '?' : '&') + 'return=' + encodeURIComponent(window.location.pathname + window.location.search); }
+					else { window.location.reload(); }
+					var e401 = new Error('Signed out'); e401.status = 401; throw e401;
 				}
 				if (!isJson) {
 					if (!res.ok) { var e0 = new Error('HTTP ' + res.status); e0.status = res.status; throw e0; }
@@ -152,7 +155,9 @@
 			api.close();
 		}
 		function onKey(e) {
-			if (e.key === 'Escape') { e.stopPropagation(); api.close(); }
+			if (e.key !== 'Escape') { return; }
+			if (!box.contains(e.target) && e.target instanceof Element && e.target.closest('.ma-editing')) { return; }   // an in-place editor behind a sticky popover handles its own Escape
+			e.stopPropagation(); api.close();
 		}
 		setTimeout(function () {
 			document.addEventListener('mousedown', onDown, true);
@@ -218,5 +223,6 @@
 		return out;
 	}
 
-	window.MaUI = { esc: esc, el: el, ajax: ajax, toast: toast, popover: popover, closePopovers: closePopovers, field: field, serialize: serialize };
+	var exported = { esc: esc, el: el, ajax: ajax, toast: toast, popover: popover, closePopovers: closePopovers, field: field, serialize: serialize, signedOut: false };
+	window.MaUI = exported;
 })();

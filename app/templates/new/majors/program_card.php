@@ -58,7 +58,7 @@ $withMedia = $image || $editing;
 								<div><div class="prose max-w-4xl"<?= $ed->html('description', $description) ?>><?= $ed->showHtml($description, 'Click to write the description.') ?></div></div>
 <?php endif; ?>
 <?php if ($learn_how !== '' || $editing): ?>
-								<p class="font-semibold text-lg/tight text-theme-heading-color"<?= $ed->text('learn_how', $learn_how) ?>><?= $ed->show($learn_how, 'Add the "Learn how…" line') ?></p>
+								<p class="font-semibold text-lg/tight text-theme-heading-color"<?= $ed->text('learn_how', $learn_how, 'Add the "Learn how…" line') ?>><?= $ed->show($learn_how, 'Add the "Learn how…" line') ?></p>
 <?php endif; ?>
 <?php if ($facts): ?>
 								<dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 border-2 border-theme-text-color p-4 majors-facts"<?= $factsForm ?>>

@@ -41,6 +41,7 @@ final class AdminProgramController extends Controller
             ];
             $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf, 'public_base' => $layout->url('index.php') . '?program=', 'colleges' => $colleges, 'departments' => $departments]), [
                 'title' => 'New program', 'page_header' => 'New program', 'body_class' => 'majors-admin', 'foot' => $foot,
+                'head'  => array_merge(['<link rel="stylesheet" href="' . $layout->e($layout->asset('admin.css')) . '">'], $head),   // the admin's compact rhythm; the editor page keeps the public one
             ] + $common);
             return;
         }
@@ -94,6 +95,7 @@ final class AdminProgramController extends Controller
             'title'        => 'Editing: ' . ProgramRenderer::title($program),
             'page_header'  => 'Details: ' . ProgramRenderer::title($program),
             'nav_items'    => $renderer->sectionNav($program),
+            'nav_path'     => $layout->programUrl($program),   // the sidebar the public page has, not the admin folder's
             'header_print' => true,
             'body_class'   => 'majors-admin majors-inplace',
             'foot'         => $foot,

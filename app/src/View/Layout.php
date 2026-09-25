@@ -102,6 +102,8 @@ final class Layout
      *                new: used only when the site's own section-nav renderer is absent)
      *   nav_html     pre-rendered <li>…</li> items (e.g. from the CMS _nav.ounav)
      *   header_print whether the header band prints (default false: .noprint)
+     *   nav_path     URL the site's section-nav renderer treats as the current page (default: the
+     *                request URI), e.g. the public page an admin editor stands in for
      *
      * @param array{title?:string,description?:string,head?:string[],foot?:string[],body_class?:string,
      *               user?:mixed,csrf?:string,page_header?:?string,nav_items?:array<string,string>,nav_html?:string,header_print?:bool} $opts
@@ -114,7 +116,7 @@ final class Layout
         }
         $sectionNav = null;
         if ($this->design === 'new' && ($navHtml !== '' || !empty($opts['nav_items']))) {
-            $sectionNav = (new SectionNav($this->docroot))->render((string) ($_SERVER['REQUEST_URI'] ?? '/'));
+            $sectionNav = (new SectionNav($this->docroot))->render((string) ($opts['nav_path'] ?? $_SERVER['REQUEST_URI'] ?? '/'));
         }
         return $this->render('layout', [
             'content'      => $content,

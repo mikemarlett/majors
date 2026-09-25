@@ -23,10 +23,16 @@ final class EditMarks
     {
     }
 
-    /** @param string|null $value pass the current value so an empty one is flagged (the client clears the placeholder text on focus) */
-    public function text(string $field, ?string $value = null): string
+    /**
+     * @param string|null $value pass the current value so an empty one is flagged (the client clears the placeholder text on focus)
+     * @param string $placeholder what the client shows when the value is emptied later (the same words show() prints for an empty value)
+     */
+    public function text(string $field, ?string $value = null, string $placeholder = ''): string
     {
-        return $this->on ? ' data-ma-text="' . Html::e($field) . '"' . ($value === '' ? ' data-ma-empty="1"' : '') : '';
+        if (!$this->on) {
+            return '';
+        }
+        return ' data-ma-text="' . Html::e($field) . '"' . ($value === '' ? ' data-ma-empty="1"' : '') . ($placeholder !== '' ? ' data-ma-placeholder="' . Html::e($placeholder) . '"' : '');
     }
 
     public function html(string $field, ?string $value = null): string

@@ -125,7 +125,8 @@ final class ProgramEditor
                     continue;
                 }
                 $cur = $this->db->query('SELECT `basename`, `cms_path` FROM `majors_academic_programs` WHERE `id` = ' . $id)->fetch_assoc() ?: [];
-                if ($v === (string) ($cur['basename'] ?? '')) {
+                $curBase = (string) ($cur['basename'] ?? '');
+                if ($v === $curBase || $v === self::cleanBasename($curBase)) {   // unchanged (an imported name may hold "__", which cleaning collapses)
                     continue;
                 }
                 if ((string) ($cur['cms_path'] ?? '') !== '') {

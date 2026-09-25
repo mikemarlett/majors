@@ -224,9 +224,6 @@ final class ProgramActions
             $this->editor->updateSection((int) $p['id'], $sid, $posted);
             $row    = $this->editor->section((int) $p['id'], $sid);
             $fields = self::stored($row, array_keys($posted));
-            if (isset($fields['label']) && $fields['label'] === '') {
-                $fields['label'] = 'Inside the Program';   // what the page shows for an empty band label
-            }
             return ['success' => true, 'message' => 'Saved.', 'fields' => $fields] + $this->parts((int) $p['id']);
         });
     }

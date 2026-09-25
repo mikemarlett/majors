@@ -179,7 +179,8 @@ then break, and the importer matches on it).
 - `_admin/index.php` — the **control panel**: every program in one table.
   Sort any column; filter by search, level (undergraduate/graduate),
   credential, college, status and "needs attention" (no text, no photo, no
-  sections, no similar programs, online); the view is bookmarkable (`#…`).
+  alt text, no department, no sections, no similar programs, overlong
+  headline, online); the view is bookmarkable (`?level=graduate&status=all`).
   Two things are edited right there: status (active/retired) and the similar
   programs (a popover with remove and search-to-add). Everything else is on
   the page.

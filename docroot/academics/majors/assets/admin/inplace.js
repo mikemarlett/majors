@@ -155,7 +155,9 @@
 		if (apply.kind === 'html') {
 			node.innerHTML = val !== '' ? val : '<p class="ma-ph-text">Click to write the text.</p>';
 		} else {
-			node.textContent = val !== '' ? val : (apply.placeholder || '');
+			var ph = apply.placeholder || node.getAttribute('data-ma-placeholder') || '';
+			if (val === '' && !ph) { swap(res); return; }   // no words to show for an empty field: take the server's render
+			node.textContent = val !== '' ? val : ph;
 		}
 		if (val === '') { node.setAttribute('data-ma-empty', '1'); } else { node.removeAttribute('data-ma-empty'); }
 		if (res.title) {
@@ -164,6 +166,8 @@
 			var h1 = document.querySelector('main h1'); if (h1) { h1.textContent = 'Details: ' + res.title; }
 		}
 	}
+	/* Fire-and-forget: save()/act() already toasted the error; keep it from surfacing as an unhandled rejection. */
+	function fire(p) { return p.catch(function () { /* reported */ }); }
 	function act(action, data) {
 		var body = new URLSearchParams();
 		Object.keys(data || {}).forEach(function (k) { if (data[k] != null) { body.append(k, data[k]); } });
@@ -219,7 +223,7 @@
 			if (scope !== scope0) { node = sameField(scope, 'text', node.getAttribute('data-ma-text')) || node; }
 			var field = node.getAttribute('data-ma-text');
 			var wasEmpty = node.hasAttribute('data-ma-empty');
-			var placeholder = wasEmpty ? node.textContent : '';
+			var placeholder = node.getAttribute('data-ma-placeholder') || (wasEmpty ? node.textContent : '');
 			var old = wasEmpty ? '' : node.textContent;
 			if (wasEmpty) { node.textContent = ''; }
 			node.setAttribute('contenteditable', supportsPlain ? 'plaintext-only' : 'true');
@@ -239,25 +243,26 @@
 				node.removeEventListener('paste', onPaste);
 				activeText = null;
 			};
+			function norm(str) { return str.replace(/\s+/g, ' ').trim(); }
 			function restore() { node.textContent = wasEmpty ? placeholder : old; }
 			function cancel() { if (done) { return; } teardown(); restore(); }
 			function commit() {
 				if (done) { return; }
-				var val = node.textContent.replace(/\s+/g, ' ').trim();
+				var val = norm(node.textContent);
 				teardown();
-				if (val === old.trim()) { restore(); return; }
+				if (val === norm(old)) { restore(); return; }
 				var f = {}; f[field] = val;
 				var note = null;
-				if (field === 'headline' && /^(Curriculum|Admission to the program|How to enroll|Careers)$/.test(old.trim()) && val !== old.trim()) {
+				if (field === 'headline' && /^(Curriculum|Admission to the program|How to enroll|Careers)$/.test(norm(old)) && val !== norm(old)) {
 					note = 'Saved. Note: degree maps are listed on the card headed "Curriculum", and the search summary reads the standard headlines.';
 				}
-				var undo = function () { var g = {}; g[field] = old; save(scope, g, { quiet: true, apply: { node: node, field: field, kind: 'text', placeholder: placeholder } }); };
+				var undo = function () { var g = {}; g[field] = old; fire(save(scope, g, { quiet: true, apply: { node: node, field: field, kind: 'text', placeholder: placeholder } })); };
 				save(scope, f, { undo: undo, note: note, apply: { node: node, field: field, kind: 'text', placeholder: placeholder } }).catch(function () { restore(); });
 			}
 			function onKey(e) {
 				if (e.isComposing || e.keyCode === 229) { return; }   // IME composition in progress
 				if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); node.blur(); }
-				else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); node.textContent = old; node.blur(); }
+				else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); node.blur(); }
 			}
 			function onBlur() { commit(); }
 			function onPaste(e) {
@@ -325,7 +330,7 @@
 					if (html === initial) { finish(oldHtml); return; }
 					finish(html).then(function () {
 						var f = {}; f[field] = html;
-						var undo = function () { var g = {}; g[field] = wasEmpty ? '' : oldHtml; save(scope, g, { quiet: true, apply: applyTo }); };
+						var undo = function () { var g = {}; g[field] = wasEmpty ? '' : oldHtml; fire(save(scope, g, { quiet: true, apply: applyTo })); };
 						save(scope, f, { undo: undo, apply: applyTo }).catch(function () { node.innerHTML = oldHtml; });
 					});
 				}
@@ -518,27 +523,27 @@
 		var sid = tools ? Number(tools.getAttribute('data-ma-section')) : 0;
 		var sec = sid ? document.querySelector('[data-section="' + sid + '"]') : null;
 		var shared = sec && sec.getAttribute('data-ma-scope') === 'block';
-		if (a === 'move') { act('move_section', { section_id: sid, dir: btn.getAttribute('data-dir') }); return; }
-		if (a === 'add') { act('add_section', { kind: btn.getAttribute('data-kind'), after: btn.getAttribute('data-after') || 0 }).then(function (r) { scrollToSection(r.section_id); }); return; }
-		if (a === 'add-shared') { blockSelect(function (bid) { act('add_section', { kind: 'teaser', after: btn.getAttribute('data-after') || 0, block_id: bid }).then(function (r) { scrollToSection(r.section_id); }); }, btn, 'Add shared text'); return; }
+		if (a === 'move') { fire(act('move_section', { section_id: sid, dir: btn.getAttribute('data-dir') })); return; }
+		if (a === 'add') { fire(act('add_section', { kind: btn.getAttribute('data-kind'), after: btn.getAttribute('data-after') || 0 }).then(function (r) { scrollToSection(r.section_id); })); return; }
+		if (a === 'add-shared') { blockSelect(function (bid) { fire(act('add_section', { kind: 'teaser', after: btn.getAttribute('data-after') || 0, block_id: bid }).then(function (r) { scrollToSection(r.section_id); })); }, btn, 'Add shared text'); return; }
 		if (a === 'add-after') {
 			var box = el('div', { class: 'ma-btn-row ma-btn-row--stack' },
-				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Card (two across)', onclick: function () { pop.close(); act('add_section', { kind: 'teaser', after: sid }).then(function (r) { scrollToSection(r.section_id); }); } }),
-				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Feature (full width, with photo)', onclick: function () { pop.close(); act('add_section', { kind: 'feature', after: sid }).then(function (r) { scrollToSection(r.section_id); }); } }),
-				el('button', { type: 'button', class: 'ma-btn', text: '+ Shared text…', onclick: function () { pop.close(); blockSelect(function (bid) { act('add_section', { kind: 'teaser', after: sid, block_id: bid }).then(function (r) { scrollToSection(r.section_id); }); }, btn, 'Add shared text'); } }));
+				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Card (two across)', onclick: function () { pop.close(); fire(act('add_section', { kind: 'teaser', after: sid }).then(function (r) { scrollToSection(r.section_id); })); } }),
+				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Feature (full width, with photo)', onclick: function () { pop.close(); fire(act('add_section', { kind: 'feature', after: sid }).then(function (r) { scrollToSection(r.section_id); })); } }),
+				el('button', { type: 'button', class: 'ma-btn', text: '+ Shared text…', onclick: function () { pop.close(); blockSelect(function (bid) { fire(act('add_section', { kind: 'teaser', after: sid, block_id: bid }).then(function (r) { scrollToSection(r.section_id); })); }, btn, 'Add shared text'); } }));
 			var pop = U.popover(btn, { title: 'Add after this section', content: box, width: 320 });
 			return;
 		}
 		if (a === 'section-menu') {
 			var items = el('div', { class: 'ma-btn-row ma-btn-row--stack' });
 			if (shared) {
-				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Customize: give this page its own copy', onclick: function () { menu.close(); act('detach_section', { section_id: sid }); } }));
+				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Customize: give this page its own copy', onclick: function () { menu.close(); fire(act('detach_section', { section_id: sid })); } }));
 			} else {
-				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Use shared text instead…', onclick: function () { menu.close(); blockSelect(function (bid) { act('swap_section_block', { section_id: sid, block_id: bid }); }, btn, 'Use shared text'); } }));
+				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Use shared text instead…', onclick: function () { menu.close(); blockSelect(function (bid) { fire(act('swap_section_block', { section_id: sid, block_id: bid })); }, btn, 'Use shared text'); } }));
 			}
 			items.appendChild(el('button', { type: 'button', class: 'ma-btn ma-btn--danger', text: 'Remove this section from the page', onclick: function () {
 				menu.close();
-				act('delete_section', { section_id: sid }).then(function (r) {
+				fire(act('delete_section', { section_id: sid }).then(function (r) {
 					var rm = r.removed || {};
 					toast(shared ? 'Section removed (the shared text stays on the other pages).' : 'Section removed.', { undo: function () {
 						var body = { kind: rm.kind, after: rm.after, label: rm.label, headline: rm.headline, body: rm.body, image_url: rm.image_url, image_alt: rm.image_alt, block_id: rm.block_id || null };
@@ -551,7 +556,7 @@
 						ajax('add_section', q).then(function (res) { working(false); swap(res); setStatus('Saved', 'ok'); scrollToSection(res.section_id); })
 							.catch(function (ex) { working(false); toast(ex.message, { kind: 'error' }); });
 					} });
-				});
+				}));
 			} }));
 			var menu = U.popover(btn, { title: 'This section', content: items, width: 320 });
 			return;
@@ -572,7 +577,7 @@
 		ids.forEach(function (id) { body.append('similar[]', id); });
 		if (!ids.length) { body.append('similar[]', ''); }
 		return save({ kind: 'similar' }, body, { quiet: true }).then(function () {
-			toast('Similar programs saved', { undo: previous ? function () { saveSimilar(previous); } : null });
+			toast('Similar programs saved', { undo: previous ? function () { fire(saveSimilar(previous)); } : null });
 		});
 	}
 	function openSimilarAdd(btn) {
@@ -580,20 +585,22 @@
 		var list = el('div', { class: 'ma-results' });
 		var box = el('div', {}, el('div', { class: 'ma-field' }, input), list);
 		var pop = U.popover(btn, { title: 'Add a similar program', content: box, width: 420 });
-		var t = null;
+		var t = null, seq = 0;
 		input.addEventListener('input', function () {
 			clearTimeout(t);
 			var q = input.value.trim();
-			if (q.length < 2) { list.innerHTML = ''; return; }
+			if (q.length < 2) { seq++; list.innerHTML = ''; return; }
 			t = setTimeout(function () {
+				var my = ++seq;
 				ajax('program_search', { q: q }, { method: 'GET' }).then(function (r) {
+					if (my !== seq) { return; }   // a newer query is in flight
 					list.innerHTML = '';
 					var have = similarIds();
 					(r.results || []).filter(function (x) { return x.id !== PID && have.indexOf(x.id) === -1; }).slice(0, 12).forEach(function (x) {
-						list.appendChild(el('button', { type: 'button', class: 'ma-result', text: x.text, onclick: function () { pop.close(); saveSimilar(have.concat([x.id])); } }));
+						list.appendChild(el('button', { type: 'button', class: 'ma-result', text: x.text, onclick: function () { pop.close(); fire(saveSimilar(have.concat([x.id]))); } }));
 					});
 					if (!list.firstChild) { list.appendChild(el('div', { class: 'ma-pick-empty', text: 'No other program matches.' })); }
-				}).catch(function (ex) { list.textContent = ex.message; });
+				}).catch(function (ex) { if (my === seq) { list.textContent = ex.message; } });
 			}, 200);
 		});
 	}
@@ -605,21 +612,22 @@
 			var form = pop.el.querySelector('form');
 			var base = form.querySelector('[name=basename]');
 			var echo = form.querySelector('[data-ma-basename-echo]');
-			if (base && echo) { base.addEventListener('input', function () { echo.textContent = base.value; }); }
+			var cleanName = function (v) { return v.toLowerCase().replace(/['\u2018\u2019]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 120); };
+			if (base && echo) { base.addEventListener('input', function () { echo.textContent = cleanName(base.value); }); }
 			form.querySelector('[data-ma-cancel]').addEventListener('click', function () { pop.close(); });
 			form.addEventListener('submit', function (e) {
 				e.preventDefault();
 				var body = U.serialize(form);
-				var newBase = base ? base.value.trim() : '';
-				save({ kind: 'program' }, body, { quiet: true }).then(function () {
+				save({ kind: 'program' }, body, { quiet: true }).then(function (res) {
 					pop.close();
 					toast('Settings saved');
 					var retired = document.querySelector('[data-ma-retired]');
 					if (retired) { retired.hidden = form.querySelector('[name=status]').value !== 'retired'; }
+					var stored = res && res.fields && typeof res.fields.basename === 'string' ? res.fields.basename : '';
 					var here = new URLSearchParams(window.location.search).get('program') || '';
-					if (newBase && here && newBase !== here) {
-						// the page name changed: move to the new address so a reload keeps working
-						window.location = window.location.pathname + '?program=' + encodeURIComponent(newBase);
+					if (stored && here && stored !== here) {
+						// the page name changed: move to the address the server stored so a reload keeps working
+						window.location = window.location.pathname + '?program=' + encodeURIComponent(stored);
 					}
 				}).catch(function (ex) { var er = form.querySelector('.ma-error') || form.appendChild(el('div', { class: 'ma-error' })); er.textContent = ex.message; });
 			});
@@ -634,7 +642,7 @@
 		var actBtn = t.closest('[data-ma-act]');
 		if (actBtn) { handleAct(actBtn, e); return; }
 		var rm = t.closest('[data-ma-similar-remove]');
-		if (rm) { e.preventDefault(); var id = Number(rm.getAttribute('data-ma-similar-remove')); var before = similarIds(); saveSimilar(before.filter(function (x) { return x !== id; }), before); return; }
+		if (rm) { e.preventDefault(); var id = Number(rm.getAttribute('data-ma-similar-remove')); var before = similarIds(); fire(saveSimilar(before.filter(function (x) { return x !== id; }), before)); return; }
 		if (t.closest('[data-ma-similar-add]')) { e.preventDefault(); openSimilarAdd(t.closest('[data-ma-similar-add]')); return; }
 		if (t.closest('[data-ma-part="similar"] a')) { e.preventDefault(); toast('Use × to remove a program, or the tile to add one.'); return; }
 		if (t.closest('[data-ma-static]')) { e.preventDefault(); toast('Degree maps are linked to the program from the degree-maps admin.'); return; }
@@ -653,7 +661,7 @@
 		if (t.matches('[data-ma-text], [data-ma-html], [data-ma-form], [data-ma-ph]')) { e.preventDefault(); t.click(); }
 	});
 	window.addEventListener('beforeunload', function (e) {
-		if (busy > 0) { e.preventDefault(); e.returnValue = ''; }
+		if (busy > 0 && !U.signedOut) { e.preventDefault(); e.returnValue = ''; }
 	});
 	prime();
 	document.body.classList.add('ma-ready');

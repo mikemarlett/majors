@@ -70,6 +70,7 @@
 .ma-popover__close:hover, .ma-toast__close:hover { color: var(--ma-red); }
 .ma-popover__body { padding: .8rem .9rem .9rem; max-height: min(70vh, 40rem); overflow: auto; }
 .ma-popover--wide { width: 40rem; }
+.ma-popover--wide .ma-popover__body { max-height: min(85vh, 52rem); }
 .ma-popover p { margin: 0 0 .6rem; font-size: .9rem; }
 
 /* ---- toasts --------------------------------------------------------------- */

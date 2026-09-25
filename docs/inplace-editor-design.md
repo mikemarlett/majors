@@ -203,6 +203,27 @@ public page until it has a headline or text.
 - Section moves, inserts, removals and the similar list run in transactions
   with the program's rows locked, so two editors cannot interleave.
 
+## Second review round (browser-verified)
+
+- Text fields carry `data-ma-placeholder`; clearing a headline or label
+  shows the placeholder again instead of a zero-height node. The no-change
+  check normalises whitespace on both sides (imported text holds NBSPs), and
+  Esc cancels without saving.
+- Page settings navigates to the page name the server stored (it may clean
+  what was typed), and an untouched Save never renames a page whose stored
+  name is merely unclean (`__`).
+- A dead session sends the editor to the sign-in page with a return address
+  and no "leave site?" prompt; fire-and-forget actions never surface as
+  unhandled rejections; the similar-program search ignores stale answers;
+  Esc in a text editor behind the sticky settings popover belongs to the
+  editor.
+- The editor's sidebar is built for the public page's URL (`nav_path`), the
+  old design keeps its notch above the Similar Programs band while editing,
+  the new design's card tool strip fits the card column, the block picker
+  stacks headline / college / excerpt, the settings Save row stays in view,
+  and the control panel keeps its state in the query string (the old
+  theme's footcode chokes on `#key=value`).
+
 ## Keyboard and screen readers
 
 Every editable node and placeholder is focusable (`tabindex=0`, `role=button`
