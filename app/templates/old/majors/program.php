@@ -40,6 +40,9 @@ $teaser = static function (array $s, string $extra = '') use ($t, $links, $ed, $
 $groups = [];
 $mapsPlaced = false;
 foreach ($sections as $s) {
+    if (!$editing && !$s['shared'] && trim($s['headline']) === '' && trim(strip_tags($s['body'])) === '') {
+        continue;                          // added in the editor but not written yet
+    }
     if ($s['kind'] === 'teaser') {
         $extra = '';
         if (!$mapsPlaced && $s['headline'] === 'Curriculum' && $mapsHtml !== '') {
@@ -88,12 +91,12 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 				<div><dt><?= $t->e($f['label']) ?></dt><dd><?= $t->e($f['value']) ?></dd></div>
 <?php endforeach; ?>
 			</dl>
-<?php else: ?>
+<?php elseif (!empty($p['graduate'])): ?>
 <?= $ed->placeholder('Add program details (degree, modality, credit hours, entry term)', $factsForm) ?>
 <?php endif; ?>
 <?php if ($coordinator): ?>
 			<p class="majors-coordinator"<?= $coordForm ?>>Questions? Contact <?= $coordinator['name'] !== '' ? 'Program Coordinator ' . $t->e($coordinator['name']) : 'the program' ?><?php if ($coordinator['email'] !== ''): ?> at <a href="mailto:<?= $t->e($coordinator['email']) ?>"><?= $t->e($coordinator['email']) ?></a><?php endif; ?><?php if ($coordinator['phone'] !== ''): ?> or call <?= $t->e($coordinator['phone']) ?><?php endif; ?>.</p>
-<?php else: ?>
+<?php elseif (!empty($p['graduate'])): ?>
 <?= $ed->placeholder('Add a program coordinator (name, email, phone)', $coordForm) ?>
 <?php endif; ?>
 <?php if ($learn_how !== '' || $editing): ?>
@@ -169,8 +172,9 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 	<header class="section-header section-header--centered section-header--no-border collection__header"><h2>Similar Programs</h2></header>
 	<div class="collection__items">
 <?php foreach ($similar as $s): ?>
+<?php $curated = !$editing || ($s['source'] ?? 'curated') === 'curated'; $retired = !empty($s['retired']); ?>
 <?php if ($editing): ?>
-		<div class="ma-similar collection__item" data-ma-similar="<?= (int) $s['id'] ?>">
+		<div class="ma-similar collection__item<?= $curated ? '' : ' ma-similar--reverse' ?><?= $retired ? ' ma-similar--retired' : '' ?>"<?= $curated ? ' data-ma-similar="' . (int) $s['id'] . '"' : '' ?>>
 <?php endif; ?>
 		<a href="<?= $t->e($t->programUrl($s)) ?>" class="teaser <?= $editing ? '' : 'collection__item ' ?>teaser--card-wide teaser--card">
 <?php if (!empty($s['main_image_url'])): ?>
@@ -178,8 +182,14 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 <?php endif; ?>
 			<div class="teaser__body"><div class="teaser__headline"><div class="headline-group"><span class="head"><?= $t->e($s['academic_program']) ?> (<?= $t->e($s['credential'] ?? $s['program_simple_type'] ?? $s['program_type']) ?>)</span></div></div></div>
 		</a>
-<?php if ($editing): ?>
+<?php if ($editing && $curated): ?>
 		<button type="button" class="ma-similar__remove" data-ma-similar-remove="<?= (int) $s['id'] ?>" title="Remove from similar programs" aria-label="Remove <?= $t->e($s['academic_program']) ?> from similar programs">×</button>
+<?php if ($retired): ?>
+		<span class="ma-similar__note">Retired program — not shown publicly</span>
+<?php endif; ?>
+		</div>
+<?php elseif ($editing): ?>
+		<span class="ma-similar__note">Shown because <?= $t->e($s['academic_program']) ?> lists this program; remove it from that page to drop it</span>
 		</div>
 <?php endif; ?>
 <?php endforeach; ?>

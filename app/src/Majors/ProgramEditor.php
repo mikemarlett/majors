@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Majors\Majors;
 
+use Majors\Support\Html;
 use mysqli;
 use RuntimeException;
 
@@ -30,13 +31,19 @@ final class ProgramEditor
     ];
     private const PROGRAM_FLAGS = ['graduate', 'certificate', 'minor', 'badge', 'online_learning', 'online_only', 'is_stem'];
 
+    private bool $inTransaction = false;
+
     public function __construct(private readonly mysqli $db)
     {
     }
 
     // ---- programs --------------------------------------------------------------
 
-    /** @param array<string,mixed> $d name + credential at least. @return int new id */
+    /**
+     * @param array<string,mixed> $d name + credential at least; graduate is
+     *        inferred from the credential when not given; college/department
+     *        optional. @return int new id
+     */
     public function create(array $d): int
     {
         $name = trim((string) ($d['academic_program'] ?? ''));
@@ -47,12 +54,39 @@ final class ProgramEditor
         $type = trim((string) ($d['program_type'] ?? ''));
         $base = self::cleanBasename((string) ($d['basename'] ?? ''));
         $base = $this->uniqueBasename($base !== '' ? $base : self::basenameFor($name, $type, $cred));
-        $this->exec('INSERT INTO `majors_academic_programs` (`academic_program`, `credential`, `program_simple_type`, `program_type`, `basename`, `status`, `graduate`, `sort_order`, `timestamp`)
-                     VALUES (?, ?, ?, ?, ?, "active", ?, 0, NOW())', 'sssssi',
-            [$name, $cred, $cred, $type !== '' ? $type : $cred, $base, (int) (bool) ($d['graduate'] ?? preg_match("/Master|Doctor|Graduate|Postbacc/i", $cred))]);
+        $flags = self::flagsFor($cred);
+        $grad  = array_key_exists('graduate', $d) && $d['graduate'] !== null && $d['graduate'] !== '' ? (int) (bool) $d['graduate'] : $flags['graduate'];
+        $insert = function (string $basename) use ($name, $cred, $type, $d, $grad, $flags): void {
+            $this->exec('INSERT INTO `majors_academic_programs` (`academic_program`, `credential`, `program_simple_type`, `program_type`, `basename`, `college`, `department`, `status`, `graduate`, `minor`, `certificate`, `badge`, `sort_order`, `timestamp`)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, "active", ?, ?, ?, ?, 0, NOW())', 'sssssssiiii',
+                [$name, $cred, $cred, $type !== '' ? $type : $cred, $basename, mb_substr(trim((string) ($d['college'] ?? '')), 0, 255), mb_substr(trim((string) ($d['department'] ?? '')), 0, 255),
+                 $grad, $flags['minor'], $flags['certificate'], $flags['badge']]);
+        };
+        try {
+            $insert($base);
+        } catch (\mysqli_sql_exception $e) {
+            if ($e->getCode() !== 1062) {          // not "duplicate key": someone else took the name between the check and the insert
+                throw $e;
+            }
+            $insert($this->uniqueBasename($base));
+        }
         $id = (int) $this->db->insert_id;
         $this->syncFlat($id);
         return $id;
+    }
+
+    /**
+     * The listing flags a credential implies (the public filters read the
+     * flags, not the credential). @return array{graduate:int,minor:int,certificate:int,badge:int}
+     */
+    public static function flagsFor(string $credential): array
+    {
+        return [
+            'graduate'    => (int) (bool) preg_match('/Master|Doctor|\bGraduate|Postbacc/i', $credential),   // \b: "Undergraduate Certificate" is not graduate
+            'minor'       => (int) (strcasecmp(trim($credential), 'Minor') === 0),
+            'certificate' => (int) (stripos($credential, 'Certificate') !== false),
+            'badge'       => (int) (stripos($credential, 'Badge') !== false),
+        ];
     }
 
     /**
@@ -65,6 +99,14 @@ final class ProgramEditor
     {
         if (array_key_exists('academic_program', $d) && trim((string) $d['academic_program']) === '') {
             throw new RuntimeException('The program name is required.');
+        }
+        // A changed credential re-derives the listing flags unless the form set them itself.
+        if (array_key_exists('credential', $d)) {
+            foreach (self::flagsFor(trim((string) $d['credential'])) as $flag => $on) {
+                if (!array_key_exists($flag, $d)) {
+                    $d[$flag] = $on;
+                }
+            }
         }
         $sets = [];
         $types = '';
@@ -79,6 +121,13 @@ final class ProgramEditor
                 if ($v === '') {
                     continue;
                 }
+                $cur = $this->db->query('SELECT `basename`, `cms_path` FROM `majors_academic_programs` WHERE `id` = ' . $id)->fetch_assoc() ?: [];
+                if ($v === (string) ($cur['basename'] ?? '')) {
+                    continue;
+                }
+                if ((string) ($cur['cms_path'] ?? '') !== '') {
+                    throw new RuntimeException('This page name comes from the CMS page the program was imported from and is the key the importer matches on; it cannot be changed here.');
+                }
                 if ($this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$v, $id]) !== null) {
                     throw new RuntimeException("Another program already uses the page name \"$v\".");
                 }
@@ -88,6 +137,9 @@ final class ProgramEditor
             }
             if ($col === 'coordinator_email' && $v !== '' && !filter_var($v, FILTER_VALIDATE_EMAIL)) {
                 throw new RuntimeException('The coordinator email is not a valid address.');
+            }
+            if ($col === 'description') {
+                $v = Html::clean($v);
             }
             $sets[] = "`$col` = ?";
             $types .= 's';
@@ -176,8 +228,8 @@ final class ProgramEditor
             if (!is_array($l)) {
                 continue;
             }
-            $text = trim((string) ($l['text'] ?? $l['link_text'] ?? ''));
-            $href = trim((string) ($l['href'] ?? $l['url'] ?? ''));
+            $text = trim(strip_tags((string) ($l['text'] ?? $l['link_text'] ?? '')));
+            $href = Html::safeUrl((string) ($l['href'] ?? $l['url'] ?? ''));
             if ($text !== '' && $href !== '') {
                 $out[] = ['text' => mb_substr($text, 0, 200), 'href' => mb_substr($href, 0, 500)];
             }
@@ -187,18 +239,21 @@ final class ProgramEditor
 
     // ---- sections --------------------------------------------------------------
 
-    /** @param array<string,mixed> $d kind, label, headline, body, links, image_url, image_alt, block_id */
-    public function saveSection(int $programId, ?int $sectionId, array $d): int
+    /**
+     * @param array<string,mixed> $d kind, label, headline, body, links, image_url, image_alt, block_id
+     * @param bool $allowEmpty the in-place editor adds a blank section and fills it on the page; the public page skips it until then
+     */
+    public function saveSection(int $programId, ?int $sectionId, array $d, bool $allowEmpty = false): int
     {
         $kind    = in_array($d['kind'] ?? '', self::KINDS, true) ? $d['kind'] : 'teaser';
         $blockId = !empty($d['block_id']) ? (int) $d['block_id'] : null;
         if ($blockId !== null && $this->scalar('SELECT `id` FROM `majors_content_blocks` WHERE `id` = ?', 'i', [$blockId]) === null) {
             throw new RuntimeException('That shared block no longer exists.');
         }
-        $headline = $blockId ? null : mb_substr(trim((string) ($d['headline'] ?? '')), 0, 255);
-        $body     = $blockId ? null : trim((string) ($d['body'] ?? ''));
+        $headline = $blockId ? null : mb_substr(trim(strip_tags((string) ($d['headline'] ?? ''))), 0, 255);
+        $body     = $blockId ? null : Html::clean((string) ($d['body'] ?? ''));
         $links    = $blockId ? null : json_encode(self::links($d['links'] ?? []), JSON_UNESCAPED_SLASHES);
-        if ($blockId === null && $headline === '' && $body === '') {
+        if ($blockId === null && $headline === '' && $body === '' && !$allowEmpty) {
             throw new RuntimeException('A section needs a headline or some text, or a shared block.');
         }
         $label = mb_substr(trim((string) ($d['label'] ?? '')), 0, 100);
@@ -225,20 +280,47 @@ final class ProgramEditor
                       WHERE s.`id` = ? AND s.`program_id` = ?', 'ii', [$sectionId, $programId]);
     }
 
-    public function deleteSection(int $programId, int $sectionId): void
+    /**
+     * Remove a section. Returns what was removed (its fields and the id of
+     * the section before it, 0 = it was first) so the client can offer Undo
+     * by re-creating it.
+     *
+     * @return array<string,mixed>
+     */
+    public function deleteSection(int $programId, int $sectionId): array
     {
+        $row = $this->section($programId, $sectionId);
+        $ids = $this->sectionIds($programId);
+        $i   = array_search($sectionId, $ids, true);
         $this->exec('DELETE FROM `majors_program_sections` WHERE `id` = ? AND `program_id` = ?', 'ii', [$sectionId, $programId]);
         $this->syncFlat($programId);
+        return [
+            'kind' => (string) $row['kind'], 'label' => (string) $row['label'], 'headline' => (string) ($row['headline'] ?? ''), 'body' => (string) ($row['body'] ?? ''),
+            'links' => (string) ($row['links'] ?? ''), 'image_url' => (string) ($row['image_url'] ?? ''), 'image_alt' => (string) ($row['image_alt'] ?? ''),
+            'block_id' => $row['block_id'] !== null ? (int) $row['block_id'] : 0, 'after' => $i !== false && $i > 0 ? $ids[$i - 1] : 0,
+        ];
     }
 
-    /** @param list<int> $ids section ids in the new order */
+    /**
+     * Renumber the sections in the given order. Ids that are not this
+     * program's are ignored and any of its sections missing from the list keep
+     * their relative order at the end, so a stale list can never lose a
+     * section or leave duplicate positions.
+     *
+     * @param list<int> $ids section ids in the new order
+     */
     public function reorderSections(int $programId, array $ids): void
     {
-        $pos = 0;
-        foreach ($ids as $id) {
-            $pos++;
-            $this->exec('UPDATE `majors_program_sections` SET `position` = ? WHERE `id` = ? AND `program_id` = ?', 'iii', [$pos, (int) $id, $programId]);
-        }
+        $this->transaction(function () use ($programId, $ids): void {
+            $current = $this->sectionIds($programId, true);
+            $wanted  = array_values(array_filter(array_map('intval', $ids), static fn (int $id) => in_array($id, $current, true)));
+            $order   = array_values(array_unique(array_merge($wanted, array_diff($current, $wanted))));
+            $pos = 0;
+            foreach ($order as $id) {
+                $pos++;
+                $this->exec('UPDATE `majors_program_sections` SET `position` = ? WHERE `id` = ? AND `program_id` = ?', 'iii', [$pos, $id, $programId]);
+            }
+        });
         $this->syncFlat($programId);
     }
 
@@ -278,7 +360,7 @@ final class ProgramEditor
             }
             $sets[] = "`$col` = ?";
             $types .= 's';
-            $vals[] = mb_substr(trim((string) $fields[$col]), 0, $max);
+            $vals[] = mb_substr($col === 'body' ? Html::clean((string) $fields[$col]) : trim(strip_tags((string) $fields[$col])), 0, $max);
         }
         if (array_key_exists('links', $fields)) {
             if ($row['block_id'] !== null) {
@@ -307,7 +389,7 @@ final class ProgramEditor
             if (array_key_exists($col, $fields)) {
                 $sets[] = "`$col` = ?";
                 $types .= 's';
-                $vals[] = mb_substr(trim((string) $fields[$col]), 0, $max);
+                $vals[] = mb_substr($col === 'body' ? Html::clean((string) $fields[$col]) : trim(strip_tags((string) $fields[$col])), 0, $max);
             }
         }
         if (array_key_exists('links', $fields)) {
@@ -331,35 +413,55 @@ final class ProgramEditor
      */
     public function insertSectionAfter(int $programId, int $afterId, array $d): int
     {
-        if (empty($d['headline']) && empty($d['body']) && empty($d['block_id'])) {
-            $d['headline'] = ($d['kind'] ?? 'teaser') === 'feature' ? 'New feature' : 'New card';
-            $d['body']     = '<p>Click to write the text.</p>';
-        }
         if (($d['kind'] ?? 'teaser') === 'feature' && empty($d['label'])) {
             $d['label'] = 'Inside the Program';
         }
-        $id  = $this->saveSection($programId, null, $d);
-        $ids = $this->sectionIds($programId);
-        if ($afterId > 0 && in_array($afterId, $ids, true)) {
-            $ids = array_values(array_diff($ids, [$id]));
-            array_splice($ids, array_search($afterId, $ids, true) + 1, 0, [$id]);
-            $this->reorderSections($programId, $ids);
-        }
-        return $id;
+        return $this->transaction(function () use ($programId, $afterId, $d): int {
+            $id  = $this->saveSection($programId, null, $d, true);
+            $ids = $this->sectionIds($programId, true);
+            if ($afterId > 0 && in_array($afterId, $ids, true)) {
+                $ids = array_values(array_diff($ids, [$id]));
+                array_splice($ids, array_search($afterId, $ids, true) + 1, 0, [$id]);
+                $this->reorderSections($programId, $ids);
+            }
+            return $id;
+        });
     }
 
     /** Swap a section with its neighbour ('up' | 'down'). */
     public function moveSection(int $programId, int $sectionId, string $dir): void
     {
         $this->section($programId, $sectionId);
-        $ids = $this->sectionIds($programId);
-        $i   = array_search($sectionId, $ids, true);
-        $j   = $dir === 'up' ? $i - 1 : $i + 1;
-        if ($i === false || $j < 0 || $j >= count($ids)) {
-            return;
+        $this->transaction(function () use ($programId, $sectionId, $dir): void {
+            $ids = $this->sectionIds($programId, true);
+            $i   = array_search($sectionId, $ids, true);
+            $j   = $dir === 'up' ? $i - 1 : $i + 1;
+            if ($i === false || $j < 0 || $j >= count($ids)) {
+                return;
+            }
+            [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
+            $this->reorderSections($programId, $ids);
+        });
+    }
+
+    /** Run $fn inside a transaction (nested calls join the outer one). @return mixed */
+    private function transaction(callable $fn): mixed
+    {
+        if ($this->inTransaction) {
+            return $fn();
         }
-        [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
-        $this->reorderSections($programId, $ids);
+        $this->inTransaction = true;
+        $this->db->begin_transaction();
+        try {
+            $out = $fn();
+            $this->db->commit();
+            return $out;
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            throw $e;
+        } finally {
+            $this->inTransaction = false;
+        }
     }
 
     /** Point a section at a shared block (its own text is dropped; kind, label and image stay). */
@@ -371,10 +473,10 @@ final class ProgramEditor
         $this->syncFlat($programId);
     }
 
-    /** @return list<int> section ids in page order */
-    public function sectionIds(int $programId): array
+    /** @return list<int> section ids in page order (cards and features only; legacy kind=similar rows are ignored). $lock = FOR UPDATE inside a transaction. */
+    public function sectionIds(int $programId, bool $lock = false): array
     {
-        $stmt = $this->db->prepare('SELECT `id` FROM `majors_program_sections` WHERE `program_id` = ? ORDER BY `position`, `id`');
+        $stmt = $this->db->prepare('SELECT `id` FROM `majors_program_sections` WHERE `program_id` = ? AND `kind` IN ("teaser", "feature") ORDER BY `position`, `id`' . ($lock ? ' FOR UPDATE' : ''));
         $stmt->bind_param('i', $programId);
         $stmt->execute();
         $ids = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'id'));
@@ -386,7 +488,7 @@ final class ProgramEditor
     public function blockUseCounts(): array
     {
         $out = [];
-        foreach ($this->db->query('SELECT `block_id`, COUNT(*) AS n FROM `majors_program_sections` WHERE `block_id` IS NOT NULL GROUP BY `block_id`')->fetch_all(MYSQLI_ASSOC) as $r) {
+        foreach ($this->db->query('SELECT `block_id`, COUNT(DISTINCT `program_id`) AS n FROM `majors_program_sections` WHERE `block_id` IS NOT NULL GROUP BY `block_id`')->fetch_all(MYSQLI_ASSOC) as $r) {
             $out[(int) $r['block_id']] = (int) $r['n'];
         }
         return $out;
@@ -431,8 +533,35 @@ final class ProgramEditor
     /** @return list<array<string,mixed>> blocks with a use count */
     public function blocks(): array
     {
-        return $this->db->query('SELECT b.*, (SELECT COUNT(*) FROM `majors_program_sections` s WHERE s.`block_id` = b.`id`) AS uses
+        return $this->db->query('SELECT b.*, (SELECT COUNT(DISTINCT s.`program_id`) FROM `majors_program_sections` s WHERE s.`block_id` = b.`id`) AS uses
                                    FROM `majors_content_blocks` b ORDER BY uses DESC, b.`headline`')->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * Blocks for the in-place picker: many share a headline ("Admission to the
+     * program" ×17, one per college), so each carries the colleges that use it
+     * and an excerpt of its text. @return list<array{id:int,headline:string,uses:int,colleges:string,excerpt:string}>
+     */
+    public function blocksForPicker(): array
+    {
+        $rows = $this->db->query('SELECT b.`id`, b.`headline`, b.`slug`, b.`body`, COUNT(DISTINCT s.`program_id`) AS uses,
+                                         GROUP_CONCAT(DISTINCT p.`college` ORDER BY p.`college` SEPARATOR ", ") AS colleges
+                                    FROM `majors_content_blocks` b
+                               LEFT JOIN `majors_program_sections` s ON s.`block_id` = b.`id`
+                               LEFT JOIN `majors_academic_programs` p ON p.`id` = s.`program_id`
+                                GROUP BY b.`id` ORDER BY b.`headline`, uses DESC')->fetch_all(MYSQLI_ASSOC);
+        $out = [];
+        foreach ($rows as $r) {
+            $text = trim(preg_replace('/\s+/', ' ', strip_tags((string) ($r['body'] ?? ''))) ?? '');
+            $out[] = [
+                'id'       => (int) $r['id'],
+                'headline' => (string) ($r['headline'] !== '' ? $r['headline'] : $r['slug']),
+                'uses'     => (int) $r['uses'],
+                'colleges' => (string) ($r['colleges'] ?? ''),
+                'excerpt'  => mb_substr($text, 0, 110) . (mb_strlen($text) > 110 ? '…' : ''),
+            ];
+        }
+        return $out;
     }
 
     /** @return array<string,mixed>|null */
@@ -461,8 +590,8 @@ final class ProgramEditor
     /** @param array<string,mixed> $d slug, headline, body, links, note. @return int id */
     public function saveBlock(?int $id, array $d): int
     {
-        $headline = mb_substr(trim((string) ($d['headline'] ?? '')), 0, 255);
-        $body     = trim((string) ($d['body'] ?? ''));
+        $headline = mb_substr(trim(strip_tags((string) ($d['headline'] ?? ''))), 0, 255);
+        $body     = Html::clean((string) ($d['body'] ?? ''));
         if ($headline === '' && $body === '') {
             throw new RuntimeException('A block needs a headline or some text.');
         }
@@ -505,6 +634,7 @@ final class ProgramEditor
             return;
         }
         $sections = (new ProgramRepository($this->db))->sections($programId);
+        $sections = array_values(array_filter($sections, static fn ($s) => $s['shared'] || trim($s['headline']) !== '' || trim(strip_tags($s['body'])) !== ''));   // unfinished sections are not on the public page
         $find = static function (array $heads, string $kind = 'teaser') use ($sections): ?array {
             foreach ($sections as $s) {
                 if ($s['kind'] === $kind && ($heads === [] || in_array($s['headline'], $heads, true))) {

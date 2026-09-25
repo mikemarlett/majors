@@ -26,6 +26,18 @@ foreach ($it as $f) {
 }
 echo $fail === 0 ? "  all files parse\n" : "  {$fail} file(s) with syntax errors\n";
 
+echo "== ajax routes\n";
+require_once __DIR__ . '/../src/Support/Autoloader.php';
+\Majors\Support\Autoloader::register('Majors\\', __DIR__ . '/../src');
+$routes = (new ReflectionClass(\Majors\Http\AjaxKernel::class))->getConstant('ROUTES');
+$unguarded = array_keys(array_filter($routes, static fn ($r) => $r[3] === 'POST' && $r[4] !== true));
+if ($unguarded === []) {
+    echo "  every POST route requires the CSRF token (" . count($routes) . " routes)\n";
+} else {
+    $fail++;
+    echo "  POST routes WITHOUT csrf: " . implode(', ', $unguarded) . "\n";
+}
+
 echo "== scripts\n";
 foreach (glob(__DIR__ . '/*.php') ?: [] as $script) {
     $name = basename($script);

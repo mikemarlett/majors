@@ -163,6 +163,9 @@ body {
 .majors-facts dt { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
 .majors-facts dd { margin: 0; font-size: 1.6rem; font-weight: 900; line-height: 1.1; }
 .majors-new .majors-facts { display: grid; }
+/* feature band: the body sits in its own wrapper after the h3 (so it can be edited on its own); keep prose rhythm */
+.majors-new .prose .majors-body > :first-child { margin-top: 0; }
+.majors-new .prose .majors-body > :last-child { margin-bottom: 0; }
 
 /* ---- advisors' help page ------------------------------------------------ */
 .majors-help { max-width: 70ch; }

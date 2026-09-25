@@ -66,6 +66,9 @@ chk "$(GET -b $J "$B/_admin/program.php?id=$PROG")" 403 "advisor blocked from th
 chk "$(GET "$B/index.php?program=$PBN")" 200 "public page by basename"; hasnt $S/out.html 'data-ma-' 'no editing markers on the public page'
 chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?id=$PROG")" "301 $B/index.php?program=$PBN" "?id redirects to the basename address"
 chk "$(GET "$B/index.php?program=no_such_program_zz")" 404 "unknown basename"
+RET_BN=$(Q "SELECT basename FROM majors_academic_programs WHERE status='retired' AND basename<>'' LIMIT 1"); [ -n "$RET_BN" ] && chk "$(GET "$B/index.php?program=$RET_BN")" 404 "retired program is not public"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=$(echo $PBN | tr a-z A-Z)")" "301 $B/index.php?program=$PBN" "another spelling of the page name redirects to the stored one"
+GET "$B/index.php?program=$PBN" >/dev/null; has $S/out.html "rel=\"canonical\" href=\"/academics/majors/index.php?program=$PBN\"" 'canonical link on the public page'
 GET -b $M "$B/_admin/program.php?id=$PROG" >/dev/null; MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//')
 MP() { curl -s -b $M -H "X-CSRF-Token: $MC" "$@"; }
 MA=$B/_admin/ajax.php
@@ -89,14 +92,21 @@ chk "$(Q "SELECT block_id=$BLK AND headline IS NULL FROM majors_program_sections
 chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "headline=x" "$MA?action=save_section_fields")" 409 "per-field save refused on a shared section"
 R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=detach_section"); echo "$R" | grep -q '"success":true' && ok "detach_section" || bad "detach: $R"
 chk "$(Q "SELECT block_id IS NULL AND headline<>'' FROM majors_program_sections WHERE id=$SEC")" 1 "detached section owns the block's text"
+chk "$(curl -s -o /dev/null -b $M -w "%{http_code}" -X POST --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "headline=x" "$MA?action=save_section_fields")" 419 "save_section_fields without the CSRF token → 419"
+chk "$(curl -s -o /dev/null -b $M -w "%{http_code}" -X POST -d "program_id=$PROG&kind=feature&after=0" "$MA?action=add_section")" 419 "add_section without the CSRF token → 419"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "body=<p onclick=\"x()\">safe <script>alert(1)</script><a href=\"javascript:alert(2)\">link</a></p>" "$MA?action=save_section_fields"); echo "$R" | grep -q '"success":true' && ok "save_section_fields (unsafe html)" || bad "unsafe html: $R"
+chk "$(Q "SELECT body FROM majors_program_sections WHERE id=$SEC")" "<p>safe link</p>" "rich text is sanitised on the way in"
 R=$(MP -d "program_id=$PROG&kind=feature&after=$SEC" "$MA?action=add_section"); SEC2=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC2" ] && ok "add_section after → $SEC2" || bad "add_section: $R"
+chk "$(Q "SELECT COALESCE(headline,'')='' AND COALESCE(body,'')='' FROM majors_program_sections WHERE id=$SEC2")" 1 "a new section starts blank"
+GET "$B/index.php?program=$PBN" >/dev/null; hasnt $S/out.html "data-section=\"$SEC2\"" 'a blank section is not on the public page'
+GET -b $M "$B/_admin/program.php?program=$PBN" >/dev/null; has $S/out.html "data-section=\"$SEC2\"" 'a blank section is on the editor page'
 chk "$(Q "SELECT (SELECT position FROM majors_program_sections WHERE id=$SEC2) = (SELECT position FROM majors_program_sections WHERE id=$SEC) + 1")" 1 "new section sits right after"
 chk "$(Q "SELECT CONCAT(kind,'|',label) FROM majors_program_sections WHERE id=$SEC2")" "feature|Inside the Program" "new feature has the band label"
 R=$(MP -d "program_id=$PROG&section_id=$SEC2&dir=up" "$MA?action=move_section"); echo "$R" | grep -q '"success":true' && ok "move_section" || bad "move: $R"
 chk "$(Q "SELECT (SELECT position FROM majors_program_sections WHERE id=$SEC2) < (SELECT position FROM majors_program_sections WHERE id=$SEC)")" 1 "section moved up"
 OTHER_SEC=$(Q "SELECT id FROM majors_program_sections WHERE program_id<>$PROG LIMIT 1")
 chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$OTHER_SEC" --data-urlencode "headline=x" "$MA?action=save_section_fields")" 422 "another program's section is refused"
-R=$(MP -d "program_id=$PROG&section_id=$SEC2" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (feature)" || bad "delete: $R"
+R=$(MP -d "program_id=$PROG&section_id=$SEC2" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (feature)" || bad "delete: $R"; echo "$R" | grep -q '"removed":{"kind":"feature"' && ok "delete_section returns what was removed (for Undo)" || bad "removed payload: $R"
 R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (card)" || bad "delete: $R"
 R=$(curl -s -b $M "$MA?action=program_search&q=engineering"); echo "$R" | grep -q '"results":\[{' && ok "program_search" || bad "search: $R"
 OTHER=$(Q "SELECT id FROM majors_academic_programs WHERE status='active' AND id<>$PROG ORDER BY id LIMIT 1")

@@ -30,13 +30,16 @@ final class AdminProgramController extends Controller
         ];
         $common = ['user' => $user, 'csrf' => $csrf, 'head' => $head];
 
+        $colleges    = array_column($db->query('SELECT `name` FROM `majors_colleges` ORDER BY `name`')->fetch_all(MYSQLI_ASSOC), 'name');
+        $departments = array_column($db->query('SELECT DISTINCT `department` FROM `majors_departments` ORDER BY `department`')->fetch_all(MYSQLI_ASSOC), 'department');
+
         if ($r->int('new') === 1) {
             $foot = [
                 '<script>window.MajorsAdmin = ' . json_encode(['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf], JSON_UNESCAPED_SLASHES) . ';</script>',
                 '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
                 '<script src="' . $layout->e($layout->asset('admin/inplace.js')) . '" defer></script>',
             ];
-            $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf, 'public_base' => $layout->url('index.php') . '?program=']), [
+            $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf, 'public_base' => $layout->url('index.php') . '?program=', 'colleges' => $colleges, 'departments' => $departments]), [
                 'title' => 'New program', 'page_header' => 'New program', 'body_class' => 'majors-admin', 'foot' => $foot,
             ] + $common);
             return;
@@ -51,9 +54,7 @@ final class AdminProgramController extends Controller
         $pid      = (int) $program['id'];
         $renderer = new ProgramRenderer($layout);
         $parts    = $renderer->parts($program, $this->app->maps()->forProgram($pid), true, $editor->blockUseCounts());
-        $blocks   = array_map(static fn (array $b) => ['id' => (int) $b['id'], 'headline' => (string) ($b['headline'] ?: $b['slug']), 'uses' => (int) $b['uses']], $editor->blocks());
-        $colleges = array_column($db->query('SELECT `name` FROM `majors_colleges` ORDER BY `name`')->fetch_all(MYSQLI_ASSOC), 'name');
-        $departments = array_column($db->query('SELECT DISTINCT `department` FROM `majors_departments` ORDER BY `department`')->fetch_all(MYSQLI_ASSOC), 'department');
+        $blocks   = $editor->blocksForPicker();
 
         $config = [
             'ajax'        => $layout->url('_admin/ajax.php'),

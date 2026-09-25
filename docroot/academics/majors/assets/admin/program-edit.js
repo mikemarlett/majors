@@ -27,6 +27,7 @@
 			if (ta._ck || editors[ta.id]) { return; }
 			ta._ck = true;
 			window.ClassicEditor.create(ta, {
+				removePlugins: ['Image', 'ImageCaption', 'ImageStyle', 'ImageToolbar', 'ImageUpload', 'EasyImage', 'CKBox', 'CKFinder', 'CKFinderUploadAdapter', 'CloudServices', 'MediaEmbed', 'AutoMediaEmbed', 'Table', 'TableToolbar', 'BlockQuote', 'Indent', 'TextTransformation', 'PictureEditing'],
 				toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'undo', 'redo'],
 				heading: { options: [{ model: 'paragraph', title: 'Paragraph' }, { model: 'heading3', view: 'h3', title: 'Heading' }] }
 			}).then(function (ed) { editors[ta.id] = ed; }).catch(function () { ta._ck = false; });

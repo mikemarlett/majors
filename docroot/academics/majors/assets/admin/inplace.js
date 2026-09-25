@@ -41,6 +41,8 @@
 			}, 250);
 		}
 		['academic_program', 'program_type', 'credential'].forEach(function (n) { np[n].addEventListener('input', preview); np[n].addEventListener('change', preview); });
+		var gradBox = np.querySelector('[data-ma-graduate]');
+		np.credential.addEventListener('change', function () { if (gradBox) { gradBox.checked = /Master|Doctor|\bGraduate|Postbacc/i.test(np.credential.value); } });
 		baseInput.addEventListener('input', function () { touched = baseInput.value.trim() !== ''; preview(); });
 		np.addEventListener('submit', function (e) {
 			e.preventDefault();
@@ -84,10 +86,11 @@
 		fresh.forEach(function (n) { var k = n.getAttribute('data-ma-part'); if (by[k]) { by[k].push(n); } });
 		['card', 'similar'].forEach(function (k) {
 			var old = document.querySelector('[data-ma-part="' + k + '"]');
-			if (old && by[k][0]) { old.replaceWith(by[k][0]); }
+			if (old && by[k][0] && old.outerHTML !== by[k][0].outerHTML) { old.replaceWith(by[k][0]); }
 		});
 		var olds = Array.prototype.slice.call(document.querySelectorAll('[data-ma-part="content"]'));
-		if (olds.length && by.content.length) {
+		var same = olds.length === by.content.length && olds.every(function (n, i) { return n.outerHTML === by.content[i].outerHTML; });
+		if (olds.length && by.content.length && !same) {
 			by.content.forEach(function (n) { olds[0].parentNode.insertBefore(n, olds[0]); });
 			olds.forEach(function (n) { n.parentNode.removeChild(n); });
 		}
@@ -102,7 +105,9 @@
 	function prime() {
 		document.querySelectorAll('[data-ma-text], [data-ma-html], [data-ma-form]').forEach(function (n) {
 			if (!n.hasAttribute('tabindex')) { n.setAttribute('tabindex', '0'); }
-			if (!n.title && n.hasAttribute('data-ma-form')) { n.title = 'Click to change'; }
+			var what = n.getAttribute('data-ma-text') || n.getAttribute('data-ma-html') || n.getAttribute('data-ma-form') || '';
+			if (!n.title) { n.title = 'Click or press Enter to change the ' + what.replace(/[_-]/g, ' '); }
+			n.setAttribute('aria-roledescription', 'editable');
 		});
 		document.querySelectorAll('[data-ma-part="similar"] a[href]').forEach(function (a) { a.setAttribute('tabindex', '-1'); });
 	}
@@ -132,9 +137,9 @@
 		working(true);
 		return ajax(action, body).then(function (res) {
 			working(false);
-			swap(res);
+			if (opts.apply && res.fields) { applyFields(opts.apply, res); } else { swap(res); }
 			setStatus('Saved', 'ok');
-			if (!opts.quiet) { toast(res.message && scope.kind === 'block' ? res.message : 'Saved', { undo: opts.undo }); }
+			if (!opts.quiet) { toast(opts.note || (res.message && scope.kind === 'block' ? res.message : 'Saved'), { undo: opts.undo }); }
 			return res;
 		}).catch(function (ex) {
 			working(false);
@@ -142,6 +147,22 @@
 			toast(ex.message || 'Not saved', { kind: 'error' });
 			throw ex;
 		});
+	}
+	/* A text/rich-text save updates just its element (the page keeps whatever else is being edited); the title follows a rename. */
+	function applyFields(apply, res) {
+		var node = apply.node, field = apply.field, val = res.fields[field];
+		if (!document.contains(node) || val === undefined) { swap(res); return; }
+		if (apply.kind === 'html') {
+			node.innerHTML = val !== '' ? val : '<p class="ma-ph-text">Click to write the text.</p>';
+		} else {
+			node.textContent = val !== '' ? val : (apply.placeholder || '');
+		}
+		if (val === '') { node.setAttribute('data-ma-empty', '1'); } else { node.removeAttribute('data-ma-empty'); }
+		if (res.title) {
+			document.title = 'Editing: ' + res.title;
+			var t = document.querySelector('[data-ma-title]'); if (t) { t.textContent = res.title; }
+			var h1 = document.querySelector('main h1'); if (h1) { h1.textContent = 'Details: ' + res.title; }
+		}
 	}
 	function act(action, data) {
 		var body = new URLSearchParams();
@@ -157,22 +178,28 @@
 		if (scope.kind !== 'block') { return Promise.resolve(scope); }
 		return new Promise(function (resolve, reject) {
 			var n = scope.uses;
+			var settled = false;
+			function done(fn) { settled = true; pop.close(); fn(); }
 			var box = el('div', {},
-				el('p', { text: 'This text is shared: it appears on ' + n + ' page' + (n === 1 ? '' : 's') + '. What would you like to do?' }),
-				el('div', { class: 'ma-btn-row' },
-					el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: 'Edit it for all ' + n + ' pages', onclick: function () { pop.close(); resolve(scope); } }),
-					el('button', { type: 'button', class: 'ma-btn', text: 'Customize this page only', onclick: function () {
-						pop.close();
-						var sid = scope.sectionId;
-						act('detach_section', { section_id: sid }).then(function () {
-							var sec = document.querySelector('[data-section="' + sid + '"]');
-							resolve(sec ? scopeOf(sec) : null);
-						}).catch(reject);
+				el('p', { text: 'This text is shared: the same words appear on ' + n + ' page' + (n === 1 ? '' : 's') + '.' }),
+				el('div', { class: 'ma-btn-row ma-btn-row--stack' },
+					el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: 'Customize this page only (gives it its own copy)', onclick: function () {
+						done(function () {
+							var sid = scope.sectionId;
+							act('detach_section', { section_id: sid }).then(function () {
+								var sec = document.querySelector('[data-section="' + sid + '"]');
+								resolve(sec ? scopeOf(sec) : null);
+							}).catch(reject);
+						});
 					} }),
-					el('button', { type: 'button', class: 'ma-btn ma-btn--ghost', text: 'Cancel', onclick: function () { pop.close(); reject(new Error('cancelled')); } })
+					el('button', { type: 'button', class: 'ma-btn ma-btn--danger', text: 'Change the shared text on all ' + n + ' pages', onclick: function () {
+						if (n >= 20 && !window.confirm('This changes the text on ' + n + ' program pages at once. Continue?')) { return; }
+						done(function () { resolve(scope); });
+					} }),
+					el('button', { type: 'button', class: 'ma-btn ma-btn--ghost', text: 'Cancel', onclick: function () { done(function () { reject(new Error('cancelled')); }); } })
 				)
 			);
-			var pop = U.popover(node, { title: 'Shared text', content: box, width: 420, onClose: function () { reject(new Error('cancelled')); } });
+			var pop = U.popover(node, { title: 'Shared text', content: box, width: 440, onClose: function () { if (!settled) { reject(new Error('cancelled')); } } });
 		});
 	}
 	/* the same field on the same section after a detach + swap */
@@ -182,7 +209,7 @@
 	}
 
 	/* ---------------------------------------------------------------- text */
-	var supportsPlain = (function () { var d = document.createElement('div'); d.contentEditable = 'plaintext-only'; return d.contentEditable === 'plaintext-only'; })();
+	var supportsPlain = (function () { try { var d = document.createElement('div'); d.contentEditable = 'plaintext-only'; return d.contentEditable === 'plaintext-only'; } catch (e) { return false; } })();
 	var activeText = null;
 	function startText(node) {
 		if (activeText) { activeText.commit(); }
@@ -192,9 +219,11 @@
 			if (scope !== scope0) { node = sameField(scope, 'text', node.getAttribute('data-ma-text')) || node; }
 			var field = node.getAttribute('data-ma-text');
 			var wasEmpty = node.hasAttribute('data-ma-empty');
+			var placeholder = wasEmpty ? node.textContent : '';
 			var old = wasEmpty ? '' : node.textContent;
 			if (wasEmpty) { node.textContent = ''; }
 			node.setAttribute('contenteditable', supportsPlain ? 'plaintext-only' : 'true');
+			node.setAttribute('spellcheck', 'true');
 			node.classList.add('ma-editing');
 			node.focus();
 			var range = document.createRange(); range.selectNodeContents(node); range.collapse(false);
@@ -203,28 +232,32 @@
 			var teardown = function () {
 				done = true;
 				node.removeAttribute('contenteditable');
+				node.removeAttribute('spellcheck');
 				node.classList.remove('ma-editing');
 				node.removeEventListener('keydown', onKey);
 				node.removeEventListener('blur', onBlur);
 				node.removeEventListener('paste', onPaste);
 				activeText = null;
 			};
-			function restore() { node.textContent = old; if (wasEmpty) { node.textContent = node.getAttribute('data-ma-placeholder') || ''; } }
-			function cancel() { if (done) { return; } teardown(); if (wasEmpty || old !== node.textContent) { location.reload(); } }
+			function restore() { node.textContent = wasEmpty ? placeholder : old; }
+			function cancel() { if (done) { return; } teardown(); restore(); }
 			function commit() {
 				if (done) { return; }
 				var val = node.textContent.replace(/\s+/g, ' ').trim();
 				teardown();
-				if (val === old.trim()) {
-					if (wasEmpty) { location.reload(); }   // placeholder text back: simplest is the real page
-					return;
-				}
+				if (val === old.trim()) { restore(); return; }
 				var f = {}; f[field] = val;
-				save(scope, f, { undo: function () { var g = {}; g[field] = old; save(scope, g, { quiet: true }); } }).catch(function () { restore(); });
+				var note = null;
+				if (field === 'headline' && /^(Curriculum|Admission to the program|How to enroll|Careers)$/.test(old.trim()) && val !== old.trim()) {
+					note = 'Saved. Note: degree maps are listed on the card headed "Curriculum", and the search summary reads the standard headlines.';
+				}
+				var undo = function () { var g = {}; g[field] = old; save(scope, g, { quiet: true, apply: { node: node, field: field, kind: 'text', placeholder: placeholder } }); };
+				save(scope, f, { undo: undo, note: note, apply: { node: node, field: field, kind: 'text', placeholder: placeholder } }).catch(function () { restore(); });
 			}
 			function onKey(e) {
-				if (e.key === 'Enter') { e.preventDefault(); node.blur(); }
-				else if (e.key === 'Escape') { e.preventDefault(); node.textContent = old; node.blur(); }
+				if (e.isComposing || e.keyCode === 229) { return; }   // IME composition in progress
+				if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); node.blur(); }
+				else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); node.textContent = old; node.blur(); }
 			}
 			function onBlur() { commit(); }
 			function onPaste(e) {
@@ -258,17 +291,19 @@
 			if (wasEmpty) { node.innerHTML = ''; }
 			node.classList.add('ma-editing', 'ma-editing--html');
 			window.BalloonEditor.create(node, {
+				removePlugins: ['Image', 'ImageCaption', 'ImageStyle', 'ImageToolbar', 'ImageUpload', 'EasyImage', 'CKBox', 'CKFinder', 'CKFinderUploadAdapter', 'CloudServices', 'MediaEmbed', 'AutoMediaEmbed', 'Table', 'TableToolbar', 'BlockQuote', 'Indent', 'TextTransformation', 'PictureEditing'],
 				toolbar: ['bold', 'italic', 'link', '|', 'undo', 'redo'],
 				blockToolbar: ['heading', '|', 'bulletedList', 'numberedList', '|', 'undo', 'redo'],
-				heading: { options: [{ model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' }, { model: 'heading3', view: 'h3', title: 'Heading', class: 'ck-heading_heading3' }, { model: 'heading4', view: 'h4', title: 'Small heading', class: 'ck-heading_heading4' }] },
-				link: { defaultProtocol: 'https://' }
+				heading: { options: [{ model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' }, { model: 'heading3', view: 'h3', title: 'Sub-heading', class: 'ck-heading_heading3' }, { model: 'heading4', view: 'h4', title: 'Small sub-heading', class: 'ck-heading_heading4' }] },
+				ui: { poweredBy: { position: 'border' } },
+				link: { defaultProtocol: 'https://', decorators: { openInNewTab: { mode: 'manual', label: 'Open in new tab', attributes: { target: '_blank', rel: 'noopener' } } } }
 			}).then(function (ed) {
 				node._ck = ed;
 				var initial = ed.getData();
 				var done = false;
 				ed.editing.view.focus();
 				function onDocDown(e) {
-					if (node.contains(e.target) || e.target.closest('.ck-body-wrapper, .ck-balloon-panel, .ck-block-toolbar-button')) { return; }
+					if (asking || node.contains(e.target) || e.target.closest('.ck-body-wrapper, .ck-balloon-panel, .ck-block-toolbar-button')) { return; }
 					commit();
 				}
 				document.addEventListener('mousedown', onDocDown, true);
@@ -282,21 +317,30 @@
 						node.innerHTML = html;
 					});
 				}
+				var asking = false;
+				var applyTo = { node: node, field: field, kind: 'html' };
 				function commit() {
-					if (done) { return; }
+					if (done || asking) { return; }
 					var html = ed.getData();
-					if (html === initial) { finish(wasEmpty ? '' : oldHtml).then(function () { if (wasEmpty) { location.reload(); } }); return; }
+					if (html === initial) { finish(oldHtml); return; }
 					finish(html).then(function () {
 						var f = {}; f[field] = html;
-						save(scope, f, { undo: function () { var g = {}; g[field] = wasEmpty ? '' : oldHtml; save(scope, g, { quiet: true }); } }).catch(function () { node.innerHTML = oldHtml; });
+						var undo = function () { var g = {}; g[field] = wasEmpty ? '' : oldHtml; save(scope, g, { quiet: true, apply: applyTo }); };
+						save(scope, f, { undo: undo, apply: applyTo }).catch(function () { node.innerHTML = oldHtml; });
 					});
 				}
 				function cancel() {
 					if (done) { return; }
-					finish(oldHtml).then(function () { if (wasEmpty) { location.reload(); } });
+					if (ed.getData() !== initial) {
+						asking = true;
+						var ok = window.confirm('Discard your changes to this text?');
+						asking = false;
+						if (!ok) { ed.editing.view.focus(); return; }
+					}
+					finish(oldHtml);
 				}
 				ed.ui.focusTracker.on('change:isFocused', function (evt, name, isFocused) {
-					if (!isFocused) { setTimeout(function () { if (!ed.ui.focusTracker.isFocused) { commit(); } }, 150); }
+					if (!isFocused) { setTimeout(function () { if (!ed.ui.focusTracker.isFocused && !asking) { commit(); } }, 150); }
 				});
 				ed.keystrokes.set('Esc', function (data, stop) { stop(); cancel(); });
 				activeHtml = { commit: commit, cancel: cancel };
@@ -382,7 +426,7 @@
 				} }, el('img', { src: imgUrl(img.url), alt: '', loading: 'lazy' }), el('span', { text: img.name }));
 				grid.appendChild(b);
 			});
-			if (!shown) { grid.appendChild(el('div', { class: 'ma-pick-empty', text: imageCache && imageCache.length ? 'No photo matches.' : 'No photos found in _images.' })); }
+			if (!shown) { grid.appendChild(el('div', { class: 'ma-pick-empty', text: imageCache && imageCache.length ? 'No photo matches.' : 'No photos on this server (the published photos live on www). Paste the address of a photo into the field above instead.' })); }
 			else if (shown >= 120) { grid.appendChild(el('div', { class: 'ma-pick-empty', text: 'Showing the first 120 — type to narrow the list.' })); }
 		}
 		filter.addEventListener('input', render);
@@ -442,17 +486,30 @@
 	}
 
 	/* ---------------------------------------------------------------- sections */
+	/* Many blocks share a headline (one "Admission to the program" per college), so the picker shows college and text. */
 	function blockSelect(onPick, anchor, title) {
 		var blocks = cfg.blocks || [];
-		var sel = el('select', { 'aria-label': 'Shared text' });
-		blocks.forEach(function (b) { sel.appendChild(el('option', { value: b.id, text: b.headline + ' (' + b.uses + ' page' + (b.uses === 1 ? '' : 's') + ')' })); });
+		var filter = el('input', { type: 'search', placeholder: 'Filter by headline, college or text…', 'aria-label': 'Filter shared text' });
+		var list = el('div', { class: 'ma-results ma-results--blocks' });
+		function render() {
+			var q = filter.value.trim().toLowerCase();
+			list.innerHTML = '';
+			blocks.forEach(function (b) {
+				var hay = (b.headline + ' ' + b.colleges + ' ' + b.excerpt).toLowerCase();
+				if (q && hay.indexOf(q) === -1) { return; }
+				list.appendChild(el('button', { type: 'button', class: 'ma-result ma-result--block', onclick: function () { pop.close(); onPick(b.id); } },
+					el('strong', { text: b.headline }), el('span', { class: 'ma-result__meta', text: (b.colleges ? b.colleges + ' · ' : '') + b.uses + ' page' + (b.uses === 1 ? '' : 's') }),
+					el('span', { class: 'ma-result__excerpt', text: b.excerpt })));
+			});
+			if (!list.firstChild) { list.appendChild(el('div', { class: 'ma-pick-empty', text: blocks.length ? 'Nothing matches.' : 'There are no shared blocks yet. Create one under Shared blocks first.' })); }
+		}
+		filter.addEventListener('input', render);
 		var box = el('div', {},
-			el('p', { text: blocks.length ? 'Shared text shows the same words on every page that uses it; change it once under Shared blocks and all of them change.' : 'There are no shared blocks yet. Create one under Shared blocks first.' }),
-			blocks.length ? el('div', { class: 'ma-field' }, sel) : null,
-			el('div', { class: 'ma-btn-row' },
-				blocks.length ? el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: 'Use this text', onclick: function () { pop.close(); onPick(Number(sel.value)); } }) : null,
-				el('button', { type: 'button', class: 'ma-btn ma-btn--ghost', text: 'Cancel', onclick: function () { pop.close(); } })));
-		var pop = U.popover(anchor, { title: title, content: box, width: 420 });
+			el('p', { text: 'Shared text shows the same words on every page that uses it; change it once under Shared blocks and all of them change.' }),
+			el('div', { class: 'ma-field' }, filter), list,
+			el('div', { class: 'ma-btn-row' }, el('button', { type: 'button', class: 'ma-btn ma-btn--ghost', text: 'Cancel', onclick: function () { pop.close(); } })));
+		var pop = U.popover(anchor, { title: title, content: box, width: 520, className: 'ma-popover--wide' });
+		render();
 	}
 	function handleAct(btn, e) {
 		e.preventDefault();
@@ -481,7 +538,20 @@
 			}
 			items.appendChild(el('button', { type: 'button', class: 'ma-btn ma-btn--danger', text: 'Remove this section from the page', onclick: function () {
 				menu.close();
-				if (window.confirm(shared ? 'Remove this section from the page? The shared text itself stays for the other pages.' : 'Remove this section and its text from the page?')) { act('delete_section', { section_id: sid }); }
+				act('delete_section', { section_id: sid }).then(function (r) {
+					var rm = r.removed || {};
+					toast(shared ? 'Section removed (the shared text stays on the other pages).' : 'Section removed.', { undo: function () {
+						var body = { kind: rm.kind, after: rm.after, label: rm.label, headline: rm.headline, body: rm.body, image_url: rm.image_url, image_alt: rm.image_alt, block_id: rm.block_id || null };
+						var links = []; try { links = JSON.parse(rm.links || '[]'); } catch (e) { links = []; }
+						var q = new URLSearchParams();
+						Object.keys(body).forEach(function (k) { if (body[k] != null) { q.append(k, body[k]); } });
+						(links.length ? links : [{ text: '', href: '' }]).forEach(function (l) { q.append('links[text][]', l.text || ''); q.append('links[href][]', l.href || ''); });
+						q.set('program_id', PID);
+						working(true);
+						ajax('add_section', q).then(function (res) { working(false); swap(res); setStatus('Saved', 'ok'); scrollToSection(res.section_id); })
+							.catch(function (ex) { working(false); toast(ex.message, { kind: 'error' }); });
+					} });
+				});
 			} }));
 			var menu = U.popover(btn, { title: 'This section', content: items, width: 320 });
 			return;
@@ -497,11 +567,13 @@
 	function similarIds() {
 		return Array.prototype.map.call(document.querySelectorAll('[data-ma-similar]'), function (n) { return Number(n.getAttribute('data-ma-similar')); }).filter(Boolean);
 	}
-	function saveSimilar(ids) {
+	function saveSimilar(ids, previous) {
 		var body = new URLSearchParams();
 		ids.forEach(function (id) { body.append('similar[]', id); });
 		if (!ids.length) { body.append('similar[]', ''); }
-		return save({ kind: 'similar' }, body, { quiet: true }).then(function () { toast('Similar programs saved'); });
+		return save({ kind: 'similar' }, body, { quiet: true }).then(function () {
+			toast('Similar programs saved', { undo: previous ? function () { saveSimilar(previous); } : null });
+		});
 	}
 	function openSimilarAdd(btn) {
 		var input = el('input', { type: 'search', placeholder: 'Type a program name…', 'aria-label': 'Find a program', autocomplete: 'off' });
@@ -544,8 +616,9 @@
 					toast('Settings saved');
 					var retired = document.querySelector('[data-ma-retired]');
 					if (retired) { retired.hidden = form.querySelector('[name=status]').value !== 'retired'; }
-					if (newBase && newBase !== cfg.basename && (cfg.publicUrl || '').indexOf('program=') !== -1) {
-						// the address changed: move to it so reloads keep working
+					var here = new URLSearchParams(window.location.search).get('program') || '';
+					if (newBase && here && newBase !== here) {
+						// the page name changed: move to the new address so a reload keeps working
 						window.location = window.location.pathname + '?program=' + encodeURIComponent(newBase);
 					}
 				}).catch(function (ex) { var er = form.querySelector('.ma-error') || form.appendChild(el('div', { class: 'ma-error' })); er.textContent = ex.message; });
@@ -561,7 +634,7 @@
 		var actBtn = t.closest('[data-ma-act]');
 		if (actBtn) { handleAct(actBtn, e); return; }
 		var rm = t.closest('[data-ma-similar-remove]');
-		if (rm) { e.preventDefault(); var id = Number(rm.getAttribute('data-ma-similar-remove')); saveSimilar(similarIds().filter(function (x) { return x !== id; })); return; }
+		if (rm) { e.preventDefault(); var id = Number(rm.getAttribute('data-ma-similar-remove')); var before = similarIds(); saveSimilar(before.filter(function (x) { return x !== id; }), before); return; }
 		if (t.closest('[data-ma-similar-add]')) { e.preventDefault(); openSimilarAdd(t.closest('[data-ma-similar-add]')); return; }
 		if (t.closest('[data-ma-part="similar"] a')) { e.preventDefault(); toast('Use × to remove a program, or the tile to add one.'); return; }
 		if (t.closest('[data-ma-static]')) { e.preventDefault(); toast('Degree maps are linked to the program from the degree-maps admin.'); return; }
@@ -574,7 +647,7 @@
 		if (formEl) { e.preventDefault(); openForm(formEl); return; }
 	});
 	document.addEventListener('keydown', function (e) {
-		if (e.key !== 'Enter' && e.key !== ' ') { return; }
+		if ((e.key !== 'Enter' && e.key !== ' ') || e.defaultPrevented) { return; }   // an editor's own Enter handler already used the key
 		var t = e.target;
 		if (!(t instanceof Element) || t.closest('.ma-editing, .ma-popover, input, textarea, select, button, a')) { return; }
 		if (t.matches('[data-ma-text], [data-ma-html], [data-ma-form], [data-ma-ph]')) { e.preventDefault(); t.click(); }

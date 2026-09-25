@@ -22,7 +22,8 @@ if (!$similar && !$editing) {
 				<div class="generic-slab-component-wrapper">
 					<ul data-card-style="wide" role="list" class="group/image-cards grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-11 lg-xs:data-[card-style=tall]:grid-cols-2 md:data-[card-style=tall]:grid-cols-3 lg:data-[card-style=tall]:grid-cols-4">
 <?php foreach ($similar as $s): ?>
-						<li<?= $editing ? ' class="ma-similar" data-ma-similar="' . (int) $s['id'] . '"' : '' ?>>
+<?php $curated = !$editing || ($s['source'] ?? 'curated') === 'curated'; $retired = !empty($s['retired']); ?>
+						<li<?= $editing ? ' class="ma-similar' . ($curated ? '' : ' ma-similar--reverse') . ($retired ? ' ma-similar--retired' : '') . '"' . ($curated ? ' data-ma-similar="' . (int) $s['id'] . '"' : '') : '' ?>>
 							<a href="<?= $t->e($t->programUrl($s)) ?>" class="nc-image-card group/fancy-link-outer-link flex flex-col xs:flex-row xs:items-stretch xs:group-data-[card-style=tall]/image-cards:flex-col h-full">
 								<div class="xs:w-1/3 xs:self-stretch xs:group-data-[card-style=tall]/image-cards:w-full shrink-0 descendants:size-full [&_img]:object-cover overflow-hidden">
 									<div class="will-change-transform transition-transform group-hocus/fancy-link-outer-link:scale-110">
@@ -37,8 +38,13 @@ if (!$similar && !$editing) {
 									<div class="nc-fancy-link-wrapper"><div class="nc-fancy-link uppercase"><?= $t->e(trim($s['academic_program'] . ' (' . ($s['credential'] ?? $s['program_simple_type'] ?? $s['program_type']) . ')')) ?></div></div>
 								</div>
 							</a>
-<?php if ($editing): ?>
+<?php if ($editing && $curated): ?>
 							<button type="button" class="ma-similar__remove" data-ma-similar-remove="<?= (int) $s['id'] ?>" title="Remove from similar programs" aria-label="Remove <?= $t->e($s['academic_program']) ?> from similar programs">×</button>
+<?php if ($retired): ?>
+							<span class="ma-similar__note">Retired program — not shown publicly</span>
+<?php endif; ?>
+<?php elseif ($editing): ?>
+							<span class="ma-similar__note">Shown because <?= $t->e($s['academic_program']) ?> lists this program; remove it from that page to drop it</span>
 <?php endif; ?>
 						</li>
 <?php endforeach; ?>

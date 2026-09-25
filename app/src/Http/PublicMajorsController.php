@@ -34,10 +34,11 @@ final class PublicMajorsController extends Controller
         $id       = $r->id('id');
         if (($basename !== null || $id !== null) && !$isJson) {
             $program = $basename !== null ? $programs->findByBasename($basename) : $programs->find((int) $id);
-            if ($program === null) {
+            if ($program === null || ($program['status'] ?? 'active') === 'retired') {
                 $this->notFound('That program could not be found.');
             }
-            if ($basename === null && (string) ($program['basename'] ?? '') !== '') {
+            // ?id=N, and any spelling of the name other than the stored one, redirect to the canonical address.
+            if ((string) ($program['basename'] ?? '') !== '' && $basename !== (string) $program['basename']) {
                 $this->redirect($layout->programUrl($program), 301);
             }
             $id    = (int) $program['id'];
@@ -49,8 +50,11 @@ final class PublicMajorsController extends Controller
                 'page_header' => 'Details: ' . ProgramRenderer::title($program),
                 'nav_items'   => $renderer->sectionNav($program),
                 'header_print' => true,
-                'description' => (string) ($program['content']['meta_description'] ?? ''),
-                'head'        => ['<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">'],
+                'description' => (string) ($program['meta_description'] ?? $program['content']['meta_description'] ?? ''),
+                'head'        => [
+                    '<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">',
+                    (string) ($program['basename'] ?? '') !== '' ? '<link rel="canonical" href="' . $layout->e($layout->programUrl($program)) . '">' : '',
+                ],
             ]);
             return;
         }

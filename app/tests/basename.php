@@ -18,4 +18,10 @@ check(ProgramEditor::basenameFor('', '', '') === 'program', 'nothing left → pr
 check(ProgramEditor::cleanBasename('Data-Science!! ') === 'data_science', 'typed page names are cleaned the same way');
 check(strlen(ProgramEditor::basenameFor(str_repeat('abcdefghij', 20), 'MS')) === 120, 'clipped to 120 characters');
 
+echo "[flags from credential]\n";
+check(ProgramEditor::flagsFor("Master's") === ['graduate' => 1, 'minor' => 0, 'certificate' => 0, 'badge' => 0], "Master's → graduate");
+check(ProgramEditor::flagsFor('Graduate Certificate') === ['graduate' => 1, 'minor' => 0, 'certificate' => 1, 'badge' => 0], 'Graduate Certificate → graduate + certificate');
+check(ProgramEditor::flagsFor('Undergraduate Certificate') === ['graduate' => 0, 'minor' => 0, 'certificate' => 1, 'badge' => 0], 'Undergraduate Certificate → certificate only');
+check(ProgramEditor::flagsFor('Minor')['minor'] === 1 && ProgramEditor::flagsFor('Badge')['badge'] === 1 && ProgramEditor::flagsFor('Major') === ['graduate' => 0, 'minor' => 0, 'certificate' => 0, 'badge' => 0], 'Minor, Badge, Major');
+
 finish();

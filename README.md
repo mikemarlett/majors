@@ -201,8 +201,17 @@ then break, and the importer matches on it).
   re-rendered page, so what you see is what the public gets; text changes get
   an **Undo** in the toast.
 - Shared text (a section that uses a shared block) is badged "Shared text ·
-  N pages". Clicking it asks whether to edit it for all N pages or to
-  customize this page only (which gives the page its own copy).
+  N pages". Clicking it asks whether to customize this page only (the
+  default; the page gets its own copy) or to change the shared text on all
+  N pages (asks again for big blocks). Removing a section or a similar
+  program can be undone from the toast. New sections start blank and stay
+  off the public page until they have text.
+- Rich text is sanitised on save (paragraphs, emphasis, links, lists, small
+  headings; no scripts, styles or unsafe link targets).
+- The control panel's "Needs attention" filter flags missing text/photo/alt
+  text/department/sections/similar programs and overlong headlines; its
+  Credential filter offers the standard credentials plus "Other / not set"
+  for the odd values still in the data (BUS, CFA, ENG/CED…).
 - `_admin/blocks.php` — the shared content blocks themselves; a block in use
   cannot be deleted.
 - Photos: the photo form accepts any address and can browse the photos

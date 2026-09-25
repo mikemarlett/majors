@@ -29,7 +29,7 @@ Desktop first; mobile only has to not break.
 | URL | Behaviour |
 |---|---|
 | `index.php?program=<basename>` | public page (canonical) |
-| `index.php?id=N` | 301 → `?program=<basename>` when the row has one, else renders as before |
+| `index.php?id=N` | 301 → `?program=<basename>` when the row has one, else renders as before; any other spelling of the name also 301s to the stored one; retired programs are 404 publicly |
 | `_admin/program.php?program=<basename>` (also `?id=N`) | in-place editor |
 | `_admin/program.php?new=1` | small create form (name, credential, type, graduate); shows the basename it will use, editable |
 | `_admin/index.php` | control panel |
@@ -63,10 +63,19 @@ same templates add attributes and placeholders:
 Feature sections (Inside the Program) show the photo placeholder when
 there is none; cards never do (theme cards have no photo; decided 2026-09-25).
 
-Shared sections render the block's text with the badge. Clicking a text in a
-shared section asks: *"This text is shared by N pages. Edit for all N pages /
-Customize for this page only / Cancel."* Edit-for-all edits in place against
-the block (`save_block_fields`); Customize detaches first, then edits.
+Shared sections render the block's text with the badge (N = pages).
+Clicking a text in a shared section asks, with **Customize this page only**
+as the primary choice and *Change the shared text on all N pages* as the
+secondary (danger-styled) one; for blocks on 20 or more pages the latter
+asks once more. Customize detaches first (reversible from the ⋯ menu with
+"Use shared text instead…"), then edits; change-for-all edits in place
+against the block (`save_block_fields`).
+
+The facts box and the coordinator line show placeholders only on graduate
+programs (the Strat Comm graduate template); other programs reach those
+fields from Page settings. The page name is locked in Page settings for
+imported programs (it is the importer's match key) and editable for
+programs created in the tool.
 
 ### Placement of tools
 
@@ -92,30 +101,48 @@ Every editable thing saves itself; there is no page-level Save button.
   above.
 - **Popover forms**: Save/Cancel buttons; Save posts only that form's fields.
 - **Structural** actions (add/move/remove section, detach, swap block,
-  similar add/remove) post immediately; Remove asks for confirmation.
+  similar add/remove) post immediately. Removing a section or a similar
+  program shows a toast with **Undo** (the removal response carries the
+  section's fields and predecessor; Undo re-creates it through
+  `add_section`), so no confirmation dialog is needed.
 
-Every mutating response returns `parts` (`card`, `content`, `similar`
-HTML with markers) and `title`; the client swaps the parts and updates the
-page title / h1. Rendering happens on the server, so the page is always the
-real page (image_base, theme classes, grouping of cards into grids). The
-theme's scroll-fade script only touches nodes present at load, so swapped
-nodes are simply visible.
+Every mutating response returns `parts` — the layout's three slots `top`,
+`content`, `bottom` (top = the card and bottom = the similar band on the new
+design; both empty on the old design, where everything is in `content`) —
+plus `title`. The DOM markers the client swaps are `data-ma-part="card" |
+"content" | "similar"`, found inside those strings. **Text and rich-text
+saves do not swap**: the response also carries `fields` (the stored values
+of the posted keys) and the client writes them into the element that was
+edited, so an editor already open on another field is never destroyed
+mid-typing. Popover forms and structural actions swap, and only the parts
+whose markup actually changed (so the theme's parallax instances don't pile
+up). Rendering happens on the server, so the page is always the real page
+(image_base, theme classes, grouping of cards into grids). The theme's
+scroll-fade script only touches nodes present at load, so swapped nodes are
+simply visible.
+
+Rich text and link targets are sanitised on the way in
+(`Html::clean()` allow-list: p, br, strong/b, em/i, u, s, sub, sup, a[href
+title target rel], ul, ol, li, h2–h4, blockquote; `Html::safeUrl()` accepts
+relative, http(s), mailto and tel). A section added in the editor starts
+blank: it shows placeholders on the editor page and is skipped on the
+public page until it has a headline or text.
 
 ## Ajax actions (`_admin/ajax.php?action=…`, role marketing; POST + CSRF unless noted)
 
 | action | in | out |
 |---|---|---|
-| `render_program` (GET) | `program_id` | `{parts, title}` |
-| `save_program` (exists; partial by design) | `program_id` + any subset of program fields; `buttons[text][]/[href][]` | `{parts, title}` |
-| `save_section_fields` *(new)* | `program_id`, `section_id`, subset of `headline`, `body`, `label`, `links[…]`, `image_url`, `image_alt` | `{parts}`; 409 when the section is shared |
-| `save_block_fields` *(new)* | `block_id`, subset of `headline`, `body`, `links[…]` | `{parts (for program_id), uses}` |
+| `render_program` (GET) | `program_id` | `{parts, title}` — test/debug only; the client never calls it |
+| `save_program` (exists; partial by design) | `program_id` + any subset of program fields; `buttons[text][]/[href][]`; flags only when posted (a changed credential re-derives graduate/minor/certificate/badge unless posted) | `{fields, parts, title}` |
+| `save_section_fields` *(new)* | `program_id`, `section_id`, subset of `headline`, `body`, `label`, `links[…]`, `image_url`, `image_alt` | `{fields, parts}`; 409 when the section is shared |
+| `save_block_fields` *(new)* | `block_id`, subset of `headline`, `body`, `links[…]` | `{fields, parts (for program_id), uses}` |
 | `add_section` *(new)* | `program_id`, `kind`, `after` (section id, 0 = end), `block_id?` | creates with a visible default ("New card" / "Inside the Program"), inserts at the position, `{parts, section_id}` |
 | `move_section` *(new)* | `program_id`, `section_id`, `dir` up\|down | `{parts}` |
-| `delete_section`, `detach_section`, `save_section_order` (exist) | | now also return `{parts}` |
+| `delete_section`, `detach_section`, `save_section_order` (exist) | | now also return `{parts}`; `delete_section` adds `removed` (fields + predecessor) for Undo |
 | `swap_section_block` *(new)* | `program_id`, `section_id`, `block_id` | section now points at the block; `{parts}` |
 | `save_similar` (exists) | `program_id`, `similar[]` | `{parts}` |
 | `program_search` (exists, GET) | `q` | for the similar picker |
-| `list_images` (GET) *(new)* | `q?` | files in `<webRoot>/_images` as `{name, url}`; the client prefixes `image_base` for thumbnails |
+| `list_images` (GET) *(new)* | `q?` | files in `<webRoot>/_images` as `{name, url}` (newest first, at most 400); the client prefixes `image_base` for thumbnails. On www-test/www-dev the folder is empty (the photos are published to www only), so the picker says so and the address field is the way in |
 | `basename_preview` (GET) *(new)* | `academic_program`, `program_type`, `credential` | `{basename}` (unique) |
 | `get_settings_form` (GET) *(new)* | `program_id` | HTML dialog: sort_title, basename, note, status, flags (online, online only, minor, certificate, badge), meta description/keywords, catalog link; saves through `save_program` |
 | `new_program` (exists) | + optional `basename` | |
@@ -158,6 +185,13 @@ nodes are simply visible.
   edit bar; `render_program`; `save_section_fields` (own text) and 409 on a
   shared section; `add_section` after / `move_section` / `swap_section_block`;
   `list_images`; `basename_preview` uniqueness; control panel toolbar.
+
+## Keyboard and screen readers
+
+Every editable node and placeholder is focusable (`tabindex=0`, `role=button`
+on placeholders) and opens with Enter or Space; the tool-strip buttons are
+labelled; popovers take focus, close on Esc and return focus to the thing
+that opened them; focus rings are 2px and inverted on the dark bands.
 
 ## Out of scope for this pass
 

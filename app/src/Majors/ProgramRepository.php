@@ -145,6 +145,7 @@ final class ProgramRepository
         $row['content']          = $this->content($id) ?? [];
         $row['sections']         = $this->sections($id);
         $row['similar_programs'] = $this->similar($id);
+        $row['similar_editing']  = $this->similarForEditing($id);
         return $row;
     }
 
@@ -161,7 +162,7 @@ final class ProgramRepository
                                            COALESCE(s.`headline`, b.`headline`, "") AS headline, COALESCE(s.`body`, b.`body`, "") AS body, COALESCE(s.`links`, b.`links`, "[]") AS links
                                       FROM `majors_program_sections` s
                                  LEFT JOIN `majors_content_blocks` b ON b.`id` = s.`block_id`
-                                     WHERE s.`program_id` = ? ORDER BY s.`position`');
+                                     WHERE s.`program_id` = ? AND s.`kind` IN ("teaser", "feature") ORDER BY s.`position`, s.`id`');
         $stmt->bind_param('i', $programId);
         $stmt->execute();
         $out = [];
@@ -196,13 +197,15 @@ final class ProgramRepository
 
     /**
      * Up to six related programs: the curated list first, then programs that
-     * point back at this one, each resolved to id/name/type/image.
+     * point back at this one, each resolved to id/name/type/image. Every row
+     * says where it came from ('source' => curated | reverse).
      *
      * @return list<array<string,mixed>>
      */
     public function similar(int $programId, int $limit = 6): array
     {
         $ids  = [];
+        $reverse = [];
         $stmt = $this->db->prepare('SELECT `similar_academic_program_id` FROM `majors_similar_programs` WHERE `main_academic_program_id` = ? LIMIT ?');
         $stmt->bind_param('ii', $programId, $limit);
         $stmt->execute();
@@ -229,6 +232,7 @@ final class ProgramRepository
             $stmt->execute();
             foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $r) {
                 $ids[] = (int) $r['main_academic_program_id'];
+                $reverse[(int) $r['main_academic_program_id']] = true;
             }
             $stmt->close();
         }
@@ -252,7 +256,37 @@ final class ProgramRepository
         $out  = [];
         foreach ($ids as $id) {
             if (isset($byId[$id])) {
-                $out[] = $byId[$id];
+                $out[] = $byId[$id] + ['source' => isset($reverse[$id]) ? 'reverse' : 'curated'];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * What the editor shows in the Similar Programs band: the whole curated
+     * list (retired ones too, flagged) followed by the reverse links the
+     * public page would add, flagged so they get no remove button.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function similarForEditing(int $programId): array
+    {
+        $stmt = $this->db->prepare('SELECT t1.`id`, t1.`basename`, t1.`academic_program`, t1.`program_type`, t1.`program_simple_type`, t1.`credential`, t1.`status`,
+                                           COALESCE(NULLIF(t1.`image_url`, ""), t2.`main_image_url`) AS main_image_url
+                                      FROM `majors_similar_programs` s
+                                      JOIN `majors_academic_programs` t1 ON t1.`id` = s.`similar_academic_program_id`
+                                 LEFT JOIN `majors_programs_content` t2 ON t1.`id` = t2.`academic_program_id`
+                                     WHERE s.`main_academic_program_id` = ? ORDER BY s.`id`');
+        $stmt->bind_param('i', $programId);
+        $stmt->execute();
+        $out = [];
+        foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $r) {
+            $out[] = $r + ['source' => 'curated', 'retired' => ($r['status'] ?? 'active') === 'retired'];
+        }
+        $stmt->close();
+        foreach ($this->similar($programId) as $r) {
+            if ($r['source'] === 'reverse') {
+                $out[] = $r + ['retired' => false];
             }
         }
         return $out;
@@ -268,9 +302,13 @@ final class ProgramRepository
     public function adminList(): array
     {
         $sql = 'SELECT m.*,
-                       (SELECT COUNT(*) FROM `majors_program_sections` x WHERE x.`program_id` = m.`id`) AS `section_count`,
+                       (SELECT COUNT(*) FROM `majors_program_sections` x WHERE x.`program_id` = m.`id` AND x.`kind` IN ("teaser", "feature")) AS `section_count`,
                        (m.`description` IS NOT NULL AND m.`description` <> "") AS `has_description`,
-                       (m.`image_url` IS NOT NULL AND m.`image_url` <> "") AS `has_image`
+                       (m.`image_url` IS NOT NULL AND m.`image_url` <> "") AS `has_image`,
+                       (m.`image_url` IS NOT NULL AND m.`image_url` <> "" AND (m.`image_alt` IS NULL OR m.`image_alt` = "")) AS `photo_no_alt`,
+                       EXISTS (SELECT 1 FROM `majors_program_sections` y WHERE y.`program_id` = m.`id` AND y.`image_url` <> "" AND (y.`image_alt` IS NULL OR y.`image_alt` = "")) AS `section_photo_no_alt`,
+                       (m.`department` IS NULL OR m.`department` = "") AS `no_department`,
+                       EXISTS (SELECT 1 FROM `majors_program_sections` z WHERE z.`program_id` = m.`id` AND z.`block_id` IS NULL AND CHAR_LENGTH(COALESCE(z.`headline`, "")) > 120) AS `long_headline`
                   FROM `majors_academic_programs` m
                  ORDER BY (m.`status` = "retired"), m.`academic_program`, m.`program_type`';
         $rows = $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);

@@ -27,6 +27,17 @@
 	FILTERS.forEach(function (k) { controls[k] = toolbar.querySelector('[data-filter="' + k + '"]'); });
 	var sort = { key: DEFAULT_SORT.key, dir: DEFAULT_SORT.dir };
 
+	/* Credential "Other / not set" = anything outside the curated list the template put on the select
+	   (falls back to the select's own options). */
+	var knownCredentials = {};
+	(function () {
+		var sel = controls.credential, list = [];
+		if (!sel) { return; }
+		try { list = JSON.parse(sel.dataset.curated || '[]'); } catch (e) { list = []; }
+		if (!list.length) { Array.prototype.forEach.call(sel.options, function (o) { if (o.value && o.value !== 'other') { list.push(o.value); } }); }
+		list.forEach(function (c) { knownCredentials[c] = true; });
+	})();
+
 	/* ---- filtering ------------------------------------------------------- */
 	function readFilters() {
 		var f = {};
@@ -37,19 +48,11 @@
 	function matches(tr, f, terms) {
 		var d = tr.dataset;
 		if (f.level && d.level !== f.level) { return false; }
-		if (f.credential && d.credential !== f.credential) { return false; }
+		if (f.credential === 'other') { if (knownCredentials[d.credential || '']) { return false; } }
+		else if (f.credential && d.credential !== f.credential) { return false; }
 		if (f.college && d.college !== f.college) { return false; }
 		if (f.status !== 'all' && d.status !== f.status) { return false; }
-		if (f.attention) {
-			var flags = ' ' + (d.flags || '') + ' ';
-			switch (f.attention) {
-				case 'no_description': if (d.hasDescription !== '0') { return false; } break;
-				case 'no_image':       if (d.hasImage !== '0') { return false; } break;
-				case 'no_sections':    if (Number(d.sections) !== 0) { return false; } break;
-				case 'no_similar':     if (Number(d.similar) !== 0) { return false; } break;
-				case 'online':         if (flags.indexOf(' online ') === -1 && flags.indexOf(' online_only ') === -1) { return false; } break;
-			}
-		}
+		if (f.attention && (' ' + (d.attention || '') + ' ').indexOf(' ' + f.attention + ' ') === -1) { return false; }   // tokens from the server
 		var hay = d.search || '';
 		for (var i = 0; i < terms.length; i++) {
 			if (hay.indexOf(terms[i]) === -1) { return false; }
@@ -91,14 +94,18 @@
 		var th = headerFor(sort.key);
 		if (!th) { sort = { key: DEFAULT_SORT.key, dir: DEFAULT_SORT.dir }; th = headerFor(sort.key); }
 		var btn  = th.querySelector('[data-sort]');
-		var key  = btn.dataset.sort, type = btn.dataset.type || 'text';
+		var key  = btn.dataset.sort, type = btn.dataset.type || 'text', then = btn.dataset.then || '';
 		var sign = sort.dir === 'desc' ? -1 : 1;
-		var sorted = rows.slice().sort(function (a, b) {
-			if (type === 'text') {                          // blanks sink to the bottom either way
-				var ea = !a.dataset[key], eb = !b.dataset[key];
+		function cmp(a, b, k, t) {
+			if (t === 'text') {                             // blanks sink to the bottom either way
+				var ea = !a.dataset[k], eb = !b.dataset[k];
 				if (ea !== eb) { return ea ? 1 : -1; }
 			}
-			var c = compare(a, b, key, type) * sign;
+			return compare(a, b, k, t) * sign;
+		}
+		var sorted = rows.slice().sort(function (a, b) {
+			var c = cmp(a, b, key, type);
+			if (c === 0 && then) { c = cmp(a, b, then, 'text'); }   // e.g. Type: credential, then the type code
 			return c !== 0 ? c : a._panelIndex - b._panelIndex;
 		});
 		sorted.forEach(function (tr) { tbody.appendChild(tr); });

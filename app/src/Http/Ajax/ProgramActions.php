@@ -38,6 +38,9 @@ final class ProgramActions
             return $fn();
         } catch (SharedSectionException $e) {
             throw new ActionException($e->getMessage(), 409);
+        } catch (\mysqli_sql_exception $e) {
+            error_log('[majors] ' . get_class($e) . ': ' . $e->getMessage());
+            throw new ActionException($this->app->isDev() ? $e->getMessage() : 'Database error — nothing was saved.', 500);
         } catch (RuntimeException $e) {
             throw new ActionException($e->getMessage(), 422);
         }
@@ -75,8 +78,12 @@ final class ProgramActions
     public function create(Request $r, User $user): array
     {
         return $this->guard(function () use ($r) {
-            $id = $this->editor->create(['academic_program' => $r->str('academic_program'), 'credential' => $r->str('credential'), 'program_type' => $r->str('program_type'),
-                'graduate' => $r->int('graduate'), 'basename' => $r->str('basename')]);
+            $d = ['academic_program' => $r->str('academic_program'), 'credential' => $r->str('credential'), 'program_type' => $r->str('program_type'),
+                'basename' => $r->str('basename'), 'college' => $r->str('college'), 'department' => $r->str('department')];
+            if ($r->has('graduate')) {           // absent → inferred from the credential
+                $d['graduate'] = $r->int('graduate');
+            }
+            $id = $this->editor->create($d);
             $p  = $this->programs->find($id) ?? [];
             return ['success' => true, 'program_id' => $id, 'redirect' => $this->app->layout()->editUrl($p) . '&flash=' . rawurlencode('Program created. Click anything on the page to write it.')];
         });
@@ -108,8 +115,21 @@ final class ProgramActions
                 }
             }
             $this->editor->saveProgram((int) $p['id'], $d);
-            return ['success' => true, 'message' => 'Saved.'] + $this->parts((int) $p['id']);
+            $fresh = $this->programs->find((int) $p['id']) ?? [];
+            return ['success' => true, 'message' => 'Saved.', 'fields' => self::stored($fresh, array_keys($d))] + $this->parts((int) $p['id']);
         });
+    }
+
+    /** The stored values of the posted keys, so the client can update a field in place without swapping the page. @return array<string,string> */
+    private static function stored(array $row, array $keys): array
+    {
+        $out = [];
+        foreach ($keys as $k) {
+            if (is_string($k) && array_key_exists($k, $row) && (is_scalar($row[$k]) || $row[$k] === null)) {
+                $out[$k] = (string) ($row[$k] ?? '');
+            }
+        }
+        return $out;
     }
 
     /** GET: the page re-rendered with editing markers. */
@@ -125,6 +145,8 @@ final class ProgramActions
         $p = $this->program($r);
         return $this->app->layout()->render('majors/admin/inplace/settings_form', [
             'program'     => $p,
+            'modalities'  => ProgramEditor::MODALITIES,
+            'basename_locked' => (string) ($p['cms_path'] ?? '') !== '',
             'cms_url'     => !empty($p['cms_path']) ? 'https://www.wichita.edu' . preg_replace('/\.pcf$/', '.php', (string) $p['cms_path']) : '',
             'degree_maps' => $this->app->maps()->forProgram((int) $p['id']),
             'maps_url'    => $this->app->layout()->url('degree_maps/admin/maps.php') . '?degree_map_id=',
@@ -172,11 +194,14 @@ final class ProgramActions
         return ['success' => true] + $this->parts((int) $p['id']);
     }
 
+    /** Removes the section; 'removed' carries its fields and predecessor so the client can offer Undo (re-create via add_section). */
     public function deleteSection(Request $r, User $user): array
     {
         $p = $this->program($r);
-        $this->editor->deleteSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
-        return ['success' => true] + $this->parts((int) $p['id']);
+        return $this->guard(function () use ($r, $p) {
+            $removed = $this->editor->deleteSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
+            return ['success' => true, 'removed' => $removed] + $this->parts((int) $p['id']);
+        });
     }
 
     public function saveSectionOrder(Request $r, User $user): array
@@ -194,9 +219,15 @@ final class ProgramActions
     {
         $p = $this->program($r);
         return $this->guard(function () use ($r, $p) {
-            $sid = $r->id('section_id') ?? throw new ActionException('Missing section_id.');
-            $this->editor->updateSection((int) $p['id'], $sid, self::posted(['headline', 'body', 'label', 'links', 'image_url', 'image_alt']));
-            return ['success' => true, 'message' => 'Saved.'] + $this->parts((int) $p['id']);
+            $sid    = $r->id('section_id') ?? throw new ActionException('Missing section_id.');
+            $posted = self::posted(['headline', 'body', 'label', 'links', 'image_url', 'image_alt']);
+            $this->editor->updateSection((int) $p['id'], $sid, $posted);
+            $row    = $this->editor->section((int) $p['id'], $sid);
+            $fields = self::stored($row, array_keys($posted));
+            if (isset($fields['label']) && $fields['label'] === '') {
+                $fields['label'] = 'Inside the Program';   // what the page shows for an empty band label
+            }
+            return ['success' => true, 'message' => 'Saved.', 'fields' => $fields] + $this->parts((int) $p['id']);
         });
     }
 
@@ -205,10 +236,11 @@ final class ProgramActions
     {
         $p = $this->program($r);
         return $this->guard(function () use ($r, $p) {
-            $bid = $r->id('block_id') ?? throw new ActionException('Missing block_id.');
-            $this->editor->updateBlock($bid, self::posted(['headline', 'body', 'links']));
+            $bid    = $r->id('block_id') ?? throw new ActionException('Missing block_id.');
+            $posted = self::posted(['headline', 'body', 'links']);
+            $this->editor->updateBlock($bid, $posted);
             $uses = $this->editor->blockUseCounts()[$bid] ?? 0;
-            return ['success' => true, 'message' => "Saved on all $uses pages.", 'uses' => $uses] + $this->parts((int) $p['id']);
+            return ['success' => true, 'message' => "Saved on all $uses pages.", 'uses' => $uses, 'fields' => self::stored($this->editor->block($bid) ?? [], array_keys($posted))] + $this->parts((int) $p['id']);
         });
     }
 
@@ -217,8 +249,11 @@ final class ProgramActions
     {
         $p = $this->program($r);
         return $this->guard(function () use ($r, $p) {
+            // Undo of a removal posts the removed section's fields back through here.
             $id = $this->editor->insertSectionAfter((int) $p['id'], $r->int('after'), [
                 'kind' => $r->str('kind') ?: 'teaser', 'block_id' => $r->id('block_id'), 'label' => $r->str('label'),
+                'headline' => $r->str('headline'), 'body' => (string) ($_POST['body'] ?? ''), 'links' => $_POST['links'] ?? [],
+                'image_url' => $r->str('image_url'), 'image_alt' => $r->str('image_alt'),
             ]);
             return ['success' => true, 'section_id' => $id] + $this->parts((int) $p['id']);
         });

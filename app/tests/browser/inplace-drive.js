@@ -77,12 +77,14 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
 
   // 1. text edit: learn_how → Enter saves → parts swapped
   const learn0 = await ev(`document.querySelector('[data-ma-text="learn_how"]').textContent.trim()`);
+  await ev(`window.__probe = document.querySelector('[data-ma-html="description"]'); true`);
   await click('[data-ma-text="learn_how"]');
   ok('learn_how becomes editable on click', await ev(`document.querySelector('[data-ma-text="learn_how"]').isContentEditable`));
   await ev(`(function(){var n=document.querySelector('[data-ma-text="learn_how"]'); n.textContent='Learn how (CDP test)'; return true;})()`);
   await key('Enter');
   await sleep(1500);
-  ok('text saved and page re-rendered', (await ev(`document.querySelector('[data-ma-text="learn_how"]').textContent.trim()`)) === 'Learn how (CDP test)' && !(await ev(`document.querySelector('[data-ma-text="learn_how"]').isContentEditable`)));
+  ok('text saved in place', (await ev(`document.querySelector('[data-ma-text="learn_how"]').textContent.trim()`)) === 'Learn how (CDP test)' && !(await ev(`document.querySelector('[data-ma-text="learn_how"]').isContentEditable`)));
+  ok('text save did not re-render the page (node identity kept)', await ev(`window.__probe === document.querySelector('[data-ma-html="description"]')`));
   ok('toast with Undo shown', await ev(`!!document.querySelector('.ma-toast .ma-toast__undo')`));
   await shot('1-after-text-save');
   await click('.ma-toast__undo'); await sleep(1500);
@@ -106,17 +108,19 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
   await click('.ma-toast__undo'); await sleep(1500);
   ok('undo restored the description', (await ev(`document.querySelector('[data-ma-html="description"]').innerHTML`)).indexOf('CDPRICH') === -1);
 
-  // 4. popover form: facts
-  await click('[data-ma-form="facts"], .ma-ph[data-ma-form="facts"]');
-  ok('facts popover opened', await ev(`!!document.querySelector('.ma-popover input[name=credit_hours]')`));
-  await shot('3-facts-popover');
-  const hours0 = await ev(`document.querySelector('.ma-popover input[name=credit_hours]').value`);
-  await ev(`(function(){var i=document.querySelector('.ma-popover input[name=credit_hours]'); i.value='77'; return true;})()`);
+  // 4. popover form: facts (graduate pages) or coordinator placeholder — fall back to the crumbs form on undergraduate pages
+  const formSel = (await ev(`!!document.querySelector('[data-ma-form="facts"]')`)) ? '[data-ma-form="facts"]' : '[data-ma-form="crumbs"]';
+  const formField = formSel.indexOf('facts') !== -1 ? 'credit_hours' : 'college_url';
+  await click(formSel);
+  ok('popover form opened (' + formField + ')', await ev(`!!document.querySelector('.ma-popover input[name=${formField}]')`));
+  await shot('3-form-popover');
+  const val0 = await ev(`document.querySelector('.ma-popover input[name=${formField}]').value`);
+  await ev(`(function(){var i=document.querySelector('.ma-popover input[name=${formField}]'); i.value='${formField === 'credit_hours' ? '77' : '/academics/cdp-test/'}'; return true;})()`);
   await click('.ma-popover button[type=submit]', { wait: 1500 });
-  ok('facts saved: credit hours on the page', (await ev(`(document.querySelector('[data-ma-form="facts"]')||{}).textContent||''`)).indexOf('77') !== -1);
+  ok('form saved and the page shows it', (await ev(`(document.querySelector('${formSel}')||{}).outerHTML||''`)).indexOf(formField === 'credit_hours' ? '77' : '/academics/cdp-test/') !== -1);
   ok('popover closed after save', !(await ev(`!!document.querySelector('.ma-popover')`)));
-  await click('[data-ma-form="facts"]');
-  await ev(`(function(){var i=document.querySelector('.ma-popover input[name=credit_hours]'); i.value=${JSON.stringify(hours0)}; return true;})()`);
+  await click(formSel);
+  await ev(`(function(){var i=document.querySelector('.ma-popover input[name=${formField}]'); i.value=${JSON.stringify(val0)}; return true;})()`);
   await click('.ma-popover button[type=submit]', { wait: 1500 });
 
   // 5. section tools: add a card after the first section, then remove it
@@ -131,12 +135,20 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
   await click(`[data-section="${newId}"] [data-ma-act="section-menu"]`);
   await click('.ma-popover .ma-btn--danger', { wait: 1800 });
   ok('new card removed again', (await ev(`document.querySelectorAll('[data-section]').length`)) === n0);
+  ok('removal toast offers Undo', await ev(`!!document.querySelector('.ma-toast .ma-toast__undo')`));
+  await click('.ma-toast__undo'); await sleep(2000);
+  ok('undo re-created the card', (await ev(`document.querySelectorAll('[data-section]').length`)) === n0 + 1);
+  const newId2 = await ev(`(function(){var s=Array.from(document.querySelectorAll('[data-section]')).map(function(n){return Number(n.getAttribute('data-section'));}); return Math.max.apply(null, s);})()`);
+  await click(`[data-section="${newId2}"] [data-ma-act="section-menu"]`);
+  await click('.ma-popover .ma-btn--danger', { wait: 1800 });
+  ok('removed for good', (await ev(`document.querySelectorAll('[data-section]').length`)) === n0);
+  ok('first section cannot move up, last cannot move down', await ev(`(function(){var t=document.querySelectorAll('[data-ma-tools]'); return t[0].querySelector('[data-dir=up]').disabled && t[t.length-1].querySelector('[data-dir=down]').disabled;})()`));
 
   // 6. shared section prompt
   const hasShared = await ev(`!!document.querySelector('[data-ma-scope="block"] [data-ma-text="headline"]')`);
   if (hasShared) {
     await click('[data-ma-scope="block"] [data-ma-text="headline"]');
-    ok('shared-text prompt shown', await ev(`(document.querySelector('.ma-popover')||{textContent:''}).textContent.indexOf('shared') !== -1`));
+    ok('shared-text prompt shown, Customize first', await ev(`(function(){var p=document.querySelector('.ma-popover'); return !!p && p.textContent.indexOf('shared') !== -1 && /Customize/.test(p.querySelector('.ma-btn--accent').textContent);})()`));
     await shot('5-shared-prompt');
     await key('Escape'); await sleep(400);
     ok('shared prompt cancelled, headline not editable', !(await ev(`document.querySelector('[data-ma-scope="block"] [data-ma-text="headline"]').isContentEditable`)));
@@ -153,7 +165,7 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
 
   // 8. settings
   await click('[data-ma-act="settings"]', { wait: 1200 });
-  ok('settings popover with basename', await ev(`!!document.querySelector('.ma-popover [name=basename]')`));
+  ok('settings popover (page name locked for imported pages, editable otherwise)', await ev(`!!document.querySelector('.ma-popover [data-ma-settings-form]') && (!!document.querySelector('.ma-popover [name=basename]') || !!document.querySelector('.ma-popover .ma-static'))`));
   await shot('7-settings');
   await key('Escape'); await sleep(300);
 

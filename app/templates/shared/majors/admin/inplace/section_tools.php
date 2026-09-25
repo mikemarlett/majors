@@ -17,8 +17,8 @@ $kind   = $s['kind'] === 'feature' ? 'Feature' : 'Card';
 	<span class="ma-tools__shared" title="This text comes from a shared block. Editing it changes every page that uses it; Customize gives this page its own copy.">Shared text · <?= (int) $uses ?> page<?= $uses === 1 ? '' : 's' ?></span>
 <?php endif; ?>
 	<span class="ma-tools__spacer"></span>
-	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-act="move" data-dir="up" title="Move up" aria-label="Move this section up">↑</button>
-	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-act="move" data-dir="down" title="Move down" aria-label="Move this section down">↓</button>
+	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-act="move" data-dir="up" title="Move up" aria-label="Move this section up"<?= !empty($s['first']) ? ' disabled' : '' ?>>↑</button>
+	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-act="move" data-dir="down" title="Move down" aria-label="Move this section down"<?= !empty($s['last']) ? ' disabled' : '' ?>>↓</button>
 	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-act="add-after" title="Add a section after this one">+ Add after</button>
 	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-act="section-menu" title="More" aria-label="More actions for this section">⋯</button>
 </div>

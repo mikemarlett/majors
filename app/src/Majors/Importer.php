@@ -293,6 +293,9 @@ final class Importer
         $this->exec('DELETE FROM `majors_program_sections` WHERE `program_id` = ?', 'i', [$id]);
         $pos = 0;
         foreach ($p['sections'] as $s) {
+            if (!in_array($s['kind'], ProgramEditor::KINDS, true)) {
+                continue;                        // the Similar Programs card is data for majors_similar_programs, not a page section
+            }
             $pos++;
             $key     = $s['kind'] === 'teaser' ? self::sectionKey($s) : '';
             $blockId = $key !== '' && isset($blockIds[$key]) ? $blockIds[$key] : null;

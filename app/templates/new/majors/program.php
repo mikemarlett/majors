@@ -68,7 +68,7 @@ $feature = static function (array $s) use ($t, $fancy, $ed, $editing, $part): st
         . '<div class="generic-slab-content-outer-wrapper relative conditional-container theme-not-default:container"><div class="generic-slab-content-inner-wrapper flex flex-col gap-8"><div class="generic-slab-component-wrapper">'
         . '<div class="group/split-feature grid grid-cols-1 gap-8 md:grid-cols-10 md:gap-12"><div class="md:col-span-5 lg:group-data-[sixty-forty]/split-feature:col-span-4 self-center"><div class="flex flex-col gap-8"><div class="flex flex-col gap-5">'
         . '<div><h2 data-style-level="2" class="nc-heading text-[length:--text-size] sm:text-[length:--text-size-sm] md:text-[length:--text-size-md]"' . $ed->text('label', $s['label']) . '>' . $t->e($label) . '</h2></div>'
-        . '<div><div class="prose max-w-4xl"><h3' . $ed->text('headline', $s['headline']) . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</h3><div' . $ed->html('body', $s['body']) . '>' . $ed->showHtml($s['body'], 'Click to write the text.') . '</div></div></div>'
+        . '<div><div class="prose max-w-4xl"><h3' . $ed->text('headline', $s['headline']) . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</h3><div class="majors-body"' . $ed->html('body', $s['body']) . '>' . $ed->showHtml($s['body'], 'Click to write the text.') . '</div></div></div>'
         . ($s['links'] ? '<div' . $linksForm . '>' . $fancy($s['links']) . '</div>' : $ed->placeholder('+ Add a link', $linksForm, 'ma-ph--on-dark'))
         . '</div></div></div>'
         . '<div class="order-first md:order-last md:group-data-[flipped]/split-feature:order-first md:col-span-5 lg:group-data-[sixty-forty]/split-feature:col-span-6">' . $media . '</div>'
@@ -78,6 +78,9 @@ $feature = static function (array $s) use ($t, $fancy, $ed, $editing, $part): st
 $groups = [];
 $mapsPlaced = false;
 foreach ($sections as $s) {
+    if (!$editing && !$s['shared'] && trim($s['headline']) === '' && trim(strip_tags($s['body'])) === '') {
+        continue;                          // added in the editor but not written yet
+    }
     if ($s['kind'] === 'teaser') {
         $extra = [];
         if (!$mapsPlaced && $s['headline'] === 'Curriculum' && $mapLinks !== []) {

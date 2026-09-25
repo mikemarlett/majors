@@ -66,7 +66,7 @@ $withMedia = $image || $editing;
 									<div><dt class="text-xs font-bold uppercase tracking-wide text-theme-text-color/80"><?= $t->e($f['label']) ?></dt><dd class="font-display font-bold text-2xl leading-tight text-theme-heading-color"><?= $t->e($f['value']) ?></dd></div>
 <?php endforeach; ?>
 								</dl>
-<?php else: ?>
+<?php elseif (!empty($p['graduate'])): ?>
 <?= $ed->placeholder('Add program details (degree, modality, credit hours, entry term)', $factsForm) ?>
 <?php endif; ?>
 <?php if ($buttons): ?>
@@ -80,7 +80,7 @@ $withMedia = $image || $editing;
 <?php endif; ?>
 <?php if ($coordinator): ?>
 								<p class="text-base majors-coordinator"<?= $coordForm ?>>Questions? Contact <?= $coordinator['name'] !== '' ? 'Program Coordinator ' . $t->e($coordinator['name']) : 'the program' ?><?php if ($coordinator['email'] !== ''): ?> at <a class="underline text-theme-link-color hocus:text-theme-link-hocus-color" href="mailto:<?= $t->e($coordinator['email']) ?>"><?= $t->e($coordinator['email']) ?></a><?php endif; ?><?php if ($coordinator['phone'] !== ''): ?> or call <a class="underline text-theme-link-color hocus:text-theme-link-hocus-color" href="tel:<?= $t->e(preg_replace('/[^0-9+]/', '', $coordinator['phone'])) ?>"><?= $t->e($coordinator['phone']) ?></a><?php endif; ?>.</p>
-<?php else: ?>
+<?php elseif (!empty($p['graduate'])): ?>
 <?= $ed->placeholder('Add a program coordinator (name, email, phone)', $coordForm) ?>
 <?php endif; ?>
 							</div>

@@ -83,9 +83,15 @@ final class ProgramRenderer
             $crumbs = array_values(array_filter(array_map(static fn ($l) => ['text' => $l['link_text'] ?? '', 'href' => $l['href'] ?? ''], $json($c['program_links'] ?? null)), static fn ($l) => $l['text'] !== 'All Programs'));
         }
         $sections = $program['sections'] ?? [];
-        if ($sections === [] && $c !== []) {
+        if ($sections === [] && $c !== [] && !$editing) {   // pre-import rows: the editor shows the empty page and its add bar instead
             $sections = self::sectionsFromFlat($c);
         }
+        $n = count($sections);
+        foreach ($sections as $i => &$sec) {
+            $sec['first'] = $i === 0;
+            $sec['last']  = $i === $n - 1;
+        }
+        unset($sec);
         return [
             'p'              => $program,
             'c'              => $c,
@@ -109,7 +115,7 @@ final class ProgramRenderer
                 'name' => (string) ($program['coordinator_name'] ?? ''), 'email' => (string) ($program['coordinator_email'] ?? ''), 'phone' => (string) ($program['coordinator_phone'] ?? ''),
             ] : null,
             'degree_maps'    => $maps,
-            'similar'        => $program['similar_programs'] ?? [],
+            'similar'        => $editing && isset($program['similar_editing']) ? $program['similar_editing'] : ($program['similar_programs'] ?? []),
             'nav_items'      => $this->sectionNav($program),
         ];
     }
