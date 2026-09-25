@@ -46,7 +46,7 @@ final class AdminMajorsController extends Controller
                 '<link rel="stylesheet" href="' . $layout->e($layout->asset('admin/ma-ui.css')) . '">',
             ],
             'foot'        => [
-                '<script>window.MajorsAdmin = ' . json_encode(['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf, 'search' => $layout->url('_admin/ajax.php') . '?action=program_search'], JSON_UNESCAPED_SLASHES) . ';</script>',
+                $layout->jsConfig('MajorsAdmin', ['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf, 'search' => $layout->url('_admin/ajax.php') . '?action=program_search']),
                 '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
                 '<script src="' . $layout->e($layout->asset('admin/majors-admin.js')) . '" defer></script>',
             ],

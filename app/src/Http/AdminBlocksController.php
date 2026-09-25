@@ -30,8 +30,8 @@ final class AdminBlocksController extends Controller
             'foot'        => [
                 '<script>window.jQuery || document.write(\'<script src="https://code.jquery.com/jquery-3.7.1.min.js"><\/script>\')</script>',
                 '<script src="' . $layout->e($layout->asset('jquery-ui-1.14.1/jquery-ui.min.js')) . '"></script>',
-                '<script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.4.2/build/ckeditor.js"></script>',
-                '<script>window.MajorsAdmin = ' . json_encode(['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf], JSON_UNESCAPED_SLASHES) . ';</script>',
+                '<script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-classic@41.4.2/build/ckeditor.js" integrity="sha384-69SUO5s28dXCoNTUaA/KXhfDJu21xD394Gxk/S6d/YJZUxrz7Zagi+seruzXFTed" crossorigin="anonymous"></script>',
+                $layout->jsConfig('MajorsAdmin', ['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf]),
                 '<script src="' . $layout->e($layout->asset('admin/program-edit.js')) . '" defer></script>',
             ],
         ]);

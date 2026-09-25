@@ -102,9 +102,12 @@ final class ProgramEditor
         }
         // A changed credential re-derives the listing flags unless the form set them itself.
         if (array_key_exists('credential', $d)) {
-            foreach (self::flagsFor(trim((string) $d['credential'])) as $flag => $on) {
-                if (!array_key_exists($flag, $d)) {
-                    $d[$flag] = $on;
+            $current = (string) ($this->scalar('SELECT COALESCE(`credential`, "") FROM `majors_academic_programs` WHERE `id` = ?', 'i', [$id]) ?? '');
+            if (trim((string) $d['credential']) !== $current) {
+                foreach (self::flagsFor(trim((string) $d['credential'])) as $flag => $on) {
+                    if (!array_key_exists($flag, $d)) {
+                        $d[$flag] = $on;
+                    }
                 }
             }
         }
@@ -140,6 +143,13 @@ final class ProgramEditor
             }
             if ($col === 'description') {
                 $v = Html::clean($v);
+            }
+            if (in_array($col, ['college_url', 'department_url', 'catalog_url', 'image_url'], true)) {
+                $safe = Html::safeUrl($v);
+                if ($v !== '' && $safe === '') {
+                    throw new RuntimeException(str_replace('_', ' ', $col) . ' must be a web address (https://…) or a path on the site (/academics/…).');
+                }
+                $v = $safe;
             }
             $sets[] = "`$col` = ?";
             $types .= 's';
@@ -257,7 +267,7 @@ final class ProgramEditor
             throw new RuntimeException('A section needs a headline or some text, or a shared block.');
         }
         $label = mb_substr(trim((string) ($d['label'] ?? '')), 0, 100);
-        $img   = mb_substr(trim((string) ($d['image_url'] ?? '')), 0, 255);
+        $img   = mb_substr(Html::safeUrl((string) ($d['image_url'] ?? '')), 0, 255);
         $alt   = trim((string) ($d['image_alt'] ?? ''));
         if ($sectionId !== null) {
             $this->exec('UPDATE `majors_program_sections` SET `kind` = ?, `label` = ?, `headline` = ?, `body` = ?, `links` = ?, `image_url` = ?, `image_alt` = ?, `block_id` = ?, `updated_at` = NOW()
@@ -275,6 +285,7 @@ final class ProgramEditor
     /** Copy the shared block's content into the section so it can be customised for this program. */
     public function detachSection(int $programId, int $sectionId): void
     {
+        $this->section($programId, $sectionId);
         $this->exec('UPDATE `majors_program_sections` s JOIN `majors_content_blocks` b ON b.`id` = s.`block_id`
                         SET s.`headline` = b.`headline`, s.`body` = b.`body`, s.`links` = b.`links`, s.`block_id` = NULL, s.`updated_at` = NOW()
                       WHERE s.`id` = ? AND s.`program_id` = ?', 'ii', [$sectionId, $programId]);
@@ -297,7 +308,7 @@ final class ProgramEditor
         return [
             'kind' => (string) $row['kind'], 'label' => (string) $row['label'], 'headline' => (string) ($row['headline'] ?? ''), 'body' => (string) ($row['body'] ?? ''),
             'links' => (string) ($row['links'] ?? ''), 'image_url' => (string) ($row['image_url'] ?? ''), 'image_alt' => (string) ($row['image_alt'] ?? ''),
-            'block_id' => $row['block_id'] !== null ? (int) $row['block_id'] : 0, 'after' => $i !== false && $i > 0 ? $ids[$i - 1] : 0,
+            'block_id' => $row['block_id'] !== null ? (int) $row['block_id'] : 0, 'after' => $i !== false && $i > 0 ? $ids[$i - 1] : -1,   // -1: it was the first section
         ];
     }
 
@@ -360,7 +371,7 @@ final class ProgramEditor
             }
             $sets[] = "`$col` = ?";
             $types .= 's';
-            $vals[] = mb_substr($col === 'body' ? Html::clean((string) $fields[$col]) : trim(strip_tags((string) $fields[$col])), 0, $max);
+            $vals[] = mb_substr($col === 'body' ? Html::clean((string) $fields[$col]) : ($col === 'image_url' ? Html::safeUrl((string) $fields[$col]) : trim(strip_tags((string) $fields[$col]))), 0, $max);
         }
         if (array_key_exists('links', $fields)) {
             if ($row['block_id'] !== null) {
@@ -408,8 +419,10 @@ final class ProgramEditor
     }
 
     /**
-     * A new section right after $afterId (0 = at the end), with a visible
-     * default so it can be clicked and edited in place. @return int new id
+     * A new section right after $afterId (0 = at the end, -1 = at the start).
+     * It starts blank unless $d carries text (Undo of a removal does), shows
+     * placeholders in the editor and stays off the public page until written.
+     * @return int new id
      */
     public function insertSectionAfter(int $programId, int $afterId, array $d): int
     {
@@ -419,12 +432,41 @@ final class ProgramEditor
         return $this->transaction(function () use ($programId, $afterId, $d): int {
             $id  = $this->saveSection($programId, null, $d, true);
             $ids = $this->sectionIds($programId, true);
-            if ($afterId > 0 && in_array($afterId, $ids, true)) {
+            if ($afterId < 0 || ($afterId > 0 && in_array($afterId, $ids, true))) {
                 $ids = array_values(array_diff($ids, [$id]));
-                array_splice($ids, array_search($afterId, $ids, true) + 1, 0, [$id]);
+                array_splice($ids, $afterId < 0 ? 0 : array_search($afterId, $ids, true) + 1, 0, [$id]);
                 $this->reorderSections($programId, $ids);
             }
             return $id;
+        });
+    }
+
+    /**
+     * A program imported before the sections model (a legacy flat row, no
+     * section rows) gets its flat content materialised as sections the first
+     * time the editor opens it, so what marketing sees is what the public
+     * page shows. Returns how many sections were created (0 = nothing to do).
+     */
+    public function materializeFlat(int $programId): int
+    {
+        if ($this->sectionIds($programId) !== []) {
+            return 0;
+        }
+        $content = (new ProgramRepository($this->db))->content($programId) ?? [];
+        $flat    = $content !== [] ? ProgramRenderer::sectionsFromFlat($content) : [];
+        if ($flat === []) {
+            return 0;
+        }
+        return $this->transaction(function () use ($programId, $flat): int {
+            $n = 0;
+            foreach ($flat as $s) {
+                $this->saveSection($programId, null, [
+                    'kind' => $s['kind'], 'label' => $s['label'], 'headline' => $s['headline'], 'body' => $s['body'], 'links' => $s['links'],
+                    'image_url' => (string) ($s['image']['url'] ?? ''), 'image_alt' => (string) ($s['image']['alt'] ?? ''),
+                ], true);
+                $n++;
+            }
+            return $n;
         });
     }
 
@@ -496,19 +538,38 @@ final class ProgramEditor
 
     // ---- similar programs --------------------------------------------------------
 
-    /** @param list<int> $ids */
+    /**
+     * Replace the curated similar-programs list. Only ids of programs that
+     * exist are kept (in the posted order, duplicates and self dropped); the
+     * delete + inserts run in one transaction so two editors cannot interleave.
+     *
+     * @param list<int> $ids
+     */
     public function saveSimilar(int $programId, array $ids): void
     {
-        $this->exec('DELETE FROM `majors_similar_programs` WHERE `main_academic_program_id` = ?', 'i', [$programId]);
-        $done = [];
+        $wanted = [];
         foreach ($ids as $id) {
             $id = (int) $id;
-            if ($id <= 0 || $id === $programId || isset($done[$id])) {
-                continue;
+            if ($id > 0 && $id !== $programId && !in_array($id, $wanted, true)) {
+                $wanted[] = $id;
             }
-            $done[$id] = true;
-            $this->exec('INSERT INTO `majors_similar_programs` (`main_academic_program_id`, `similar_academic_program_id`, `timestamp`) VALUES (?, ?, NOW())', 'ii', [$programId, $id]);
         }
+        $exists = [];
+        if ($wanted !== []) {
+            $stmt = $this->db->prepare('SELECT `id` FROM `majors_academic_programs` WHERE `id` IN (' . implode(',', array_fill(0, count($wanted), '?')) . ')');
+            $stmt->bind_param(str_repeat('i', count($wanted)), ...$wanted);
+            $stmt->execute();
+            $exists = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'id'));
+            $stmt->close();
+        }
+        $this->transaction(function () use ($programId, $wanted, $exists): void {
+            $this->exec('DELETE FROM `majors_similar_programs` WHERE `main_academic_program_id` = ?', 'i', [$programId]);
+            foreach ($wanted as $id) {
+                if (in_array($id, $exists, true)) {
+                    $this->exec('INSERT IGNORE INTO `majors_similar_programs` (`main_academic_program_id`, `similar_academic_program_id`, `timestamp`) VALUES (?, ?, NOW())', 'ii', [$programId, $id]);
+                }
+            }
+        });
         $this->syncFlat($programId);
     }
 
@@ -633,8 +694,9 @@ final class ProgramEditor
         if (!$p) {
             return;
         }
-        $sections = (new ProgramRepository($this->db))->sections($programId);
-        $sections = array_values(array_filter($sections, static fn ($s) => $s['shared'] || trim($s['headline']) !== '' || trim(strip_tags($s['body'])) !== ''));   // unfinished sections are not on the public page
+        $stored   = (new ProgramRepository($this->db))->sections($programId);
+        $sections = array_values(array_filter($stored, static fn ($s) => $s['shared'] || trim($s['headline']) !== '' || trim(strip_tags($s['body'])) !== ''));   // unfinished sections are not on the public page
+        $keepFlat = $stored === [];   // pre-import program: its legacy section columns are still the page; leave them alone
         $find = static function (array $heads, string $kind = 'teaser') use ($sections): ?array {
             foreach ($sections as $s) {
                 if ($s['kind'] === $kind && ($heads === [] || in_array($s['headline'], $heads, true))) {
@@ -676,6 +738,13 @@ final class ProgramEditor
             ])), JSON_UNESCAPED_SLASHES),
             'similar_programs' => json_encode($similar), 'meta_description' => (string) ($p['meta_description'] ?? ''), 'meta_keywords' => (string) ($p['meta_keywords'] ?? ''),
         ];
+        if ($keepFlat) {
+            foreach (array_keys($vals) as $k) {
+                if (preg_match('/^(curriculum|admissions|inside_the_program|wildcard|careers)_/', $k)) {
+                    unset($vals[$k]);
+                }
+            }
+        }
         $existing = $this->scalar('SELECT `id` FROM `majors_programs_content` WHERE `academic_program_id` = ?', 'i', [$programId]);
         if ($existing !== null) {
             $set = implode(', ', array_map(static fn ($k) => "`$k` = ?", array_keys($vals))) . ', `timestamp` = NOW()';

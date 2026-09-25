@@ -98,9 +98,8 @@ final class ProgramActions
 
     /**
      * Partial save: only the posted fields change. Flags (checkboxes) are
-     * written only when posted, as 0/1 — the in-place forms always post them
-     * explicitly, and a form that wants absent boxes to mean "off" posts
-     * flags_form=1 with the list of flags it showed.
+     * written only when posted, as 0/1 — every form posts them explicitly
+     * (a hidden 0 under each checkbox).
      */
     public function saveProgram(Request $r, User $user): array
     {
@@ -109,9 +108,7 @@ final class ProgramActions
             $d = $_POST;                       // the whole form; the editor only writes known fields
             foreach (['graduate', 'certificate', 'minor', 'badge', 'online_learning', 'online_only', 'is_stem'] as $flag) {
                 if (array_key_exists($flag, $d)) {
-                    $d[$flag] = $r->int($flag);
-                } elseif (in_array($flag, (array) ($d['flags_form'] ?? []), true)) {
-                    $d[$flag] = 0;             // shown as a checkbox and left unchecked
+                    $d[$flag] = $r->int($flag);   // the forms post every box as 0/1 (hidden 0 + checkbox 1)
                 }
             }
             $this->editor->saveProgram((int) $p['id'], $d);
@@ -190,8 +187,10 @@ final class ProgramActions
     public function detachSection(Request $r, User $user): array
     {
         $p = $this->program($r);
-        $this->editor->detachSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
-        return ['success' => true] + $this->parts((int) $p['id']);
+        return $this->guard(function () use ($r, $p) {
+            $this->editor->detachSection((int) $p['id'], $r->id('section_id') ?? throw new ActionException('Missing section_id.'));
+            return ['success' => true] + $this->parts((int) $p['id']);
+        });
     }
 
     /** Removes the section; 'removed' carries its fields and predecessor so the client can offer Undo (re-create via add_section). */
@@ -206,10 +205,11 @@ final class ProgramActions
 
     public function saveSectionOrder(Request $r, User $user): array
     {
-        $p   = $this->program($r);
-        $ids = array_map('intval', (array) ($_POST['order'] ?? []));
-        $this->editor->reorderSections((int) $p['id'], $ids);
-        return ['success' => true] + $this->parts((int) $p['id']);
+        $p = $this->program($r);
+        return $this->guard(function () use ($r, $p) {
+            $this->editor->reorderSections((int) $p['id'], array_map('intval', (array) ($_POST['order'] ?? [])));
+            return ['success' => true] + $this->parts((int) $p['id']);
+        });
     }
 
     // ---- in-place editor: per-field saves and structure ----
@@ -278,12 +278,15 @@ final class ProgramActions
     }
 
     // ---- similar ----
+    /** Replaces the curated list; the response carries the curated list as stored (what the control panel's popover shows). */
     public function saveSimilar(Request $r, User $user): array
     {
         $p = $this->program($r);
-        $this->editor->saveSimilar((int) $p['id'], array_map('intval', (array) ($_POST['similar'] ?? [])));
-        $fresh = $this->programs->find((int) $p['id']) ?? [];
-        return ['success' => true, 'message' => 'Similar programs saved.', 'similar' => array_map(static fn ($s) => ['id' => (int) $s['id'], 'name' => (string) $s['academic_program']], $fresh['similar_programs'] ?? [])] + $this->parts((int) $p['id']);
+        return $this->guard(function () use ($r, $p) {
+            $this->editor->saveSimilar((int) $p['id'], array_map('intval', (array) ($_POST['similar'] ?? [])));
+            $curated = array_values(array_filter($this->programs->similarForEditing((int) $p['id']), static fn ($s) => $s['source'] === 'curated'));
+            return ['success' => true, 'message' => 'Similar programs saved.', 'similar' => array_map(static fn ($s) => ['id' => (int) $s['id'], 'name' => (string) $s['academic_program'], 'retired' => !empty($s['retired'])], $curated)] + $this->parts((int) $p['id']);
+        });
     }
 
     // ---- shared blocks ----

@@ -35,7 +35,7 @@ final class AdminProgramController extends Controller
 
         if ($r->int('new') === 1) {
             $foot = [
-                '<script>window.MajorsAdmin = ' . json_encode(['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf], JSON_UNESCAPED_SLASHES) . ';</script>',
+                $layout->jsConfig('MajorsAdmin', ['ajax' => $layout->url('_admin/ajax.php'), 'csrf' => $csrf]),
                 '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
                 '<script src="' . $layout->e($layout->asset('admin/inplace.js')) . '" defer></script>',
             ];
@@ -47,11 +47,17 @@ final class AdminProgramController extends Controller
 
         $basename = $r->strOrNull('program');
         $program  = $basename !== null ? $this->app->programs()->findByBasename($basename) : null;
+        if ($program === null && $basename !== null && $r->id('id') === null) {
+            $this->notFound('No program has the page name "' . $basename . '". It may have been renamed; find it in the Majors admin list.');
+        }
         if ($program === null) {
             $id      = $r->id('id') ?? $this->notFound('Which program? Open one from the Majors admin list.');
             $program = $this->app->programs()->find($id) ?? $this->notFound('That program could not be found.');
         }
         $pid      = (int) $program['id'];
+        if (($program['sections'] ?? []) === [] && $editor->materializeFlat($pid) > 0) {   // pre-import page: its flat content becomes editable sections
+            $program = $this->app->programs()->find($pid) ?? $program;
+        }
         $renderer = new ProgramRenderer($layout);
         $parts    = $renderer->parts($program, $this->app->maps()->forProgram($pid), true, $editor->blockUseCounts());
         $blocks   = $editor->blocksForPicker();
@@ -71,8 +77,8 @@ final class AdminProgramController extends Controller
         ];
         $foot = [
             // balloon-block build: formatting balloon on a selection, plus the block handle (⋮) for lists and headings
-            '<script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-balloon-block@41.4.2/build/ckeditor.js"></script>',
-            '<script>window.MajorsAdmin = ' . json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';</script>',
+            '<script src="https://cdn.jsdelivr.net/npm/@ckeditor/ckeditor5-build-balloon-block@41.4.2/build/ckeditor.js" integrity="sha384-ITlzbiwG8EE2LFc5JkwTnZVbGtOwedAxy3Ad2/ArOwJnx7HcZfbJAIODiKsKr5bz" crossorigin="anonymous"></script>',
+            $layout->jsConfig('MajorsAdmin', $config),
             '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
             '<script src="' . $layout->e($layout->asset('admin/inplace.js')) . '" defer></script>',
         ];

@@ -184,6 +184,16 @@ final class Layout
         return $base !== '' && str_starts_with($url, '/') ? rtrim($base, '/') . $url : $url;
     }
 
+    /**
+     * A <script> that sets window.<name> to the given array. JSON inside an
+     * inline script is encoded with the HTML-safe flags, so a program name
+     * containing "</script>" can never break out of it.
+     */
+    public function jsConfig(string $name, array $config): string
+    {
+        return '<script>window.' . $name . ' = ' . json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) . ';</script>';
+    }
+
     /** Cache-busted URL to a file in docroot/academics/majors/assets/. */
     public function asset(string $path): string
     {

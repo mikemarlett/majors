@@ -29,10 +29,10 @@ final class AdminUsersController extends Controller
             'foot'       => [
                 '<script>window.jQuery || document.write(\'<script src="https://code.jquery.com/jquery-3.7.1.min.js"><\/script>\')</script>',
                 '<script src="' . $layout->e($layout->asset('jquery-ui-1.14.1/jquery-ui.min.js')) . '"></script>',
-                '<script>window.MajorsAdmin = ' . json_encode([
+                $layout->jsConfig('MajorsAdmin', [
                     'ajax' => $layout->url('degree_maps/admin/ajax.php'),
                     'csrf' => $csrf,
-                ], JSON_UNESCAPED_SLASHES) . ';</script>',
+                ]),
                 '<script src="' . $layout->e($layout->asset('admin/manage-users.js')) . '" defer></script>',
             ],
         ]);

@@ -186,6 +186,8 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 		<button type="button" class="ma-similar__remove" data-ma-similar-remove="<?= (int) $s['id'] ?>" title="Remove from similar programs" aria-label="Remove <?= $t->e($s['academic_program']) ?> from similar programs">×</button>
 <?php if ($retired): ?>
 		<span class="ma-similar__note">Retired program — not shown publicly</span>
+<?php elseif (!empty($s['hidden'])): ?>
+		<span class="ma-similar__note">Not shown publicly — the page lists the first six</span>
 <?php endif; ?>
 		</div>
 <?php elseif ($editing): ?>

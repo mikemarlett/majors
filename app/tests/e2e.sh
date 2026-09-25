@@ -73,7 +73,8 @@ GET -b $M "$B/_admin/program.php?id=$PROG" >/dev/null; MC=$(grep -o 'name="csrf-
 MP() { curl -s -b $M -H "X-CSRF-Token: $MC" "$@"; }
 MA=$B/_admin/ajax.php
 NAME=$(Q "SELECT academic_program FROM majors_academic_programs WHERE id=$PROG")
-DESC0=$(Q "SELECT description FROM majors_academic_programs WHERE id=$PROG")
+SIM0=$(Q "SELECT GROUP_CONCAT(similar_academic_program_id ORDER BY id) FROM majors_similar_programs WHERE main_academic_program_id=$PROG")
+DESC0=$(Q "SELECT description FROM majors_academic_programs WHERE id=$PROG"); CH0=$(Q "SELECT COALESCE(credit_hours,'') FROM majors_academic_programs WHERE id=$PROG"); MOD0=$(Q "SELECT COALESCE(modality,'') FROM majors_academic_programs WHERE id=$PROG")
 FLAGS0=$(Q "SELECT CONCAT_WS(',',COALESCE(graduate,'n'),COALESCE(online_learning,'n'),COALESCE(certificate,'n'),is_stem) FROM majors_academic_programs WHERE id=$PROG")
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "credit_hours=99" --data-urlencode "modality=Online" --data-urlencode "description=<p>E2E description</p>" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save_program" || bad "save_program: $R"; echo "$R" | grep -q '"parts":{' && ok "save_program returns the re-rendered parts" || bad "parts missing"
 chk "$(Q "SELECT credit_hours FROM majors_academic_programs WHERE id=$PROG")" 99 "program facts saved"
@@ -81,7 +82,11 @@ chk "$(Q "SELECT CONCAT_WS(',',COALESCE(graduate,'n'),COALESCE(online_learning,'
 chk "$(Q "SELECT description FROM majors_programs_content WHERE academic_program_id=$PROG")" "<p>E2E description</p>" "flat row kept in step (ai-meta.php)"
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "modality=Sideways" "$MA?action=save_program"); echo "$R" | grep -q 'Modality must be' && ok "save_program validates modality" || bad "modality validation: $R"
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=" "$MA?action=save_program"); echo "$R" | grep -q 'name is required' && ok "save_program refuses an empty name" || bad "empty name: $R"
-MP -d "program_id=$PROG&credit_hours=&modality=" --data-urlencode "description=$DESC0" "$MA?action=save_program" >/dev/null
+MP --data-urlencode "program_id=$PROG" --data-urlencode "credit_hours=$CH0" --data-urlencode "modality=$MOD0" --data-urlencode "description=$DESC0" "$MA?action=save_program" >/dev/null
+chk "$(Q "SELECT CONCAT(COALESCE(credit_hours,''),'|',COALESCE(modality,'')) FROM majors_academic_programs WHERE id=$PROG")" "$CH0|$MOD0" "test program's facts restored"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "college_url=javascript:alert(1)" "$MA?action=save_program"); echo "$R" | grep -q 'must be a web address' && ok "save_program refuses a javascript: college link" || bad "college_url: $R"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME</script><script>alert(1)</script>" "$MA?action=save_program" >/dev/null; GET -b $M "$B/_admin/program.php?id=$PROG"); hasnt $S/out.html '</script><script>alert(1)</script>, ' 'a program name cannot break out of the inline config script'; MP --data-urlencode "program_id=$PROG" --data-urlencode "academic_program=$NAME" "$MA?action=save_program" >/dev/null
+R=$(MP -d "program_id=$PROG&similar[]=999999&similar[]=$PROG" "$MA?action=save_similar"); echo "$R" | grep -q '"similar":\[\]' && ok "save_similar drops unknown ids and self" || bad "save_similar ids: $R"
 R=$(curl -s -b $M "$MA?action=render_program&program_id=$PROG"); echo "$R" | grep -q '"parts":{' && ok "render_program" || bad "render_program: $R"
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=teaser" --data-urlencode "headline=E2E card" --data-urlencode "body=<p>e2e body</p>" --data-urlencode "links[text][]=Go" --data-urlencode "links[href][]=/x" "$MA?action=save_section"); SEC=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$SEC" ] && ok "save_section → $SEC" || bad "save_section: $R"; echo "$R" | grep -q 'E2E card' && ok "parts carry the new card" || bad "parts html"
 R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$SEC" --data-urlencode "headline=E2E card renamed" "$MA?action=save_section_fields"); echo "$R" | grep -q '"success":true' && ok "save_section_fields" || bad "save_section_fields: $R"
@@ -107,10 +112,14 @@ chk "$(Q "SELECT (SELECT position FROM majors_program_sections WHERE id=$SEC2) <
 OTHER_SEC=$(Q "SELECT id FROM majors_program_sections WHERE program_id<>$PROG LIMIT 1")
 chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$OTHER_SEC" --data-urlencode "headline=x" "$MA?action=save_section_fields")" 422 "another program's section is refused"
 R=$(MP -d "program_id=$PROG&section_id=$SEC2" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (feature)" || bad "delete: $R"; echo "$R" | grep -q '"removed":{"kind":"feature"' && ok "delete_section returns what was removed (for Undo)" || bad "removed payload: $R"
+FIRST=$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG AND kind IN ('teaser','feature') ORDER BY position LIMIT 1")
+R=$(MP -d "program_id=$PROG&section_id=$FIRST" "$MA?action=delete_section"); echo "$R" | grep -q '"after":-1' && ok "removing the first section reports after=-1" || bad "first removal: $R"
+RK=$(echo "$R" | python3 -c "import sys,json; d=json.load(sys.stdin)['removed']; print(d['kind'], d.get('block_id') or '')"); set -- $RK
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=$1" --data-urlencode "after=-1" --data-urlencode "block_id=$2" --data-urlencode "headline=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin)['removed']['headline'])")" --data-urlencode "body=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin)['removed']['body'])")" "$MA?action=add_section"); NEWFIRST=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$')
+chk "$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG AND kind IN ('teaser','feature') ORDER BY position LIMIT 1")" "$NEWFIRST" "undo of a first-section removal puts it back first"
 R=$(MP -d "program_id=$PROG&section_id=$SEC" "$MA?action=delete_section"); echo "$R" | grep -q '"success":true' && ok "delete_section (card)" || bad "delete: $R"
 R=$(curl -s -b $M "$MA?action=program_search&q=engineering"); echo "$R" | grep -q '"results":\[{' && ok "program_search" || bad "search: $R"
 OTHER=$(Q "SELECT id FROM majors_academic_programs WHERE status='active' AND id<>$PROG ORDER BY id LIMIT 1")
-SIM0=$(Q "SELECT GROUP_CONCAT(similar_academic_program_id ORDER BY id) FROM majors_similar_programs WHERE main_academic_program_id=$PROG")
 R=$(MP -d "program_id=$PROG&similar[]=$OTHER" "$MA?action=save_similar"); echo "$R" | grep -q '"success":true' && ok "save_similar" || bad "similar: $R"; echo "$R" | grep -q "\"similar\":\[{\"id\":$OTHER" && ok "save_similar returns the list" || bad "similar list"
 SIMARGS=""; for id in ${SIM0//,/ }; do SIMARGS="$SIMARGS -d similar[]=$id"; done; [ -n "$SIM0" ] && MP -d "program_id=$PROG" $SIMARGS "$MA?action=save_similar" >/dev/null || MP -d "program_id=$PROG&similar[]=" "$MA?action=save_similar" >/dev/null
 chk "$(Q "SELECT COALESCE(GROUP_CONCAT(similar_academic_program_id ORDER BY id),'') FROM majors_similar_programs WHERE main_academic_program_id=$PROG")" "$SIM0" "similar programs restored"

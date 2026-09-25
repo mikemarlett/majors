@@ -156,13 +156,21 @@ and cached in `/tmp`; pass `--tags=/data/www/config/majors-cms-tags.json` to
 keep the cache between runs. Re-running updates what changed and retires
 programs whose page is gone (never deletes; degree maps keep their links).
 
-## 2f. In-place editor (no schema change)
+## 2f. In-place editor
 
-The in-place editor and the control panel need no migration: `basename` is
-already unique on `majors_academic_programs`. Deploy the app bundle and the
-docroot bundle as usual; the editor loads CKEditor 5 (balloon-block build)
-from jsdelivr, so the editors' browsers need to reach `cdn.jsdelivr.net`.
-Old `index.php?id=N` links keep working (301 to `?program=<basename>`).
+No new columns: `basename` is already unique on `majors_academic_programs`.
+One clean-up runs once per database (it deletes the import's unused
+`kind='similar'` section rows and renumbers positions; safe to re-run):
+
+```bash
+mysql formshandlerdb < /data/www/config/majors/sql/007_drop_similar_sections.sql
+```
+
+Deploy the app bundle and the docroot bundle as usual. The editor loads
+CKEditor 5 (balloon-block build, pinned with an integrity hash) from
+jsdelivr, so the editors' browsers need to reach `cdn.jsdelivr.net`. Old
+`index.php?id=N` links keep working (301 to `?program=<basename>`); retired
+programs answer 404 publicly.
 
 ## 2e. Graduate Program Details from the catalog
 

@@ -136,11 +136,11 @@ public page until it has a headline or text.
 | `save_program` (exists; partial by design) | `program_id` + any subset of program fields; `buttons[text][]/[href][]`; flags only when posted (a changed credential re-derives graduate/minor/certificate/badge unless posted) | `{fields, parts, title}` |
 | `save_section_fields` *(new)* | `program_id`, `section_id`, subset of `headline`, `body`, `label`, `links[…]`, `image_url`, `image_alt` | `{fields, parts}`; 409 when the section is shared |
 | `save_block_fields` *(new)* | `block_id`, subset of `headline`, `body`, `links[…]` | `{fields, parts (for program_id), uses}` |
-| `add_section` *(new)* | `program_id`, `kind`, `after` (section id, 0 = end), `block_id?` | creates with a visible default ("New card" / "Inside the Program"), inserts at the position, `{parts, section_id}` |
+| `add_section` *(new)* | `program_id`, `kind`, `after` (section id; 0 = end, −1 = start), `block_id?`, and optionally the full field set (Undo of a removal posts the removed section back) | creates a blank section (feature label "Inside the Program"), inserts at the position, `{parts, section_id}` |
 | `move_section` *(new)* | `program_id`, `section_id`, `dir` up\|down | `{parts}` |
 | `delete_section`, `detach_section`, `save_section_order` (exist) | | now also return `{parts}`; `delete_section` adds `removed` (fields + predecessor) for Undo |
 | `swap_section_block` *(new)* | `program_id`, `section_id`, `block_id` | section now points at the block; `{parts}` |
-| `save_similar` (exists) | `program_id`, `similar[]` | `{parts}` |
+| `save_similar` (exists) | `program_id`, `similar[]` (ids that don't exist, duplicates and the program itself are dropped; one transaction) | `{parts, similar: the curated list as stored}` |
 | `program_search` (exists, GET) | `q` | for the similar picker |
 | `list_images` (GET) *(new)* | `q?` | files in `<webRoot>/_images` as `{name, url}` (newest first, at most 400); the client prefixes `image_base` for thumbnails. On www-test/www-dev the folder is empty (the photos are published to www only), so the picker says so and the address field is the way in |
 | `basename_preview` (GET) *(new)* | `academic_program`, `program_type`, `credential` | `{basename}` (unique) |
@@ -185,6 +185,23 @@ public page until it has a headline or text.
   edit bar; `render_program`; `save_section_fields` (own text) and 409 on a
   shared section; `add_section` after / `move_section` / `swap_section_block`;
   `list_images`; `basename_preview` uniqueness; control panel toolbar.
+
+## Safety nets found in review
+
+- Every link field (college/department/catalog/photo addresses, buttons,
+  section links) goes through `Html::safeUrl()`; a `javascript:` address is
+  refused with a message.
+- Inline config for the scripts is written by `Layout::jsConfig()` with the
+  HTML-safe JSON flags, so a program name containing `</script>` cannot break
+  out of it. The CKEditor builds are pinned with Subresource Integrity hashes.
+- A program imported before the sections model (legacy flat row, no section
+  rows; only retired ones today) has its flat content materialised into
+  sections the first time the editor opens it, and `syncFlat()` leaves the
+  legacy section columns alone while a program has no stored sections.
+- The public band shows the first six curated programs that are active; the
+  editor marks the rest "not shown publicly".
+- Section moves, inserts, removals and the similar list run in transactions
+  with the program's rows locked, so two editors cannot interleave.
 
 ## Keyboard and screen readers
 

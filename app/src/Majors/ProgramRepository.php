@@ -206,7 +206,9 @@ final class ProgramRepository
     {
         $ids  = [];
         $reverse = [];
-        $stmt = $this->db->prepare('SELECT `similar_academic_program_id` FROM `majors_similar_programs` WHERE `main_academic_program_id` = ? LIMIT ?');
+        $stmt = $this->db->prepare('SELECT s.`similar_academic_program_id` FROM `majors_similar_programs` s
+                                      JOIN `majors_academic_programs` p ON p.`id` = s.`similar_academic_program_id` AND p.`status` = "active"
+                                     WHERE s.`main_academic_program_id` = ? ORDER BY s.`id` LIMIT ?');
         $stmt->bind_param('ii', $programId, $limit);
         $stmt->execute();
         foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $r) {
@@ -216,15 +218,17 @@ final class ProgramRepository
 
         if (count($ids) < $limit) {
             $remaining = $limit - count($ids);
-            $sql = 'SELECT `main_academic_program_id` FROM `majors_similar_programs` WHERE `similar_academic_program_id` = ?';
+            $sql = 'SELECT s.`main_academic_program_id` FROM `majors_similar_programs` s
+                      JOIN `majors_academic_programs` p ON p.`id` = s.`main_academic_program_id` AND p.`status` = "active"
+                     WHERE s.`similar_academic_program_id` = ?';
             $types = 'i';
             $params = [$programId];
             if ($ids !== []) {
-                $sql .= ' AND `main_academic_program_id` NOT IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
+                $sql .= ' AND s.`main_academic_program_id` NOT IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
                 $types .= str_repeat('i', count($ids));
                 $params = array_merge($params, $ids);
             }
-            $sql .= ' LIMIT ?';
+            $sql .= ' ORDER BY s.`id` LIMIT ?';
             $types .= 'i';
             $params[] = $remaining;
             $stmt = $this->db->prepare($sql);
@@ -280,13 +284,16 @@ final class ProgramRepository
         $stmt->bind_param('i', $programId);
         $stmt->execute();
         $out = [];
+        $shown = 0;
         foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $r) {
-            $out[] = $r + ['source' => 'curated', 'retired' => ($r['status'] ?? 'active') === 'retired'];
+            $retired = ($r['status'] ?? 'active') === 'retired';
+            $hidden  = !$retired && ++$shown > 6;   // the public band shows the first six that render
+            $out[] = $r + ['source' => 'curated', 'retired' => $retired, 'hidden' => $hidden];
         }
         $stmt->close();
         foreach ($this->similar($programId) as $r) {
             if ($r['source'] === 'reverse') {
-                $out[] = $r + ['retired' => false];
+                $out[] = $r + ['retired' => false, 'hidden' => false];
             }
         }
         return $out;

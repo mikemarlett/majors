@@ -125,13 +125,13 @@ final class AdminMapsController extends Controller
                 '<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>',
                 '<script src="https://unpkg.com/@popperjs/core@2"></script>',
                 '<script src="https://unpkg.com/tippy.js@6"></script>',
-                '<script>window.MajorsAdmin = ' . json_encode([
+                $layout->jsConfig('MajorsAdmin', [
                     'ajax'     => $layout->url('degree_maps/admin/ajax.php'),
                     'self'     => $layout->url('degree_maps/admin/maps.php'),
                     'csrf'     => $csrf,
                     'mapId'    => $map ? (int) $map['id'] : null,
                     'mode'     => $mode,
-                ], JSON_UNESCAPED_SLASHES) . ';</script>',
+                ]),
                 '<script src="' . $layout->e($layout->asset('admin/map-edit.js')) . '" defer></script>',
                 '<script src="' . $layout->e($layout->asset('degree-maps.js')) . '" defer></script>',
             ],
