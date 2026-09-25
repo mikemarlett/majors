@@ -7,7 +7,7 @@
 ?>
 <div class="majors-admin-bar noprint">
 	<div class="<?= $t->cls('row') ?> majors-admin-bar__inner">
-	<span>Signed in as <strong><?= $t->e($user->name()) ?></strong> (<?= $t->e($user->role) ?>)</span>
+	<span class="majors-admin-bar__who">Signed in as <strong><?= $t->e($user->name()) ?></strong> <span class="majors-admin-bar__role"><?= $t->e(str_replace('_', ' ', $user->role)) ?></span></span>
 	<nav aria-label="Admin">
 <?php if ($user->canEditDegreeMaps()): ?>
 		<a href="<?= $t->e($t->url('degree_maps/admin/maps.php')) ?>">Degree Maps</a>

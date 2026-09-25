@@ -50,7 +50,7 @@ return [
     'button'               => 'nc-button',
     'button.accent'        => 'nc-button majors-accent',
     'button.subtle'        => 'nc-button majors-subtle',
-    'button.small'         => 'nc-chip-link',
+    'button.small'         => 'nc-button majors-accent majors-small',
     'button_collection'    => 'flex flex-wrap items-center gap-3',
 
     // The theme styles tables only inside .prose (dark head row, bordered cells,

@@ -22,9 +22,9 @@ $links = json_decode((string) ($b['links'] ?? '[]'), true) ?: [];
 		<label>Links</label>
 		<div class="ma-links-edit">
 <?php foreach (array_merge($links, [['text' => '', 'href' => '']]) as $l): ?>
-			<div class="ma-link-row"><input type="text" name="links[text][]" value="<?= $t->e($l['text'] ?? '') ?>" placeholder="Link text" maxlength="200"><input type="text" name="links[href][]" value="<?= $t->e($l['href'] ?? '') ?>" placeholder="https://…" maxlength="500"><button type="button" class="ma-link-remove" title="Remove">×</button></div>
+			<div class="ma-link-row"><input type="text" name="links[text][]" value="<?= $t->e($l['text'] ?? '') ?>" placeholder="Link text" maxlength="200"><input type="text" name="links[href][]" value="<?= $t->e($l['href'] ?? '') ?>" placeholder="https://…" maxlength="500"><button type="button" class="<?= $t->cls('button.small') ?> ma-link-remove">− Remove</button></div>
 <?php endforeach; ?>
-			<button type="button" class="<?= $t->cls('button.small') ?> ma-link-add">+ link</button>
+			<button type="button" class="<?= $t->cls('button.small') ?> ma-link-add">+ Add link</button>
 		</div>
 		<label for="b_note">Note (for editors)</label>
 		<input type="text" id="b_note" name="note" value="<?= $t->e($b['note'] ?? '') ?>" maxlength="255">

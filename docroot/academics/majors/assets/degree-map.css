@@ -121,6 +121,9 @@ body {
 .majors-new .nc-button.majors-accent:hover { background: rgb(144 59 65); color: #fff; }
 .majors-new .nc-chip-link { display: inline-block; padding: .25rem .75rem; border: 1px solid rgb(39 37 31 / .3); border-radius: 999px; font-size: .85rem; text-decoration: none; color: rgb(39 37 31); }
 .majors-new .nc-chip-link:hover { border-color: rgb(144 59 65); color: rgb(144 59 65); }
+.majors-new .nc-button.majors-small { padding: .4rem .9rem; font-size: .85rem; }
+.majors-new .nc-button.ma-danger { background: rgb(232 0 0); color: #fff; }
+.majors-new .nc-button.ma-danger:hover { background: rgb(144 59 65); }
 /* top slot: full-bleed slabs stacked directly under the title band */
 .majors-new .majors-top .dm-filters form { margin: 0; }
 .majors-new .majors-top .dm-filters select { min-width: 14rem; }
@@ -147,7 +150,7 @@ body {
 .majors-new .dm-title { font-size: 1.4rem; font-weight: 700; margin: 0; }
 .majors-new .dm-year { margin-top: 2rem; }
 .majors-new .majors-admin-bar { background: rgb(245 244 242); border-bottom: 1px solid rgb(39 37 31 / .15); font-size: .9rem; }
-.majors-new .majors-admin-bar__role { display: inline-block; margin-left: .35rem; padding: 0 .5rem; border-radius: 999px; background: rgb(39 37 31 / .08); font-size: .8rem; text-transform: capitalize; }
+.majors-admin-bar__role { display: inline-block; margin-left: .35rem; padding: 0 .5rem; border-radius: 999px; background: rgb(39 37 31 / .08); font-size: .8rem; text-transform: capitalize; }
 .majors-new .majors-admin-bar .nc-chip-link { background: #fff; }
 .majors-new .majors-admin-bar .nc-chip-link.is-current { background: rgb(39 37 31); border-color: rgb(39 37 31); color: #fff; }
 .majors-new .majors-admin-bar__out { margin-left: .5rem; border-style: dashed; }

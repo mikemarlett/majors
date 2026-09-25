@@ -66,9 +66,9 @@ foreach ($departments as $d) {
 			<div class="ma-col-6"><label>Buttons</label>
 				<div class="ma-links-edit" data-name="buttons">
 <?php foreach (array_merge($buttons, [['text' => '', 'href' => '']]) as $i => $b): ?>
-					<div class="ma-link-row"><input type="text" name="buttons[text][]" value="<?= $t->e($b['text'] ?? '') ?>" placeholder="Button text" maxlength="200"><input type="text" name="buttons[href][]" value="<?= $t->e($b['href'] ?? '') ?>" placeholder="https://…" maxlength="500"><button type="button" class="ma-link-remove" title="Remove">×</button></div>
+					<div class="ma-link-row"><input type="text" name="buttons[text][]" value="<?= $t->e($b['text'] ?? '') ?>" placeholder="Button text" maxlength="200"><input type="text" name="buttons[href][]" value="<?= $t->e($b['href'] ?? '') ?>" placeholder="https://…" maxlength="500"><button type="button" class="<?= $t->cls('button.small') ?> ma-link-remove">− Remove</button></div>
 <?php endforeach; ?>
-					<button type="button" class="<?= $t->cls('button.small') ?> ma-link-add">+ button</button>
+					<button type="button" class="<?= $t->cls('button.small') ?> ma-link-add">+ Add button</button>
 				</div>
 			</div>
 		</div>
@@ -110,9 +110,9 @@ foreach ($departments as $d) {
 	<p class="help-block">Drag to reorder. Cards sit two across in page order; a feature (Inside the Program) is a full-width band with a photo. A section that uses a <strong>shared block</strong> shows the same text as every other page using it — edit the block to change them all, or Customize to change this page only.</p>
 	<div id="sectionsWrap"><?= $t->render('majors/admin/sections', ['program' => $p, 'sections' => $sections]) ?></div>
 	<div class="ma-actions">
-		<button type="button" class="<?= $t->cls('button') ?> add-section" data-kind="teaser">+ Card</button>
-		<button type="button" class="<?= $t->cls('button') ?> add-section" data-kind="feature">+ Feature</button>
-		<button type="button" class="<?= $t->cls('button.subtle') ?> add-section" data-kind="teaser" data-block="1">+ Card from a shared block</button>
+		<button type="button" class="<?= $t->cls('button.accent') ?> add-section" data-kind="teaser">+ Add card</button>
+		<button type="button" class="<?= $t->cls('button.accent') ?> add-section" data-kind="feature">+ Add feature</button>
+		<button type="button" class="<?= $t->cls('button') ?> add-section" data-kind="teaser" data-block="1">+ Add card from a shared block</button>
 	</div>
 </section>
 
