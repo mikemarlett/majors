@@ -71,8 +71,72 @@ final class ProgramEditor
             $insert($this->uniqueBasename($base));
         }
         $id = (int) $this->db->insert_id;
+        $this->addDefaultListing($id, 'editor');
         $this->syncFlat($id);
         return $id;
+    }
+
+    /**
+     * One listing line under the program's own name on the lists its credential implies (a new
+     * program, or one the CMS import creates). Does nothing when the program has lines already.
+     */
+    public function addDefaultListing(int $programId, string $source = 'editor'): void
+    {
+        if ((int) ($this->scalar('SELECT COUNT(*) FROM `majors_listing_entries` WHERE `program_id` = ?', 'i', [$programId]) ?? 0) > 0) {
+            return;
+        }
+        $p = $this->db->query('SELECT * FROM `majors_academic_programs` WHERE `id` = ' . $programId)->fetch_assoc() ?: [];
+        $d = Listings::defaults($p);
+        $lists = implode(',', $d['lists']);
+        $this->exec('INSERT INTO `majors_listing_entries` (`program_id`, `position`, `name`, `detail`, `lists`, `shown_in`, `cert_section`, `source`, `updated_at`)
+                     VALUES (?, 1, NULL, NULL, ?, "both", ?, ?, NOW())', 'isss', [$programId, $lists, $d['cert_section'], $source]);
+    }
+
+    /**
+     * Replace a program's listing lines with the posted ones (in their order). A line's name
+     * equal to the program's name is stored as "same as the page" so it follows renames; a line
+     * on no list is dropped, so removing every line (or unticking every list) means not listed.
+     *
+     * @param array<array-key,array<string,mixed>> $rows name, detail, lists[], shown_in, cert_section, cert_topics[]
+     * @return int lines saved
+     */
+    public function saveListings(int $programId, array $rows): int
+    {
+        $own = (string) ($this->scalar('SELECT `academic_program` FROM `majors_academic_programs` WHERE `id` = ?', 'i', [$programId])
+            ?? throw new RuntimeException('Program not found.'));
+        $clean = [];
+        foreach ($rows as $r) {
+            if (!is_array($r)) {
+                continue;
+            }
+            $lists = array_values(array_intersect(array_keys(Listings::LISTS), array_map('strval', (array) ($r['lists'] ?? []))));
+            if ($lists === []) {
+                continue;
+            }
+            $name   = mb_substr(trim(strip_tags((string) ($r['name'] ?? ''))), 0, 255);
+            $detail = mb_substr(trim(Html::clean((string) ($r['detail'] ?? ''))), 0, 500);
+            $shown  = in_array($r['shown_in'] ?? '', array_keys(Listings::SHOWN_IN), true) ? (string) $r['shown_in'] : 'both';
+            $sec    = in_array('certificates', $lists, true) && in_array($r['cert_section'] ?? '', array_keys(Listings::CERT_SECTIONS), true) ? (string) $r['cert_section'] : null;
+            if (in_array('certificates', $lists, true) && $sec === null) {
+                throw new RuntimeException('A line on the Certificates list needs its half of the page: Graduate or Undergraduate Certificates.');
+            }
+            $topics = in_array('certificates', $lists, true)
+                ? implode('|', array_values(array_intersect(Listings::CERT_TOPICS, array_map('strval', (array) ($r['cert_topics'] ?? [])))))
+                : '';
+            $clean[] = [
+                ListingImporter::norm($name) === ListingImporter::norm($own) || $name === '' ? null : $name,
+                $detail !== '' ? $detail : null,
+                implode(',', $lists), $shown, $sec, $topics !== '' ? $topics : null,
+            ];
+        }
+        $this->transaction(function () use ($programId, $clean): void {
+            $this->exec('DELETE FROM `majors_listing_entries` WHERE `program_id` = ?', 'i', [$programId]);
+            foreach ($clean as $i => [$name, $detail, $lists, $shown, $sec, $topics]) {
+                $this->exec('INSERT INTO `majors_listing_entries` (`program_id`, `position`, `name`, `detail`, `lists`, `shown_in`, `cert_section`, `cert_topics`, `source`, `updated_at`)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, "editor", NOW())', 'iissssss', [$programId, $i + 1, $name, $detail, $lists, $shown, $sec, $topics]);
+            }
+        });
+        return count($clean);
     }
 
     /**
@@ -611,6 +675,7 @@ final class ProgramEditor
                                     FROM `majors_content_blocks` b
                                LEFT JOIN `majors_program_sections` s ON s.`block_id` = b.`id`
                                LEFT JOIN `majors_academic_programs` p ON p.`id` = s.`program_id`
+                                   WHERE b.`slug` NOT LIKE "listing-%"
                                 GROUP BY b.`id` ORDER BY b.`headline`, uses DESC')->fetch_all(MYSQLI_ASSOC);
         $out = [];
         foreach ($rows as $r) {
@@ -680,6 +745,9 @@ final class ProgramEditor
 
     public function deleteBlock(int $id): void
     {
+        if (str_starts_with((string) ($this->scalar('SELECT `slug` FROM `majors_content_blocks` WHERE `id` = ?', 'i', [$id]) ?? ''), 'listing-')) {
+            throw new RuntimeException('This block is text on a listing page (the Certificates intro); it can be edited but not deleted.');
+        }
         $uses = (int) ($this->scalar('SELECT COUNT(*) FROM `majors_program_sections` WHERE `block_id` = ?', 'i', [$id]) ?? 0);
         if ($uses > 0) {
             throw new RuntimeException("This block is used on $uses page(s). Detach those sections first, or edit the block instead.");

@@ -73,6 +73,19 @@ final class CmsClient
         return \mc_get_file_source($token, $path, $this->site);
     }
 
+    /** Content of a shared asset ({{a:N}}), e.g. the hand-kept program lists the listing pages include. */
+    public function asset(int $id): string
+    {
+        $token = $this->token();
+        $url   = 'https://' . MC_DOMAIN . '/assets/view?site=' . rawurlencode($this->site) . '&asset=' . $id;
+        $resp  = \mc_api_request($url, 'GET', ['X-Auth-Token: ' . $token]);
+        $content = $resp['json']['content'] ?? null;
+        if (!is_string($content)) {
+            throw new RuntimeException("Asset {$id} could not be read from the CMS.");
+        }
+        return $content;
+    }
+
     /** Replace every {{f:N}} / {{d:N}} in $html with its URL. Unknown tags are left as-is. */
     public function resolveTags(string $html): string
     {

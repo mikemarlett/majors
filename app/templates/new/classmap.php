@@ -83,5 +83,6 @@ return [
     'sr_only'              => 'sr-only',
     'icon'                 => 'inline-block w-5 h-5',
     'link.rich'            => 'nc-fancy-link',
+    'callout'              => '',                 // majors-callout in degree-map.css: the design system's yellow-bordered Callout
     'prose'                => 'prose',        // long-form text (help page)
 ];

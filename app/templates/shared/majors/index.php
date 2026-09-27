@@ -1,11 +1,11 @@
 <?php
 /**
  * Degree Programs listing page body.
- * Variables: $results, $filter, $order, $search, $college, $colleges, $self_url, $search_url
+ * Variables: $results, $filters (value => label), $filter, $order, $search, $college, $colleges, $self_url, $search_url
  * (the page header and section menu are rendered by the layout)
  * @var \Majors\View\Layout $t
  */
-$filters = ['all' => 'All Programs', 'undergrad' => 'Undergraduate Degrees', 'graduate' => 'Graduate Degrees', 'online' => 'Online', 'minors' => 'Minors', 'certificates' => 'Certificates', 'badges' => 'Badges'];
+$filters = $filters ?? ['all' => 'All Programs', 'undergrad' => 'Undergrad Majors & Minors', 'graduate' => 'Graduate Degrees', 'online' => 'Online', 'minors' => 'Minors', 'certificates' => 'Certificates'];
 ?>
 
 <section class="<?= $t->cls('section.shade') ?> noprint">

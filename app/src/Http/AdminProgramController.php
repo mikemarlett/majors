@@ -88,6 +88,7 @@ final class AdminProgramController extends Controller
             'public_url' => $layout->programUrl($program),
             'blocks_url' => $layout->url('_admin/blocks.php'),
             'index_url'  => $layout->url('_admin/index.php'),
+            'listed'     => $this->app->programs()->listingEntries($pid) !== [],
         ]);
         $this->page($parts['content'], [
             'top'          => $editBar . $parts['top'],

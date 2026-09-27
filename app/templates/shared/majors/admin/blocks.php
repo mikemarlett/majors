@@ -13,9 +13,9 @@
 					<td><strong><?= $t->e($b['headline']) ?></strong></td>
 					<td><code><?= $t->e($b['slug']) ?></code></td>
 					<td><?= $t->e(mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags((string) $b['body'])) ?? ''), 0, 120)) ?>…</td>
-					<td><?= (int) $b['uses'] ?> page<?= (int) $b['uses'] === 1 ? '' : 's' ?></td>
+					<td><?php if (str_starts_with((string) $b['slug'], 'listing-')): ?><?= $t->e($b['note'] ?: 'A listing page') ?><?php else: ?><?= (int) $b['uses'] ?> page<?= (int) $b['uses'] === 1 ? '' : 's' ?><?php endif; ?></td>
 					<td><?= $t->e(substr((string) ($b['updated_at'] ?? ''), 0, 10)) ?></td>
-					<td><button type="button" class="<?= $t->cls('button.small') ?> edit-block" data-block-id="<?= (int) $b['id'] ?>">Edit</button> <?php if ((int) $b['uses'] === 0): ?><button type="button" class="<?= $t->cls('button.small') ?> ma-danger delete-block" data-block-id="<?= (int) $b['id'] ?>">Delete</button><?php endif; ?></td>
+					<td><button type="button" class="<?= $t->cls('button.small') ?> edit-block" data-block-id="<?= (int) $b['id'] ?>">Edit</button> <?php if ((int) $b['uses'] === 0 && !str_starts_with((string) $b['slug'], 'listing-')): ?><button type="button" class="<?= $t->cls('button.small') ?> ma-danger delete-block" data-block-id="<?= (int) $b['id'] ?>">Delete</button><?php endif; ?></td>
 				</tr>
 <?php endforeach; ?>
 			</tbody>

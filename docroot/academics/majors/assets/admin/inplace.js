@@ -562,6 +562,13 @@
 			return;
 		}
 		if (a === 'settings') { openSettings(btn); return; }
+		if (a === 'listings') {
+			U.listingsPopover(btn, PID, function (res) {
+				var tag = document.querySelector('[data-ma-unlisted]');
+				if (tag && res.listing) { tag.hidden = res.listing.lines > 0; }
+			});
+			return;
+		}
 	}
 	function scrollToSection(id) {
 		var s = id ? document.querySelector('[data-section="' + id + '"]') : null;

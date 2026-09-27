@@ -39,7 +39,7 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
     '<button type="button" class="ma-sort" data-sort="' . $key . '" data-type="' . $type . '"' . ($then !== '' ? ' data-then="' . $then . '"' : '') . '>' . $label . '</button>';
 ?>
 <section class="<?= $t->cls('section') ?>">
-	<p>Every academic program and the state of its page. Sort and filter the table; <strong>Edit</strong> opens the page editor, the name previews the public page. Status and similar programs can be changed right here.</p>
+	<p>Every academic program and the state of its page. Sort and filter the table; <strong>Edit</strong> opens the page editor, the name previews the public page. Status, listings and similar programs can be changed right here.</p>
 	<div class="ma-actions"><a class="<?= $t->cls('button.accent') ?>" href="<?= $t->e($t->url('_admin/program.php')) ?>?new=1">+ New program</a> <a class="<?= $t->cls('button') ?>" href="<?= $t->e($t->url('_admin/blocks.php')) ?>">Shared blocks</a></div>
 
 	<div class="ma-panel-toolbar" id="panel_toolbar" role="group" aria-label="Filter programs">
@@ -53,6 +53,8 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
 			<select data-filter="college"><option value="">All</option><?php foreach ($colleges as $c): ?><option value="<?= $t->e($c) ?>"><?= $t->e($c) ?></option><?php endforeach; ?></select></label>
 		<label class="ma-panel-toolbar__field"><span>Status</span>
 			<select data-filter="status"><option value="active" selected>Active</option><option value="retired">Retired</option><option value="all">All</option></select></label>
+		<label class="ma-panel-toolbar__field"><span>Listed on</span>
+			<select data-filter="listed"><option value="">Any</option><?php foreach (\Majors\Majors\Listings::LISTS as $k => $def): if ($k === 'badges') { continue; } ?><option value="<?= $k ?>"><?= $t->e($def['label']) ?></option><?php endforeach; ?><option value="none">Not listed</option></select></label>
 		<label class="ma-panel-toolbar__field"><span>Needs attention</span>
 			<select data-filter="attention"><?php foreach ($attention as $v => $label): ?><option value="<?= $t->e($v) ?>"><?= $t->e($label) ?></option><?php endforeach; ?></select></label>
 		<div class="ma-panel-toolbar__meta"><span class="ma-panel-count" id="panel_count" aria-live="polite"><?= $active ?> of <?= $total ?> programs</span> <button type="button" class="ma-panel-reset" id="panel_reset">Reset</button></div>
@@ -66,7 +68,7 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
 				<th scope="col"><?= $sortable('credential', 'Type', 'text', 'type') ?></th>
 				<th scope="col"><?= $sortable('college', 'College', 'text', 'department') ?></th>
 				<th scope="col"><?= $sortable('level', 'Level') ?></th>
-				<th scope="col">Flags</th>
+				<th scope="col"><?= $sortable('lines', 'Listed on', 'number') ?></th>
 				<th scope="col"><?= $sortable('sections', 'Sections', 'number') ?></th>
 				<th scope="col"><?= $sortable('similar', 'Similar', 'number') ?></th>
 				<th scope="col"><?= $sortable('status', 'Status') ?></th>
@@ -106,9 +108,10 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
     if (!$similar) { $reasons[] = 'no_similar'; }
     if (!empty($p['long_headline'])) { $reasons[] = 'long_headline'; }
     if (isset($flags['online']) || isset($flags['online_only'])) { $reasons[] = 'online'; }
+    $listedOn = $p['listing_lists'] ?? [];
     $search = mb_strtolower(trim((string) preg_replace('/\s+/', ' ', implode(' ', [
         $name, $sortTitle, (string) ($p['basename'] ?? ''), (string) ($p['college'] ?? ''), (string) ($p['department'] ?? ''),
-        (string) ($p['credential'] ?? ''), (string) ($p['program_type'] ?? ''), $note,
+        (string) ($p['credential'] ?? ''), (string) ($p['program_type'] ?? ''), $note, implode(' ', $p['listing_names'] ?? []),
     ]))));
 ?>
 				<tr<?= $retired ? ' class="is-retired" hidden' : '' ?> data-id="<?= (int) $p['id'] ?>"
@@ -125,6 +128,8 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
 					data-similar-json="<?= $t->e(json_encode($similar, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>"
 					data-updated="<?= $t->e($updated) ?>"
 					data-flags="<?= $t->e(implode(' ', array_keys($flags))) ?>"
+					data-listed="<?= $t->e($listedOn !== [] ? implode(' ', $listedOn) : 'none') ?>"
+					data-lines="<?= (int) ($p['listing_lines'] ?? 0) ?>"
 					data-has-description="<?= empty($p['has_description']) ? 0 : 1 ?>"
 					data-has-image="<?= empty($p['has_image']) ? 0 : 1 ?>"
 					data-attention="<?= $t->e(implode(' ', $reasons)) ?>"
@@ -135,7 +140,7 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
 					<td class="ma-cell-type"><?= $t->e($typeLine1) ?><?php if ($typeLine2 !== ''): ?><span class="ma-sub"><?= $t->e($typeLine2) ?></span><?php endif; ?></td>
 					<td class="ma-cell-college"><?= $t->e($collLine1) ?><?php if ($collLine2 !== ''): ?><span class="ma-sub"><?= $t->e($collLine2) ?></span><?php endif; ?></td>
 					<td class="ma-cell-level"><?= $graduate ? 'Graduate' : 'Undergraduate' ?></td>
-					<td class="ma-cell-flags"><?php if ($flags): ?><span class="ma-flag-list"><?php foreach ($flags as $token => $label): ?><span class="ma-flag ma-flag--<?= $t->e($token) ?>"><?= $t->e($label) ?></span><?php endforeach; ?></span><?php endif; ?></td>
+					<td class="ma-cell-flags"><button type="button" class="ma-listed-btn" data-listings-btn title="Edit where this program is listed"><?= $t->partial('majors/admin/listed_pills', ['lists' => $listedOn, 'lines' => (int) ($p['listing_lines'] ?? 0)]) ?></button></td>
 					<td class="ma-cell-sections"><?= $sections ?><?= empty($p['has_description']) ? '<span class="ma-sub ma-danger">no text</span>' : '' ?><?= empty($p['has_image']) ? '<span class="ma-sub ma-warning">no photo</span>' : '' ?><?php
                         if (in_array('no_alt', $reasons, true)): ?><span class="ma-issue" title="A photo has no alt text">no alt</span><?php endif;
                         if (in_array('no_department', $reasons, true)): ?><span class="ma-issue" title="No department">no dept</span><?php endif;

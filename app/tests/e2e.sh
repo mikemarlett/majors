@@ -38,9 +38,20 @@ chk "$(GET -X POST -d "searchList=A&selected_year=2027" "$B/degree_maps/search.p
 
 echo "[public majors]"
 chk "$(GET "$B/index.php")" 200 "programs listing"; has $S/out.html 'All Degrees' 'headline'; has $S/out.html 'majors-jump' 'jump nav'
-chk "$(GET "$B/index.php?order=college&filter=online")" 200 "filtered"; has $S/out.html 'Online Degrees' 'filter headline'
+chk "$(GET "$B/index.php?order=college&filter=online")" 200 "filtered"; has $S/out.html 'Online Programs' 'filter headline'
 chk "$(GET "$B/index.php?program=$PBN")" 200 "program page"; grep -qE 'program-card|majors-program-intro' $S/out.html && ok "program page body (either design)" || bad "program page body"
 chk "$(GET "$B/search.php?filter=graduate")" 200 "majors search json"; has $S/out.html '"title":"Graduate Degrees"' 'json title'
+
+echo "[listings]"
+chk "$(GET "$B/index.php")" 200 "All Programs"; has $S/out.html '>Nursing Practice - Family Nurse Practitioner</a>' 'listing names from the CMS (DNP as Nursing Practice)'; hasnt $S/out.html 'program=business_administration_mem_to_mba"' 'a page left off the CMS listing is not listed'
+chk "$(GET "$B/majors.php")" 200 "Undergrad Majors & Minors address"; has $S/out.html 'Undergraduate Majors and Minors' 'undergrad headline'
+chk "$(GET "$B/graduate.php")" 200 "Graduate address"; hasnt $S/out.html 'program=administrator_in_training_ait__practicum_placement_program_338"' 'AIT is not on the Graduate list'
+chk "$(GET "$B/graduate_by_college.php")" 200 "Graduate by college address"
+chk "$(GET "$B/online.php")" 200 "Online address"
+chk "$(GET "$B/index_by_college.php")" 200 "All by college address"
+chk "$(GET "$B/certificates.php")" 200 "Certificates address"; has $S/out.html 'program=administrator_in_training_ait__practicum_placement_program_338"' 'AIT is on the Certificates list'; has $S/out.html 'Graduate Certificates' 'Certificates page halves'; has $S/out.html 'id="graduate-health"' 'Certificates topics'
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?filter=badges")" "302 https://badges.wichita.edu/badge/" "Badges goes to the badges site"
+LP=$(Q "SELECT id FROM majors_academic_programs WHERE basename='counseling_med_41'")
 
 echo "[auth gating]"
 chk "$(curl -s -o /dev/null -w "%{http_code}" "$B/degree_maps/admin/maps.php")" 302 "anonymous admin redirects"
@@ -127,8 +138,20 @@ R=$(curl -s -b $M "$MA?action=list_images"); echo "$R" | grep -q '"images":\[' &
 R=$(curl -s -b $M "$MA?action=basename_preview&academic_program=$(printf %s "$NAME" | sed 's/ /%20/g')&program_type=E2E"); echo "$R" | grep -q '"basename":"' && ok "basename_preview" || bad "basename_preview: $R"
 R=$(curl -s -b $M "$MA?action=basename_preview&basename=$PBN"); echo "$R" | grep -q "\"basename\":\"${PBN}_2\"" && ok "basename_preview avoids a taken name" || bad "basename uniqueness: $R"
 chk "$(GET -b $M "$MA?action=get_settings_form&program_id=$PROG")" 200 "settings form"; has $S/out.html 'data-ma-settings-form' 'settings form markup'
+chk "$(GET -b $M "$MA?action=get_listings_form&program_id=$LP")" 200 "listings form"; has $S/out.html 'Counseling - School' 'listings form shows the program lines'
+Q "DROP TABLE IF EXISTS e2e_listing_backup; CREATE TABLE e2e_listing_backup AS SELECT * FROM majors_listing_entries WHERE program_id=$LP" >/dev/null
+R=$(MP --data-urlencode "program_id=$LP" --data-urlencode "entries[n1][name]=E2E Counseling" --data-urlencode "entries[n1][lists][]=all" --data-urlencode "entries[n1][lists][]=graduate" --data-urlencode "entries[n1][shown_in]=both" --data-urlencode "entries[n2][name]=Counseling, E2E" --data-urlencode "entries[n2][lists][]=all" --data-urlencode "entries[n2][shown_in]=az" "$MA?action=save_listings"); echo "$R" | grep -q '"lines":2' && ok "save_listings" || bad "save_listings: $R"
+chk "$(Q "SELECT GROUP_CONCAT(CONCAT(name,':',lists,':',shown_in,':',source) ORDER BY position SEPARATOR ' | ') FROM majors_listing_entries WHERE program_id=$LP")" "E2E Counseling:all,graduate:both:editor | Counseling, E2E:all:az:editor" "listing lines stored in order"
+GET "$B/index.php" >/dev/null; has $S/out.html '>Counseling, E2E</a>' 'A-Z entry on All Programs'; GET "$B/index_by_college.php" >/dev/null; hasnt $S/out.html '>Counseling, E2E</a>' 'A-Z-only entry not in the by-college view'
+R=$(MP --data-urlencode "program_id=$LP" --data-urlencode "entries[n1][name]=E2E" --data-urlencode "entries[n1][lists][]=certificates" "$MA?action=save_listings"); echo "$R" | grep -q 'Graduate or Undergraduate' && ok "a Certificates line needs its half of the page" || bad "cert validation: $R"
+R=$(MP --data-urlencode "program_id=$LP" "$MA?action=save_listings"); echo "$R" | grep -q 'Not listed' && ok "no lines means not listed" || bad "unlist: $R"
+GET "$B/index.php" >/dev/null; hasnt $S/out.html "program=counseling_med_41\"" 'an unlisted program is on no listing'; chk "$(GET "$B/index.php?program=counseling_med_41")" 200 "an unlisted program's page stays live"
+Q "DELETE FROM majors_listing_entries WHERE program_id=$LP; INSERT INTO majors_listing_entries SELECT * FROM e2e_listing_backup; DROP TABLE e2e_listing_backup" >/dev/null
+chk "$(Q "SELECT COUNT(*) FROM majors_listing_entries WHERE program_id=$LP AND source='cms'")" 4 "listing lines restored"
 R=$(MP --data-urlencode "academic_program=E2E Test Program" --data-urlencode "credential=Minor" "$MA?action=new_program"); NP=$(echo "$R" | grep -o '"program_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$NP" ] && ok "new_program → $NP" || bad "new_program: $R"
-chk "$(Q "SELECT basename FROM majors_academic_programs WHERE id=$NP")" "e2e_test_program_minor" "new program gets <name>_<credential> as its page name"; echo "$R" | grep -q 'program.php?program=e2e_test_program_minor' && ok "redirect goes to the in-place editor by basename" || bad "redirect: $R"
+chk "$(Q "SELECT basename FROM majors_academic_programs WHERE id=$NP")" "e2e_test_program_minor" "new program gets <name>_<credential> as its page name"
+chk "$(Q "SELECT CONCAT(lists,':',source) FROM majors_listing_entries WHERE program_id=$NP")" "all,undergrad:editor" "a new Minor starts listed on All and Undergrad"
+Q "DELETE FROM majors_listing_entries WHERE program_id=$NP" >/dev/null; echo "$R" | grep -q 'program.php?program=e2e_test_program_minor' && ok "redirect goes to the in-place editor by basename" || bad "redirect: $R"
 Q "DELETE FROM majors_programs_content WHERE academic_program_id=$NP; DELETE FROM majors_academic_programs WHERE id=$NP" >/dev/null
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'

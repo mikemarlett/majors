@@ -172,30 +172,34 @@ final class ProgramRenderer
         return $t;
     }
 
-    /** Section menu entries (label => href). */
+    /** Section menu entries (label => href): the listing pages, then the program's college and departments. */
     public function sectionNav(?array $program = null): array
     {
-        $base  = $this->layout->url('index.php');
+        $base  = $this->layout->url('');
         $items = [
-            'All Programs'          => $base,
-            'Programs By College'   => $base . '?order=college',
-            'Online Degrees'        => $base . '?filter=online',
-            'Undergraduate Degrees' => $base . '?filter=undergrad',
-            'Graduate Degrees'      => $base . '?filter=graduate',
-            'Certificates'          => $base . '?filter=certificates',
-            'Badges'                => $base . '?filter=badges',
-            'Degree Maps'           => $this->layout->url('degree_maps/maps.php'),
+            'All Programs'              => Listings::url($base, 'all'),
+            'Programs By College'       => Listings::url($base, 'all', 'college'),
+            'Undergrad Majors & Minors' => Listings::url($base, 'undergrad'),
+            'Graduate Degrees'          => Listings::url($base, 'graduate'),
+            'Online'                    => Listings::url($base, 'online'),
+            'Certificates'              => Listings::url($base, 'certificates'),
+            'Badges'                    => Listings::BADGES_URL,
+            'Degree Maps'               => $this->layout->url('degree_maps/maps.php'),
         ];
+        $list = $this->layout->url('index.php');
         if (!empty($program['college'])) {
-            $items['Degrees from ' . $program['college']] = $base . '?college=' . rawurlencode((string) $program['college']);
+            $items['Degrees from ' . $program['college']] = $list . '?college=' . rawurlencode((string) $program['college']);
         }
-        if (!empty($program['department'])) {
-            $items['Degrees from ' . $program['department']] = $base . '?department=' . rawurlencode((string) $program['department']);
+        foreach ($program !== null ? ProgramRepository::departmentsOf($program) : [] as $d) {
+            $items['Degrees from ' . $d['text']] = $list . '?department=' . rawurlencode($d['text']);
         }
         return $items;
     }
 
-    /** Group rows for the listing. @return list<array{key:string,label:string,items:list<array<string,mixed>>}> */
+    /**
+     * Group listing lines: A–Z by the first letter of what the line says, or by college.
+     * @return list<array{key:string,label:string,items:list<array<string,mixed>>}>
+     */
     public static function group(array $rows, string $order): array
     {
         $groups = [];
@@ -204,7 +208,8 @@ final class ProgramRenderer
                 $label = (string) ($r['college'] ?? '');
                 $key   = rawurlencode(mb_strtolower($label));
             } else {
-                $label = mb_strtoupper(mb_substr((string) $r['academic_program'], 0, 1));
+                $name  = (string) ($r['list_name'] ?? $r['academic_program'] ?? '');
+                $label = mb_strtoupper(mb_substr(ltrim($name), 0, 1));
                 $key   = $label;
             }
             $groups[$key] ??= ['key' => $key, 'label' => $label, 'items' => []];
@@ -213,18 +218,45 @@ final class ProgramRenderer
         return array_values($groups);
     }
 
-    /** "Undergraduate Degrees in College of X from Dept" style headline for the current filters. */
+    /**
+     * The Certificates page layout: Graduate Certificates, then Undergraduate Certificates,
+     * each grouped by topic (a certificate listed under two topics shows in both), topics in
+     * the page's own order.
+     *
+     * @return list<array{key:string,label:string,topics:list<array{key:string,label:string,items:list<array<string,mixed>>}>}>
+     */
+    public static function groupCertificates(array $rows): array
+    {
+        $sections = [];
+        foreach ($rows as $r) {
+            $sec = $r['cert_section'] === 'undergraduate' || ($r['cert_section'] === null && empty($r['graduate'])) ? 'undergraduate' : 'graduate';
+            $topics = array_values(array_filter(explode('|', (string) ($r['cert_topics'] ?? ''))));
+            foreach ($topics !== [] ? $topics : ['Other Certificates'] as $topic) {
+                $sections[$sec][$topic][] = $r;
+            }
+        }
+        $rank = array_flip(Listings::CERT_TOPICS);
+        $out  = [];
+        foreach (Listings::CERT_SECTIONS as $sec => $label) {
+            if (empty($sections[$sec])) {
+                continue;
+            }
+            $topics = $sections[$sec];
+            uksort($topics, static fn ($a, $b) => [($rank[$a] ?? 99), $a] <=> [($rank[$b] ?? 99), $b]);
+            $list = [];
+            foreach ($topics as $topic => $items) {
+                usort($items, static fn ($a, $b) => strnatcasecmp((string) $a['list_name'], (string) $b['list_name']));
+                $list[] = ['key' => $sec . '-' . rawurlencode(mb_strtolower($topic)), 'label' => $topic, 'items' => $items];
+            }
+            $out[] = ['key' => $sec, 'label' => $label, 'topics' => $list];
+        }
+        return $out;
+    }
+
+    /** "Graduate Degrees in College of X from Dept" style headline for the current filters. */
     public static function headline(string $filter, ?string $college, ?string $department, string $search): string
     {
-        $h = match ($filter) {
-            'undergrad'    => 'Undergraduate Degrees',
-            'graduate'     => 'Graduate Degrees',
-            'online'       => 'Online Degrees',
-            'minors'       => 'Minors',
-            'certificates' => 'Certificates',
-            'badges'       => 'Badges',
-            default        => 'All Degrees',
-        };
+        $h = $filter === 'minors' ? 'Minors' : (Listings::LISTS[$filter]['headline'] ?? Listings::LISTS['all']['headline']);
         if ($college) {
             $h .= ' in ' . $college;
         }

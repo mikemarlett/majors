@@ -65,6 +65,8 @@ final class AjaxKernel extends Controller
         'get_settings_form'   => [ProgramActions::class,   'settingsForm',      ['marketing'],            'GET',  false],
         'list_images'         => [ProgramActions::class,   'listImages',        ['marketing'],            'GET',  false],
         'basename_preview'    => [ProgramActions::class,   'basenamePreview',   ['marketing'],            'GET',  false],
+        'get_listings_form'   => [ProgramActions::class,   'listingsForm',      ['marketing'],            'GET',  false],
+        'save_listings'       => [ProgramActions::class,   'saveListings',      ['marketing'],            'POST', true],
         'save_section_fields' => [ProgramActions::class,   'saveSectionFields', ['marketing'],            'POST', true],
         'save_block_fields'   => [ProgramActions::class,   'saveBlockFields',   ['marketing'],            'POST', true],
         'add_section'         => [ProgramActions::class,   'addSection',        ['marketing'],            'POST', true],

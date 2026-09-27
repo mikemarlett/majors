@@ -207,13 +207,14 @@
 		return wrap;
 	}
 
-	/* Serialise a form: checkboxes post 0/1 (the hidden 0 is overridden by a checked 1). */
+	/* Serialise a form: single checkboxes post 0/1 (the hidden 0 is overridden by a checked 1);
+	   checkbox groups named foo[] post every ticked value. */
 	function serialize(form) {
 		var out = new URLSearchParams();
 		var fd = new FormData(form);
 		var seen = {};
 		fd.forEach(function (v, k) {
-			if (form.querySelector('input[type=checkbox][name="' + k.replace(/"/g, '\\"') + '"]')) {
+			if (!/\[\]$/.test(k) && form.querySelector('input[type=checkbox][name="' + k.replace(/"/g, '\\"') + '"]')) {
 				seen[k] = v;   // last value wins: '1' when checked comes after the hidden '0'
 			} else {
 				out.append(k, v);
@@ -223,6 +224,60 @@
 		return out;
 	}
 
-	var exported = { esc: esc, el: el, ajax: ajax, toast: toast, popover: popover, closePopovers: closePopovers, field: field, serialize: serialize, signedOut: false };
+	/* ---- listings popover (in-place editor and control panel) ------------ */
+	/* listingsPopover(anchor, programId, onSaved(res)) — the program's listing lines, edited in a popover. */
+	function listingsPopover(anchor, programId, onSaved) {
+		return ajax('get_listings_form', { program_id: programId }, { method: 'GET' }).then(function (html) {
+			var pop = popover(anchor, { title: 'Listings', content: html, width: 760, className: 'ma-popover--wide', sticky: true });
+			var form = pop.el.querySelector('form');
+			var rows = form.querySelector('[data-ma-listing-rows]');
+			var tpl = form.querySelector('[data-ma-listing-template]');
+			var none = form.querySelector('[data-ma-listing-none]');
+			var err = form.querySelector('[data-ma-listing-error]');
+			var n = 0;
+			function refresh() {
+				rows.querySelectorAll('[data-ma-listing-row]').forEach(function (row) {
+					var cert = row.querySelector('[data-ma-cert-toggle]');
+					row.querySelectorAll('[data-ma-cert-only]').forEach(function (f) { f.hidden = !(cert && cert.checked); });
+				});
+				none.hidden = rows.querySelector('[data-ma-listing-row]') !== null;
+				pop.reposition();
+			}
+			form.addEventListener('change', refresh);
+			form.addEventListener('click', function (e) {
+				var t = e.target instanceof Element ? e.target : null;
+				if (!t) { return; }
+				if (t.closest('[data-ma-listing-add]')) {
+					e.preventDefault();
+					var holder = document.createElement('div');
+					holder.innerHTML = tpl.innerHTML.replace(/__KEY__/g, 'n' + (++n));
+					var row = holder.firstElementChild;
+					rows.appendChild(row);
+					refresh();
+					row.querySelector('input').focus();
+				} else if (t.closest('[data-ma-listing-remove]')) {
+					e.preventDefault();
+					t.closest('[data-ma-listing-row]').remove();
+					refresh();
+				} else if (t.closest('[data-ma-cancel]')) {
+					e.preventDefault();
+					pop.close();
+				}
+			});
+			form.addEventListener('submit', function (e) {
+				e.preventDefault();
+				err.textContent = '';
+				ajax('save_listings', serialize(form)).then(function (res) {
+					pop.close();
+					toast(res.message || 'Listings saved');
+					if (onSaved) { onSaved(res); }
+				}).catch(function (ex) { err.textContent = ex.message; });
+			});
+			refresh();
+			return pop;
+		}).catch(function (ex) { toast(ex.message, { kind: 'error' }); });
+	}
+
+	var exported = { esc: esc, el: el, ajax: ajax, toast: toast, popover: popover, closePopovers: closePopovers, field: field, serialize: serialize, listingsPopover: listingsPopover, signedOut: false };
 	window.MaUI = exported;
 })();

@@ -30,84 +30,128 @@ final class ProgramRepository
         return $out;
     }
 
-    /** @return list<string> */
+    /** @return list<string> every department active programs name, including their additional ones */
     public function departments(): array
     {
         $out = [];
-        $res = $this->db->query('SELECT DISTINCT `department` FROM `majors_academic_programs` WHERE `status` = "active" AND `department` <> "" AND `department` IS NOT NULL ORDER BY `department`');
+        $res = $this->db->query('SELECT `department`, `more_departments` FROM `majors_academic_programs` WHERE `status` = "active"');
         while ($r = $res->fetch_assoc()) {
-            $out[] = (string) $r['department'];
+            foreach (self::departmentsOf($r) as $d) {
+                $out[$d['text']] = true;
+            }
         }
+        $out = array_map('strval', array_keys($out));
+        sort($out, SORT_NATURAL | SORT_FLAG_CASE);
         return $out;
     }
 
     /**
-     * Every program, A–Z, with an extra entry under the sort title for
-     * programs that have one (so "Engineering, Aerospace" also lists under E).
-     *
-     * @return list<array<string,mixed>>
+     * A program's departments in order: the main one, then the additional ones
+     * (more_departments, JSON [{text, href}]). @return list<array{text:string,href:string}>
      */
+    public static function departmentsOf(array $p): array
+    {
+        $out = [];
+        if (trim((string) ($p['department'] ?? '')) !== '') {
+            $out[] = ['text' => trim((string) $p['department']), 'href' => trim((string) ($p['department_url'] ?? ''))];
+        }
+        $more = json_decode((string) ($p['more_departments'] ?? ''), true);
+        foreach (is_array($more) ? $more : [] as $d) {
+            $t = trim((string) ($d['text'] ?? ''));
+            if ($t !== '' && !in_array($t, array_column($out, 'text'), true)) {
+                $out[] = ['text' => $t, 'href' => trim((string) ($d['href'] ?? ''))];
+            }
+        }
+        return $out;
+    }
+
+    /** Every line of the All Programs list, A–Z (the listing page with no filters). @return list<array<string,mixed>> */
     public function all(): array
     {
-        $sql = 'SELECT s.`program` AS `academic_program`, m.`id`, m.`basename`, m.`program_type`, m.`program_simple_type`, m.`credential`, m.`college`, m.`department`,
-                       m.`online_learning`, m.`online_only`, m.`graduate`, m.`note`, m.`timestamp`
-                  FROM `majors_academic_programs` m
-                  JOIN (SELECT `academic_program` AS `program`, `id` FROM `majors_academic_programs`
-                        UNION ALL
-                        SELECT `sort_title` AS `program`, `id` FROM `majors_academic_programs` WHERE `sort_title` IS NOT NULL AND `sort_title` <> "") s
-                    ON m.`id` = s.`id`
-                 WHERE m.`status` = "active"
-                 ORDER BY s.`program`, m.`program_type`';
-        return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
+        return $this->listing(['filter' => 'all', 'order' => 'alpha']);
     }
 
     /**
-     * Filtered / searched programs.
+     * Listing lines for a filter, optionally narrowed by a search, a college or a department.
      *
      * @param array{filter?:string,college?:?string,department?:?string,order?:string} $f
      * @return list<array<string,mixed>>
      */
     public function search(string $text, array $f = []): array
     {
-        $types  = '';
-        $params = [];
+        return $this->listing(['search' => $text] + $f);
+    }
+
+    /**
+     * The lines a listing page shows. Each row is the program joined with one of its listing
+     * entries: list_name / list_detail are what the line says (the entry's own words, or the
+     * program's name and degree), list_key is the list the view is for.
+     *
+     *   filter  all | undergrad | graduate | online | minors (Undergrad lines of minors) | certificates | badges
+     *   order   alpha (A–Z view) | college (by-college view)
+     *
+     * @param array{filter?:string,order?:string,search?:string,college?:?string,department?:?string} $f
+     * @return list<array<string,mixed>>
+     */
+    public function listing(array $f): array
+    {
+        $filter = in_array($f['filter'] ?? 'all', self::FILTERS, true) ? (string) ($f['filter'] ?? 'all') : 'all';
+        $list   = $filter === 'minors' ? 'undergrad' : $filter;
+        $order  = ($f['order'] ?? 'alpha') === 'college' ? 'college' : 'alpha';
+        $sql = 'SELECT p.`id`, p.`basename`, p.`academic_program`, p.`sort_title`, p.`program_type`, p.`program_simple_type`, p.`credential`, p.`college`,
+                       p.`department`, p.`department_url`, p.`more_departments`, p.`graduate`, p.`minor`, p.`certificate`, p.`badge`, p.`online_learning`,
+                       p.`online_only`, p.`note`, p.`timestamp`,
+                       e.`id` AS entry_id, e.`position` AS entry_position, e.`name` AS entry_name, e.`detail` AS entry_detail, e.`lists`, e.`shown_in`,
+                       e.`cert_section`, e.`cert_topics`,
+                       COALESCE(NULLIF(TRIM(e.`name`), ""), p.`academic_program`) AS list_name
+                  FROM `majors_listing_entries` e
+                  JOIN `majors_academic_programs` p ON p.`id` = e.`program_id`
+                 WHERE p.`status` = "active" AND FIND_IN_SET(?, e.`lists`) AND e.`shown_in` IN ("both", ?)';
+        $types  = 'ss';
+        $params = [$list, $order === 'college' ? 'college' : 'az'];
+        if ($filter === 'minors') {
+            $sql .= ' AND (p.`credential` = "Minor" OR p.`minor` = 1)';
+        }
+        $text = trim((string) ($f['search'] ?? ''));
         if ($text !== '') {
-            $like   = '%' . $text . '%';
-            $sql    = 'SELECT DISTINCT m1.* FROM `majors_academic_programs` m1
-                       LEFT JOIN `majors_programs_content` m2 ON m1.`id` = m2.`academic_program_id`
-                       WHERE m1.`status` = "active" AND (m1.`academic_program` LIKE ? OR m1.`sort_title` LIKE ? OR m1.`department` LIKE ? OR m1.`note` LIKE ? OR m2.`meta_keywords` LIKE ?)';
-            $types  = 'sssss';
-            $params = [$like, $like, $like, $like, $like];
-        } else {
-            $sql = 'SELECT m1.* FROM `majors_academic_programs` m1 WHERE m1.`status` = "active"';
+            $like = '%' . $text . '%';
+            $sql .= ' AND (COALESCE(NULLIF(TRIM(e.`name`), ""), p.`academic_program`) LIKE ? OR p.`academic_program` LIKE ? OR p.`sort_title` LIKE ?
+                           OR p.`department` LIKE ? OR p.`more_departments` LIKE ? OR p.`note` LIKE ? OR p.`meta_keywords` LIKE ?)';
+            $types .= 'sssssss';
+            array_push($params, $like, $like, $like, $like, $like, $like, $like);
         }
         if (!empty($f['college']) && $f['college'] !== 'all') {
-            $sql   .= ' AND m1.`college` = ?';
+            $sql .= ' AND p.`college` = ?';
             $types .= 's';
-            $params[] = $f['college'];
+            $params[] = (string) $f['college'];
         }
         if (!empty($f['department'])) {
-            $sql   .= ' AND m1.`department` = ?';
-            $types .= 's';
-            $params[] = $f['department'];
+            $sql .= ' AND (p.`department` = ? OR (CASE WHEN JSON_VALID(p.`more_departments`) THEN JSON_SEARCH(p.`more_departments`, "one", ?, NULL, "$[*].text") END) IS NOT NULL)';
+            $types .= 'ss';
+            $params[] = (string) $f['department'];
+            $params[] = (string) $f['department'];
         }
-        $sql .= match ($f['filter'] ?? 'all') {
-            'undergrad'    => ' AND (m1.`graduate` IS NULL OR m1.`graduate` = 0)',
-            'graduate'     => ' AND m1.`graduate` = 1',
-            'online'       => ' AND m1.`online_learning` = 1',
-            'minors'       => ' AND m1.`minor` = 1',
-            'certificates' => ' AND m1.`certificate` = 1',
-            'badges'       => ' AND m1.`badge` = 1',
-            default        => '',
-        };
-        $sql .= ($f['order'] ?? 'alpha') === 'college'
-            ? ' ORDER BY m1.`college`, m1.`academic_program`, m1.`program_type`'
-            : ' ORDER BY m1.`academic_program`, m1.`program_type`';
-
+        $sql .= $order === 'college'
+            ? ' ORDER BY p.`college`, list_name, e.`detail`, p.`id`'
+            : ' ORDER BY list_name, e.`detail`, p.`id`';
         $stmt = $this->db->prepare($sql);
-        if ($types !== '') {
-            $stmt->bind_param($types, ...$params);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        foreach ($rows as &$r) {
+            $r['list_key']    = $list;
+            $r['list_detail'] = Listings::detailHtml(['detail' => $r['entry_detail']], $r);
         }
+        unset($r);
+        return $rows;
+    }
+
+    /** A program's listing entries in order. @return list<array<string,mixed>> */
+    public function listingEntries(int $programId): array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM `majors_listing_entries` WHERE `program_id` = ? ORDER BY `position`, `id`');
+        $stmt->bind_param('i', $programId);
         $stmt->execute();
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
@@ -326,9 +370,25 @@ final class ProgramRepository
         while ($r = $res->fetch_assoc()) {
             $similar[(int) $r['pid']][] = ['id' => (int) $r['id'], 'name' => (string) $r['academic_program']];
         }
+        $listing = [];
+        $res = $this->db->query('SELECT `program_id`, `lists`, `name` FROM `majors_listing_entries` ORDER BY `program_id`, `position`');
+        while ($r = $res->fetch_assoc()) {
+            $pid = (int) $r['program_id'];
+            $listing[$pid]['lines'] = ($listing[$pid]['lines'] ?? 0) + 1;
+            foreach (Listings::listsOf($r) as $l) {
+                $listing[$pid]['lists'][$l] = true;
+            }
+            if ((string) $r['name'] !== '') {
+                $listing[$pid]['names'][] = (string) $r['name'];
+            }
+        }
         foreach ($rows as &$row) {
             $row['similar']       = $similar[(int) $row['id']] ?? [];
             $row['similar_count'] = count($row['similar']);
+            $l = $listing[(int) $row['id']] ?? [];
+            $row['listing_lines'] = (int) ($l['lines'] ?? 0);
+            $row['listing_lists'] = array_values(array_filter(array_keys(Listings::LISTS), static fn ($k) => isset($l['lists'][$k])));
+            $row['listing_names'] = array_values(array_unique($l['names'] ?? []));
         }
         unset($row);
         return $rows;

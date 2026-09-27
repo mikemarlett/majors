@@ -20,8 +20,8 @@
 	var resetEl = document.getElementById('panel_reset');
 	rows.forEach(function (tr, i) { tr._panelIndex = i; });   // ties keep the server's order
 
-	var FILTERS  = ['q', 'level', 'credential', 'college', 'status', 'attention'];
-	var DEFAULTS = { q: '', level: '', credential: '', college: '', status: 'active', attention: '' };
+	var FILTERS  = ['q', 'level', 'credential', 'college', 'status', 'listed', 'attention'];
+	var DEFAULTS = { q: '', level: '', credential: '', college: '', status: 'active', listed: '', attention: '' };
 	var DEFAULT_SORT = { key: 'name', dir: 'asc' };
 	var controls = {};
 	FILTERS.forEach(function (k) { controls[k] = toolbar.querySelector('[data-filter="' + k + '"]'); });
@@ -53,6 +53,7 @@
 		if (f.college && d.college !== f.college) { return false; }
 		if (f.status !== 'all' && d.status !== f.status) { return false; }
 		if (f.attention && (' ' + (d.attention || '') + ' ').indexOf(' ' + f.attention + ' ') === -1) { return false; }   // tokens from the server
+		if (f.listed && (' ' + (d.listed || 'none') + ' ').indexOf(' ' + f.listed + ' ') === -1) { return false; }
 		var hay = d.search || '';
 		for (var i = 0; i < terms.length; i++) {
 			if (hay.indexOf(terms[i]) === -1) { return false; }
@@ -189,6 +190,21 @@
 			sel.value = prev;
 			MaUI.toast(err.message || 'Could not save.', { kind: 'error' });
 		}).then(function () { sel.disabled = false; });
+	});
+
+	/* ---- listings: the same popover the page editor uses ------------------- */
+	tbody.addEventListener('click', function (e) {
+		var btn = e.target.closest('[data-listings-btn]');
+		if (!btn) { return; }
+		e.preventDefault();
+		var tr = btn.closest('tr');
+		MaUI.listingsPopover(btn, tr.dataset.id, function (res) {
+			var l = res.listing || {};
+			tr.dataset.listed = (l.lists && l.lists.length) ? l.lists.join(' ') : 'none';
+			tr.dataset.lines = String(l.lines || 0);
+			if (l.pills) { btn.innerHTML = l.pills; }
+			applyFilters();
+		});
 	});
 
 	/* ---- similar programs: popover with remove + search-to-add ------------ */

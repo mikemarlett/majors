@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Majors\Http;
 
+use Majors\Majors\Listings;
 use Majors\Majors\ProgramRenderer;
 use Majors\Support\Json;
 use Majors\Support\Request;
@@ -13,7 +14,8 @@ use Majors\Support\Request;
  *
  *   index.php                      A–Z list of every program
  *   index.php?order=college        grouped by college
- *   index.php?filter=online        undergrad | graduate | online | minors | certificates | badges
+ *   index.php?filter=online        undergrad | graduate | online | minors | certificates | badges (majors.php, graduate.php,
+ *                                  online.php, certificates.php and the *_by_college.php pages set these, as the CMS pages did)
  *   index.php?college=...&department=...&search=...
  *   index.php?program=<basename>   one program's marketing page (index.php?id=N redirects here)
  *
@@ -80,20 +82,27 @@ final class PublicMajorsController extends Controller
             $department = null;
         }
 
-        $unfiltered = $search === '' && $filter === 'all' && $college === null && $department === null;
-        $rows = $unfiltered && $order === 'alpha'
-            ? $programs->all()
-            : $programs->search($search, ['filter' => $filter, 'college' => $college, 'department' => $department, 'order' => $order]);
+        $rows = $programs->listing(['filter' => $filter, 'order' => $order, 'search' => $search, 'college' => $college, 'department' => $department]);
+        if ($filter === 'badges' && $rows === [] && !$isJson) {
+            $this->redirect(Listings::BADGES_URL);   // badges have their own site, as on the CMS listing pages
+        }
 
         $headline = ProgramRenderer::headline($filter, $college, $department, $search);
         $query    = http_build_query(array_filter(['order' => $order === 'alpha' ? null : $order, 'filter' => $filter === 'all' ? null : $filter,
             'college' => $college, 'department' => $department, 'search' => $search !== '' ? $search : null]));
+        // A plain list view links to its own page (graduate.php, online_by_college.php…), like the CMS listing pages.
+        $plain = $search === '' && $college === null && $department === null && $filter !== 'minors'
+            && ($order === 'alpha' || (Listings::LISTS[$filter]['college'] ?? null) !== null);
+        $resultsUrl = $query === '' ? null : ($plain ? Listings::url($layout->url(''), $filter, $order) : $layout->url('index.php') . '?' . $query);
+        $certs = $filter === 'certificates' && $order === 'alpha';
         $listing  = $layout->render('majors/listing', [
-            'groups'      => ProgramRenderer::group($rows, $order),
-            'headline'    => $headline,
-            'order'       => $order,
-            'results_url' => $query !== '' ? $layout->url('index.php') . '?' . $query : null,
-            'all_url'     => $layout->url('index.php'),
+            'groups'        => $certs ? [] : ProgramRenderer::group($rows, $order),
+            'cert_sections' => $certs ? ProgramRenderer::groupCertificates($rows) : null,
+            'intros'        => $certs ? $this->certificateIntros() : [],
+            'headline'      => $headline,
+            'order'         => $order,
+            'results_url'   => $resultsUrl,
+            'all_url'       => Listings::url($layout->url(''), 'all'),
         ]);
 
         if ($isJson) {
@@ -102,6 +111,7 @@ final class PublicMajorsController extends Controller
 
         $content = $layout->render('majors/index', [
             'results'    => $listing,
+            'filters'    => self::filterLabels(),
             'filter'     => $filter,
             'order'      => $order,
             'search'     => $search,
@@ -118,5 +128,26 @@ final class PublicMajorsController extends Controller
             'head'        => ['<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">'],
             'foot'        => ['<script src="' . $layout->e($layout->asset('majors.js')) . '" defer></script>'],
         ]);
+    }
+
+    /** @return array<string,string> filter => label for the listing's type select (badges live on their own site) */
+    private static function filterLabels(): array
+    {
+        return ['all' => 'All Programs', 'undergrad' => 'Undergrad Majors & Minors', 'graduate' => 'Graduate Degrees', 'online' => 'Online',
+            'minors' => 'Minors', 'certificates' => 'Certificates'];
+    }
+
+    /**
+     * The two intros on the Certificates page ("What's a certificate?"), kept as shared blocks so
+     * they can be edited on the Shared blocks page. @return array<string,array{headline:string,body:string}>
+     */
+    private function certificateIntros(): array
+    {
+        $out = [];
+        $res = $this->app->db()->query("SELECT `slug`, `headline`, `body` FROM `majors_content_blocks` WHERE `slug` IN ('listing-intro-certificates-graduate', 'listing-intro-certificates-undergraduate')");
+        while ($r = $res->fetch_assoc()) {
+            $out[substr((string) $r['slug'], strlen('listing-intro-certificates-'))] = ['headline' => (string) $r['headline'], 'body' => (string) $r['body']];
+        }
+        return $out;
     }
 }

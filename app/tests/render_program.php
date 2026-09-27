@@ -69,7 +69,7 @@ foreach (['old', 'new'] as $design) {
     check(!str_contains($hp, 'Click to write') && !str_contains($hp, 'Add a photo') && !str_contains($hp, 'Similar Programs'), "$design: the empty program's public page shows no placeholders and no empty similar band");
 }
 
-check(ProgramRenderer::headline('online', 'College of Engineering', null, 'robot') === '"robot" in Online Degrees in College of Engineering', 'headline composition');
+check(ProgramRenderer::headline('online', 'College of Engineering', null, 'robot') === '"robot" in Online Programs in College of Engineering', 'headline composition (list names as on the CMS pages)');
 check(ProgramRenderer::title($program) === 'Aerospace Engineering, Major', 'page title');
 $lay = test_layout('new', ['image_base' => 'https://www.wichita.edu']);
 check($lay->img('/academics/majors/_images/x.jpg') === 'https://www.wichita.edu/academics/majors/_images/x.jpg' && $lay->img('https://cdn/x.jpg') === 'https://cdn/x.jpg', 'image_base prefixes relative content images only');

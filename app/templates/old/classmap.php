@@ -53,6 +53,7 @@ return [
     'divided_list'         => 'divided-list',
     'divided_list.item'    => 'divided-list__item',
 
+    'callout'              => 'callout callout--tertiary callout--shade-lighter',
     'prose'                => '',
     'alert'                => 'alert-bar',
     'alert.emergency'      => 'alert-bar alert-bar--emergency',

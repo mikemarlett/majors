@@ -6,6 +6,7 @@ namespace Majors\Http\Ajax;
 
 use Majors\Auth\User;
 use Majors\Kernel;
+use Majors\Majors\Listings;
 use Majors\Majors\ProgramEditor;
 use Majors\Majors\ProgramRenderer;
 use Majors\Majors\ProgramRepository;
@@ -148,6 +149,42 @@ final class ProgramActions
             'degree_maps' => $this->app->maps()->forProgram((int) $p['id']),
             'maps_url'    => $this->app->layout()->url('degree_maps/admin/maps.php') . '?degree_map_id=',
         ]);
+    }
+
+    /** GET: the Listings form (how the program shows on the listing pages). */
+    public function listingsForm(Request $r, User $user): string
+    {
+        $p = $this->program($r);
+        return $this->app->layout()->render('majors/admin/inplace/listings_form', [
+            'program'     => $p,
+            'entries'     => $this->programs->listingEntries((int) $p['id']),
+            'auto_detail' => Listings::degreeName($p),
+        ]);
+    }
+
+    /** Replace the program's listing lines; the answer says where it is listed now (for the control panel and the edit bar). */
+    public function saveListings(Request $r, User $user): array
+    {
+        $p = $this->program($r);
+        return $this->guard(function () use ($p) {
+            $n = $this->editor->saveListings((int) $p['id'], (array) ($_POST['entries'] ?? []));
+            $summary = self::listingSummary($this->programs->listingEntries((int) $p['id']));
+            $summary['pills'] = $this->app->layout()->render('majors/admin/listed_pills', ['lists' => $summary['lists'], 'lines' => $summary['lines']]);
+            return ['success' => true, 'message' => $n === 0 ? 'Saved. Not listed on any listing page.' : 'Listings saved.', 'listing' => $summary];
+        });
+    }
+
+    /** @return array{lines:int,lists:list<string>,labels:list<string>} */
+    public static function listingSummary(array $entries): array
+    {
+        $on = [];
+        foreach ($entries as $e) {
+            foreach (Listings::listsOf($e) as $l) {
+                $on[$l] = true;
+            }
+        }
+        $lists = array_values(array_filter(array_keys(Listings::LISTS), static fn ($k) => isset($on[$k])));
+        return ['lines' => count($entries), 'lists' => $lists, 'labels' => array_map(static fn ($k) => Listings::SHORT[$k], $lists)];
     }
 
     /** GET: photos already on the site (docroot/academics/majors/_images), newest first. */

@@ -163,6 +163,11 @@ body {
 .majors-facts dt { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0; }
 .majors-facts dd { margin: 0; font-size: 1.6rem; font-weight: 900; line-height: 1.1; }
 .majors-new .majors-facts { display: grid; }
+/* Certificates listing: each half's intro, as the design system's Callout (8px yellow border) */
+.majors-new .majors-callout { border: 8px solid rgb(255 219 0); padding: 1.5rem 1.75rem; margin: 1rem 0 2rem; }
+.majors-new .majors-callout > h3 { margin: 0 0 .75rem; }
+.majors-old .majors-callout { margin: 1rem 0 2rem; }
+.majors-cert-section + .majors-cert-section { margin-top: 3rem; }
 /* feature band: the body sits in its own wrapper after the h3 (so it can be edited on its own); keep prose rhythm */
 .majors-new .prose .majors-body > :first-child { margin-top: 0; }
 .majors-new .prose .majors-body > :last-child { margin-bottom: 0; }

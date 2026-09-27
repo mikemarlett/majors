@@ -95,6 +95,9 @@ final class Importer
             $this->counts[$how]++;
             $this->writeSections($id, $p, $blocks, $blockIds);
             $this->writeFlatContent($id, $p);
+            if ($how === 'created' && !$this->dry && $this->hasListings()) {
+                (new ProgramEditor($this->db))->addDefaultListing($id, 'seed');   // listed by default until the listing import says otherwise
+            }
         }
         // Similar programs need every id first.
         foreach ($pages as $p) {
@@ -460,5 +463,13 @@ final class Importer
         $row = $stmt->get_result()->fetch_row();
         $stmt->close();
         return $row === null ? null : (string) $row[0];
+    }
+
+    private ?bool $listingsTable = null;
+
+    /** Whether migration 008 (listing entries) has run on this database. */
+    private function hasListings(): bool
+    {
+        return $this->listingsTable ??= $this->db->query("SHOW TABLES LIKE 'majors_listing_entries'")->num_rows > 0;
     }
 }

@@ -234,4 +234,54 @@ $run('CREATE TABLE IF NOT EXISTS `majors_program_sections` (
         PRIMARY KEY (`id`), KEY `idx_sections_program` (`program_id`, `position`), KEY `idx_sections_block` (`block_id`)
      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 
+// 008: listing entries, page-name history, full-width section backgrounds, Similar Programs
+// background photo, more departments, forwarding a retired program (same as sql/008).
+$listingsExisted = $columns('majors_listing_entries') !== [];
+$run('CREATE TABLE IF NOT EXISTS `majors_listing_entries` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `program_id` INT UNSIGNED NOT NULL,
+        `position` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        `name` VARCHAR(255) NULL,
+        `detail` VARCHAR(500) NULL,
+        `lists` SET("all","undergrad","graduate","online","certificates","badges") NOT NULL DEFAULT "",
+        `shown_in` ENUM("both","az","college") NOT NULL DEFAULT "both",
+        `cert_section` ENUM("graduate","undergraduate") NULL,
+        `cert_topics` VARCHAR(255) NULL,
+        `source` ENUM("seed","cms","editor") NOT NULL DEFAULT "editor",
+        `updated_at` DATETIME NULL,
+        PRIMARY KEY (`id`), KEY `idx_listing_program` (`program_id`, `position`)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$run('CREATE TABLE IF NOT EXISTS `majors_program_aliases` (
+        `basename` VARCHAR(200) NOT NULL,
+        `program_id` INT UNSIGNED NOT NULL,
+        `created_at` DATETIME NULL,
+        PRIMARY KEY (`basename`), KEY `idx_alias_program` (`program_id`)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$prog = $columns('majors_academic_programs');
+foreach (['similar_bg_url' => 'VARCHAR(255) NULL', 'more_departments' => 'TEXT NULL', 'forward_to' => 'INT UNSIGNED NULL'] as $col => $def) {
+    if (!in_array($col, $prog, true)) {
+        $run("ALTER TABLE `majors_academic_programs` ADD COLUMN `{$col}` {$def}");
+    }
+}
+if (!in_array('theme', $columns('majors_program_sections'), true)) {
+    $run('ALTER TABLE `majors_program_sections` ADD COLUMN `theme` VARCHAR(20) NULL');
+}
+if (!$listingsExisted) {
+    // Starting entries (first run only): what the database listing showed before; the CMS listing import replaces them.
+    $run("INSERT INTO `majors_listing_entries` (`program_id`, `position`, `name`, `detail`, `lists`, `shown_in`, `cert_section`, `source`, `updated_at`)
+          SELECT p.`id`, 1, NULL, NULL,
+                 CONCAT_WS(',', 'all',
+                   CASE WHEN p.`credential` LIKE '%Certificate%' OR p.`credential` IN ('Endorsement', 'Practicum Placement') OR (COALESCE(p.`credential`, '') = '' AND COALESCE(p.`certificate`, 0) = 1) THEN 'certificates'
+                        WHEN p.`credential` LIKE '%Badge%' OR (COALESCE(p.`credential`, '') = '' AND COALESCE(p.`badge`, 0) = 1) THEN 'badges'
+                        WHEN p.`credential` IN ('Master''s', 'Doctorate', 'Postbaccalaureate', 'Post Master', 'Graduate Emphasis') OR (COALESCE(p.`credential`, '') = '' AND COALESCE(p.`graduate`, 0) = 1) THEN 'graduate'
+                        ELSE 'undergrad' END,
+                   IF(COALESCE(p.`online_learning`, 0) = 1 OR COALESCE(p.`online_only`, 0) = 1, 'online', NULL)),
+                 'both',
+                 CASE WHEN p.`credential` LIKE '%Certificate%' OR p.`credential` IN ('Endorsement', 'Practicum Placement') OR (COALESCE(p.`credential`, '') = '' AND COALESCE(p.`certificate`, 0) = 1)
+                      THEN IF(p.`credential` LIKE 'Undergraduate%' OR (COALESCE(p.`credential`, '') = '' AND COALESCE(p.`graduate`, 0) = 0), 'undergraduate', 'graduate') END,
+                 'seed', NOW()
+            FROM `majors_academic_programs` p
+           WHERE p.`status` = 'active' AND NOT EXISTS (SELECT 1 FROM `majors_listing_entries` x)");
+}
+
 echo $dry ? "dry run complete\n" : "migration complete\n";
