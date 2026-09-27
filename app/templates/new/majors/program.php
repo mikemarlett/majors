@@ -45,7 +45,7 @@ $teaser = static function (array $s, array $extraLinks = [], string $extraHeadin
         $out .= $ed->placeholder('+ Add a link', $linksForm);
     }
     if ($extraLinks) {
-        $out .= '<div class="pt-2"' . ($editing ? ' data-ma-static title="Degree maps are linked from the degree-maps admin."' : '') . '><h3 class="nc-heading text-base mb-2">' . $t->e($extraHeading) . '</h3>' . $fancy($extraLinks) . '</div>';
+        $out .= '<div class="pt-4"' . ($editing ? ' data-ma-static title="Degree maps are linked from the degree-maps admin."' : '') . '><h3 class="nc-heading text-lg sm:text-xl mb-3 majors-maps-heading">' . $t->e($extraHeading) . '</h3>' . $fancy($extraLinks) . '</div>';
     }
     return $out . '</div></div></section></li>';
 };
@@ -66,14 +66,30 @@ $feature = static function (array $s) use ($t, $fancy, $ed, $editing, $part): st
         . '<div aria-hidden="true" class="top-arrowhead-spacer tw-hidden relative h-[--arrowhead-h] pointer-events-none"></div>'
         . '<div aria-hidden="true" class="absolute inset-0 pointer-events-none theme-default:tw-hidden"><div data-bg-pattern-parallax-wrapper="true" aria-hidden="true" class="relative size-full overflow-hidden"><div data-bg-wheat="true" style="--wheat-tile: url(\'/_resources/_theme/images/wheat.svg\'); --wheat-tile-width: 1440px; --wheat-tile-height: 1388px; --parallax-scale: 1.3; --wheat-tile-parallax-size: calc(var(--wheat-tile-width) / var(--parallax-scale)) calc(var(--wheat-tile-height) / var(--parallax-scale));" class="absolute inset-0 bg-[image:--wheat-tile] opacity-[--theme-wheat-opacity] [.simple-parallax-initialized>&]:bg-[length:--wheat-tile-parallax-size]"></div></div></div>'
         . '<div class="generic-slab-content-outer-wrapper relative conditional-container theme-not-default:container"><div class="generic-slab-content-inner-wrapper flex flex-col gap-8"><div class="generic-slab-component-wrapper">'
-        . '<div class="group/split-feature grid grid-cols-1 gap-8 md:grid-cols-10 md:gap-12"><div class="md:col-span-5 lg:group-data-[sixty-forty]/split-feature:col-span-4 self-center"><div class="flex flex-col gap-8"><div class="flex flex-col gap-5">'
-        . '<div><h2 data-style-level="2" class="nc-heading text-[length:--text-size] sm:text-[length:--text-size-sm] md:text-[length:--text-size-md]"' . $ed->text('label', $s['label'], 'Inside the Program') . '>' . $t->e($label) . '</h2></div>'
-        . '<div><div class="prose max-w-4xl"><h3' . $ed->text('headline', $s['headline'], 'Click to write the headline') . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</h3><div class="majors-body"' . $ed->html('body', $s['body']) . '>' . $ed->showHtml($s['body'], 'Click to write the text.') . '</div></div></div>'
-        . ($s['links'] ? '<div' . $linksForm . '>' . $fancy($s['links']) . '</div>' : $ed->placeholder('+ Add a link', $linksForm, 'ma-ph--on-dark'))
+        // Text wraps around the photo on desktop (photo floated right at the top); stacked on mobile, photo first.
+        . '<div class="majors-feature">'
+        . '<div class="majors-feature__media">' . $media . '</div>'
+        . '<h2 data-style-level="2" class="nc-heading text-[length:--text-size] sm:text-[length:--text-size-sm] md:text-[length:--text-size-md] majors-feature__label"' . $ed->text('label', $s['label'], 'Inside the Program') . '>' . $t->e($label) . '</h2>'
+        . '<div class="prose max-w-none majors-feature__text"><h3' . $ed->text('headline', $s['headline'], 'Click to write the headline') . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</h3><div class="majors-body"' . $ed->html('body', $s['body']) . '>' . $ed->showHtml($s['body'], 'Click to write the text.') . '</div></div>'
+        . ($s['links'] ? '<div class="majors-feature__links"' . $linksForm . '>' . $fancy($s['links']) . '</div>' : $ed->placeholder('+ Add a link', $linksForm, 'ma-ph--on-dark'))
+        . '</div>'
         . '</div></div></div>'
-        . '<div class="order-first md:order-last md:group-data-[flipped]/split-feature:order-first md:col-span-5 lg:group-data-[sixty-forty]/split-feature:col-span-6">' . $media . '</div>'
-        . '</div></div></div></div>'
         . '<div aria-hidden="true" class="bottom-arrowhead-spacer tw-hidden relative h-[--arrowhead-h] pointer-events-none"></div></div></section>';
+};
+// Full-width section: a themed Generic Slab (white, light gray, yellow or dark) with a headline, text and links.
+$bandThemes = ['white' => '', 'light' => 'neutral-200', 'yellow' => 'yellow', 'dark' => 'neutral-900'];
+$band = static function (array $s) use ($t, $fancy, $ed, $editing, $part, $bandThemes): string {
+    $theme = $bandThemes[$s['theme'] ?? 'light'] ?? 'neutral-200';
+    $linksForm = $ed->form('links', ['links' => $s['links']]);
+    $onDark = $theme === 'neutral-900' ? ' ma-ph--on-dark' : '';
+    return '<section data-nc-component="majors-band"' . ($theme !== '' ? ' data-tw-theme="' . $theme . '"' : '') . ' class="generic-slab majors-section majors-band" data-section="' . (int) $s['id'] . '"' . $ed->scope($s) . $part . '>'
+        . $t->partial('majors/admin/inplace/section_tools', ['s' => $s, 'ed' => $ed])
+        . '<div class="generic-slab-inner vertical-rhythm-standard theme-not-default:my-0 with-sidebar-up:theme-not-default:my-vertical-space with-sidebar-up-first:theme-not-default:mt-0 with-sidebar-up-last:theme-not-default:mb-0 theme-not-default:py-vertical-space-padding">'
+        . '<div class="generic-slab-content-outer-wrapper relative conditional-container theme-not-default:container"><div class="generic-slab-content-inner-wrapper flex flex-col gap-6">'
+        . ($s['headline'] !== '' || $editing ? '<div class="generic-slab-heading-wrapper max-w-4xl"><h2 data-style-level="3" class="nc-heading text-[length:--text-size] sm:text-[length:--text-size-sm] md:text-[length:--text-size-md]"' . $ed->text('headline', $s['headline'], 'Click to write the headline') . '>' . $ed->show($s['headline'], 'Click to write the headline') . '</h2></div>' : '')
+        . ($s['body'] !== '' || $editing ? '<div class="prose max-w-4xl"' . $ed->html('body', $s['body']) . '>' . $ed->showHtml($s['body'], 'Click to write the text.') . '</div>' : '')
+        . ($s['links'] ? '<div' . $linksForm . '>' . $fancy($s['links']) . '</div>' : $ed->placeholder('+ Add a link', $linksForm, trim($onDark)))
+        . '</div></div></div></section>';
 };
 $groups = [];
 $mapsPlaced = false;
@@ -93,6 +109,8 @@ foreach ($sections as $s) {
         $groups[count($groups) - 1]['items'][] = $teaser($s, $extra, count($mapLinks) > 1 ? 'Degree Maps' : 'Degree Map');
     } elseif ($s['kind'] === 'feature') {
         $groups[] = ['type' => 'feature', 's' => $s];
+    } elseif ($s['kind'] === 'band') {
+        $groups[] = ['type' => 'band', 's' => $s];
     }
 }
 if (!$mapsPlaced && $mapLinks !== []) {
@@ -103,7 +121,7 @@ if (!$mapsPlaced && $mapLinks !== []) {
 <?= $t->render('majors/program_card', get_defined_vars()) ?>
 <?php endif; ?>
 <?php foreach ($groups as $g): ?>
-<?= $g['type'] === 'grid' ? $grid($g['items']) : $feature($g['s']) ?>
+<?= $g['type'] === 'grid' ? $grid($g['items']) : ($g['type'] === 'band' ? $band($g['s']) : $feature($g['s'])) ?>
 
 <?php endforeach; ?>
 <?= $t->partial('majors/admin/inplace/add_bar', ['ed' => $ed, 'empty' => $sections === []]) ?>

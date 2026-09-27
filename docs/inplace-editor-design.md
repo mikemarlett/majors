@@ -224,6 +224,63 @@ public page until it has a headline or text.
   and the control panel keeps its state in the query string (the old
   theme's footcode chokes on `#key=value`).
 
+## Round three: marketing's review (2026-09-27)
+
+Built from Quinn's notes after the first demo:
+
+- **Listing lines** (`majors_listing_entries`, `Listings`, `ListingImporter`).
+  The hand-kept CMS listing pages turned out to be more than filters over
+  program flags: pages listed under other names ("Nursing Practice -" for the
+  DNP tracks), concentrations as separate lines, A–Z-only cross references,
+  pages on All Programs but not on their obvious list (AIT, the Reading
+  Specialist endorsement), and live pages on no list at all (the MBA
+  combination pages). So a program has zero or more lines; each line says
+  where it shows and how it reads. `name`/`detail` store NULL for "the
+  default", so an unchanged line follows a rename or a degree change. The
+  import parses each CMS listing page's asset (A–Z, by college,
+  Certificates halves and topics), merges identical lines across lists into
+  one row, and replaces lines only for pages it owns — never for a page whose
+  lines were saved in the editor (`source = 'editor'`). New programs get a
+  line from their credential (`Listings::defaults`). Parity with the CMS was
+  checked list by list: every list and view has the same number of lines.
+- **Full-width section** (`kind = 'band'`, `theme`). The CMS generic section
+  maps to the new design's Generic Slab (`data-tw-theme`: none, neutral-200,
+  yellow, neutral-900) and the old design's `section-wrap--none`,
+  `--shade-light`, `--wheat`, `--shade-dark`. No shared text, no photo.
+- **Similar Programs photo** (`similar_bg_url`), current design only; the
+  import takes the photo from each CMS page's title row.
+- **Feature wrap** (new design): the Inside the Program photo floats right
+  at 48em and up so the text wraps it, as on the CMS pages; stacked below.
+  The current design's feature band is now the gray dots, as on the CMS.
+- **Departments**: `department`/`department_url` stay the main one (the
+  importer and older code read them); the rest are a JSON list in
+  `more_departments`. `ProgramRepository::departmentsOf()` is the one
+  reader; crumbs, the section menu, the listing department filter and the
+  flat row all use it.
+- **Renames and forwarding**: `majors_program_aliases` keeps every earlier
+  page name; the public page and the editor 301/302 an old name to the
+  current one, a name that still forwards cannot be reused, and renaming
+  back frees it. `forward_to` on a retired program forwards (following a
+  short chain of retired programs; a chain ending at a retired page is a
+  404). The page-name lock for imported pages hangs on
+  `majors.cms_import` instead of on `cms_path` alone.
+
+Found in review before shipping:
+
+- Every 301 now carries `Cache-Control: no-cache`. Browsers otherwise keep a
+  permanent redirect for good, and a name changed back (x→y→x) would then
+  bounce visitors between the two addresses.
+- A rename, its forward and the flat row are saved in one transaction, and
+  the name checks lock what they read.
+- The page import retired every program no CMS page matched, including
+  programs made in the editor; it now retires only imported ones. It also
+  finds a page renamed in the editor by its earlier name (keeping the new
+  name), and when the CMS renames a page (matched by catalog number) the old
+  address is kept as a forward.
+- The supplement adds a band only beside a program's own sections (a band
+  alone would hide a program still on the old flat row) and fills only
+  photos that were never set, so one cleared in the editor stays cleared.
+
 ## Keyboard and screen readers
 
 Every editable node and placeholder is focusable (`tabindex=0`, `role=button`

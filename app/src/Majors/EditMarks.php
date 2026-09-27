@@ -79,7 +79,7 @@ final class EditMarks
         if (!$this->on) {
             return '';
         }
-        $a = ' data-ma-kind="' . Html::e((string) $section['kind']) . '"';
+        $a = ' data-ma-kind="' . Html::e((string) $section['kind']) . '"' . (($section['kind'] ?? '') === 'band' ? ' data-ma-theme="' . Html::e((string) ($section['theme'] ?? 'light')) . '"' : '');
         if (!empty($section['block_id'])) {
             $a .= ' data-ma-scope="block" data-block="' . (int) $section['block_id'] . '" data-ma-uses="' . (int) ($this->blockUses[(int) $section['block_id']] ?? 0) . '"';
         } else {

@@ -2,9 +2,10 @@
 
 /**
  * Which files in docroot/academics/majors/_images are referenced by the
- * database (majors_programs_content image URLs and any image URL inside the
- * marketing copy)? Writes a manifest and, with --archive <dir>, moves the
- * unreferenced files out of the docroot.
+ * database (any image URL in the programs, their sections, the shared blocks
+ * and the legacy flat rows, including the Similar Programs background photos)?
+ * Writes a manifest and, with --archive <dir>, moves the unreferenced files
+ * out of the docroot.
  *
  *   php app/bin/images-audit.php                                    report only (repo checkout)
  *   php bin/images-audit.php --images /data/www/main/academics/majors/_images --archive /data/majors-images-archive
@@ -35,27 +36,42 @@ if (($i = array_search('--archive', $argv, true)) !== false) {
     }
 }
 
-// Every string column in the content table may hold an image URL (the copy is HTML).
+// Every string column may hold an image URL (the copy is HTML): the legacy flat rows, the programs
+// (photo, Similar Programs background, note…), their sections and the shared blocks.
+// File names may contain spaces ("transition to teaching program.jpg"): a bare address is read whole,
+// a quoted HTML attribute up to its closing quote, and only loose text stops at the first space.
 $referenced = [];
-$res = $db->query('SELECT * FROM `majors_programs_content`');
-while ($row = $res->fetch_assoc()) {
-    foreach ($row as $v) {
-        if (!is_string($v) || $v === '') {
-            continue;
-        }
-        if (preg_match_all('#(?:https?://[^/\s"\']+)?/academics/majors/_images/([^\s"\'<>?]+)#i', $v, $m)) {
-            foreach ($m[1] as $f) {
-                $referenced[rawurldecode($f)] = true;
-            }
-        }
+$add = static function (string $path) use (&$referenced): void {
+    $path = trim((string) preg_replace('/[?#].*$/s', '', $path));
+    if ($path !== '') {
+        $referenced[rawurldecode($path)] = true;
     }
-}
-// Program rows too (note field etc.).
-$res = $db->query('SELECT `note` FROM `majors_academic_programs` WHERE `note` LIKE "%_images/%"');
-while ($row = $res->fetch_assoc()) {
-    if (preg_match_all('#/academics/majors/_images/([^\s"\'<>?]+)#i', (string) $row['note'], $m)) {
-        foreach ($m[1] as $f) {
-            $referenced[rawurldecode($f)] = true;
+};
+foreach (['majors_programs_content', 'majors_academic_programs', 'majors_program_sections', 'majors_content_blocks'] as $table) {
+    if ($db->query("SHOW TABLES LIKE '{$table}'")->num_rows === 0) {
+        continue;
+    }
+    $res = $db->query("SELECT * FROM `{$table}`");
+    while ($row = $res->fetch_assoc()) {
+        foreach ($row as $v) {
+            if (!is_string($v) || ($v = trim($v)) === '') {
+                continue;
+            }
+            if (strpbrk($v, "<>\"'\n") === false && preg_match('#^(?:https?://[^/\s]+)?/academics/majors/_images/(.+)$#i', $v, $m)) {
+                $add($m[1]);                                   // image_url, similar_bg_url…: the whole value
+                continue;
+            }
+            if (preg_match_all('#=\s*(["\'])(?:https?://[^/"\']+)?/academics/majors/_images/([^"\']+?)\1#i', $v, $m)) {
+                foreach ($m[2] as $f) {
+                    $add($f);                                  // src="…" / href='…'
+                }
+            }
+            $loose = (string) preg_replace('#=\s*(["\']).*?\1#s', '=""', $v);
+            if (preg_match_all('#(?:https?://[^/\s"\']+)?/academics/majors/_images/([^\s"\'<>?]+)#i', $loose, $m)) {
+                foreach ($m[1] as $f) {
+                    $add($f);                                  // an address in plain text
+                }
+            }
         }
     }
 }

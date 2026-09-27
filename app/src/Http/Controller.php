@@ -17,6 +17,11 @@ abstract class Controller
 
     protected function redirect(string $url, int $status = 302): never
     {
+        if ($status === 301) {
+            // Permanent for search engines, but browsers must ask again: a page name can be changed
+            // back later, and a remembered redirect would then send visitors round in a loop.
+            header('Cache-Control: no-cache');
+        }
         header('Location: ' . $url, true, $status);
         exit;
     }

@@ -12,7 +12,7 @@
  * @var \Majors\View\Layout $t
  */
 $identity = $ed->form('identity', ['credential' => (string) ($p['credential'] ?? ''), 'program_type' => (string) ($p['program_type'] ?? ''), 'graduate' => (int) !empty($p['graduate']), 'is_stem' => (int) $is_stem]);
-$crumbsForm = $ed->form('crumbs', ['college' => (string) ($p['college'] ?? ''), 'college_url' => (string) ($p['college_url'] ?? ''), 'department' => (string) ($p['department'] ?? ''), 'department_url' => (string) ($p['department_url'] ?? '')]);
+$crumbsForm = $ed->form('crumbs', ['college' => (string) ($p['college'] ?? ''), 'college_url' => (string) ($p['college_url'] ?? ''), 'departments' => \Majors\Majors\ProgramRepository::departmentsOf($p)]);
 $imageForm = $ed->form('image', ['image_url' => (string) ($p['image_url'] ?? ''), 'image_alt' => (string) ($p['image_alt'] ?? ''), 'image_caption' => (string) ($p['image_caption'] ?? ''), 'image_credit' => (string) ($p['image_credit'] ?? '')]);
 $factsForm = $ed->form('facts', ['degree_title' => (string) ($p['degree_title'] ?? ''), 'modality' => (string) ($p['modality'] ?? ''), 'credit_hours' => (string) ($p['credit_hours'] ?? ''), 'entry_terms' => (string) ($p['entry_terms'] ?? '')]);
 $coordForm = $ed->form('coordinator', ['coordinator_name' => (string) ($p['coordinator_name'] ?? ''), 'coordinator_email' => (string) ($p['coordinator_email'] ?? ''), 'coordinator_phone' => (string) ($p['coordinator_phone'] ?? '')]);

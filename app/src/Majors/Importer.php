@@ -73,6 +73,8 @@ final class Importer
     private function import(array $pages, bool $retireMissing): void
     {
         $existing = $this->existingPrograms();                       // basename => row, plus '#<catalog>' => row
+        $aliases  = $this->aliasedPrograms();                         // earlier page name => row (renamed in the editor)
+        $cmsNames = array_flip(array_column($pages, 'basename'));
         $blocks   = $this->sharedBlocks($pages);                      // key => ['slug','headline','body','links','count']
         $blockIds = $this->writeBlocks($blocks);
         $seenIds  = [];
@@ -81,6 +83,14 @@ final class Importer
         foreach ($pages as $p) {
             $row = $existing[$p['basename']] ?? null;
             $how = 'updated';
+            $keepName = null;
+            // A page renamed in the editor (possible once the CMS import was switched off) is found by
+            // its earlier name and keeps the new one, unless its new name is itself a CMS page.
+            if ($row === null && isset($aliases[$p['basename']]) && !isset($cmsNames[(string) $aliases[$p['basename']]['basename']])) {
+                $row = $aliases[$p['basename']];
+                $keepName = (string) $row['basename'];
+                $this->notes[] = "kept the editor's page name: {$p['basename']} is now {$keepName} (id {$row['id']})";
+            }
             if ($row === null && $p['catalog_number'] !== null && isset($existing['#' . $p['catalog_number']])) {
                 $row = $existing['#' . $p['catalog_number']];
                 $how = 'renamed';
@@ -89,7 +99,7 @@ final class Importer
             if ($row === null) {
                 $how = 'created';
             }
-            $id = $this->writeProgram($row, $p);
+            $id = $this->writeProgram($row, $p, $keepName);
             $seenIds[$id] = true;
             $idByBasename[$p['basename']] = $id;
             $this->counts[$how]++;
@@ -104,16 +114,37 @@ final class Importer
             $this->writeSimilar($idByBasename[$p['basename']], $p, $idByBasename);
         }
         if ($retireMissing) {
-            foreach ($this->db->query('SELECT `id`, `basename`, `status` FROM `majors_academic_programs`')->fetch_all(MYSQLI_ASSOC) as $row) {
+            foreach ($this->db->query('SELECT `id`, `basename`, `status`, `cms_path` FROM `majors_academic_programs`')->fetch_all(MYSQLI_ASSOC) as $row) {
                 if (isset($seenIds[(int) $row['id']]) || ($row['status'] ?? 'active') === 'retired') {
                     continue;
                 }
                 $row['basename'] = (string) ($row['basename'] ?? '') !== '' ? $row['basename'] : '(no page)';
+                if ((string) ($row['cms_path'] ?? '') === '') {       // made in the editor: it never had a CMS page to lose
+                    $this->notes[] = "kept: {$row['basename']} (id {$row['id']}) — not from the CMS (made in the editor)";
+                    continue;
+                }
                 $this->exec('UPDATE `majors_academic_programs` SET `status` = "retired", `imported_at` = NOW() WHERE `id` = ?', 'i', [(int) $row['id']]);
                 $this->counts['retired']++;
                 $this->notes[] = "retired: {$row['basename']} (id {$row['id']}) — no page in the CMS";
             }
         }
+    }
+
+    /**
+     * Programs by an earlier page name (majors_program_aliases, migration 008), in the shape
+     * existingPrograms() returns. @return array<string,array<string,mixed>>
+     */
+    private function aliasedPrograms(): array
+    {
+        if (!$this->hasListings()) {
+            return [];
+        }
+        $out = [];
+        foreach ($this->db->query('SELECT a.`basename` AS alias, p.`id`, p.`status`, p.`catalog_number`, p.`basename`
+                                     FROM `majors_program_aliases` a JOIN `majors_academic_programs` p ON p.`id` = a.`program_id`')->fetch_all(MYSQLI_ASSOC) as $r) {
+            $out[(string) $r['alias']] = $r;
+        }
+        return $out;
     }
 
     /** @return array<string,array<string,mixed>> */
@@ -199,7 +230,8 @@ final class Importer
         return $ids;
     }
 
-    private function writeProgram(?array $row, array $p): int
+    /** @param string|null $keepName the program's own page name, when it was renamed in the editor */
+    private function writeProgram(?array $row, array $p, ?string $keepName = null): int
     {
         $crumbs   = $p['breadcrumb'];
         $college  = $crumbs[1]['text'] ?? '';
@@ -242,14 +274,27 @@ final class Importer
             'cms_path'            => (string) ($p['cms_path'] ?? ''),
             'cms_file_date'       => $p['cms_file_date'] ?? null,
         ];
+        if ($this->hasListings()) {                      // migration 008 has run
+            $vals['similar_bg_url'] = (string) ($p['similar_bg'] ?? '');
+        }
         if ($online !== null) {
             $vals['online_learning'] = $online;
+        }
+        if ($keepName !== null) {
+            $vals['basename'] = $keepName;
         }
         $vals = self::clip($vals, self::PROGRAM_WIDTHS);
         $this->syncCollege($college, $dept);
         if ($row !== null) {
             $set = implode(', ', array_map(static fn ($k) => "`$k` = ?", array_keys($vals))) . ', `imported_at` = NOW(), `timestamp` = NOW()';
             $this->exec("UPDATE `majors_academic_programs` SET $set WHERE `id` = ?", str_repeat('s', count($vals)) . 'i', [...array_values($vals), (int) $row['id']]);
+            $old = (string) ($row['basename'] ?? '');
+            if ($old !== '' && $old !== $vals['basename'] && $this->hasListings()) {
+                // The CMS page was renamed (matched by its catalog number): the old address keeps forwarding.
+                $this->exec('INSERT INTO `majors_program_aliases` (`basename`, `program_id`, `created_at`) VALUES (?, ?, NOW())
+                             ON DUPLICATE KEY UPDATE `program_id` = VALUES(`program_id`)', 'si', [$old, (int) $row['id']]);
+                $this->exec('DELETE FROM `majors_program_aliases` WHERE `basename` = ?', 's', [(string) $vals['basename']]);
+            }
             return (int) $row['id'];
         }
         $vals['sort_order'] = 0;
@@ -296,7 +341,7 @@ final class Importer
         $this->exec('DELETE FROM `majors_program_sections` WHERE `program_id` = ?', 'i', [$id]);
         $pos = 0;
         foreach ($p['sections'] as $s) {
-            if (!in_array($s['kind'], ProgramEditor::KINDS, true)) {
+            if (!in_array($s['kind'], ProgramEditor::KINDS, true) || ($s['kind'] === 'band' && !$this->hasListings())) {
                 continue;                        // the Similar Programs card is data for majors_similar_programs, not a page section
             }
             $pos++;
@@ -304,6 +349,19 @@ final class Importer
             $blockId = $key !== '' && isset($blockIds[$key]) ? $blockIds[$key] : null;
             $img     = $s['image'] ?? [];
             $s       = self::clip($s, ['headline' => 255, 'label' => 100]);
+            if ($this->hasListings()) {
+                $this->exec('INSERT INTO `majors_program_sections` (`program_id`,`position`,`kind`,`label`,`headline`,`body`,`links`,`image_url`,`image_alt`,`block_id`,`theme`,`updated_at`)
+                             VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())', 'iisssssssis', [
+                    $id, $pos, $s['kind'], (string) $s['label'],
+                    $blockId ? null : $s['headline'],
+                    $blockId ? null : $s['body'],
+                    $blockId ? null : json_encode($s['links'], JSON_UNESCAPED_SLASHES),
+                    mb_substr((string) ($img['url'] ?? ''), 0, 255), (string) ($img['alt'] ?? ''),
+                    $blockId, $s['theme'] ?? null,
+                ]);
+                $this->counts['sections']++;
+                continue;
+            }
             $this->exec('INSERT INTO `majors_program_sections` (`program_id`,`position`,`kind`,`label`,`headline`,`body`,`links`,`image_url`,`image_alt`,`block_id`,`updated_at`)
                          VALUES (?,?,?,?,?,?,?,?,?,?,NOW())', 'iisssssssi', [
                 $id, $pos, $s['kind'], (string) $s['label'],
@@ -423,7 +481,7 @@ final class Importer
     }
 
     private const PROGRAM_WIDTHS = ['academic_program' => 255, 'program_type' => 255, 'program_simple_type' => 255, 'department' => 255, 'college' => 255,
-        'basename' => 200, 'credential' => 100, 'college_code' => 10, 'learn_how' => 255, 'image_url' => 255, 'image_credit' => 255,
+        'basename' => 200, 'credential' => 100, 'college_code' => 10, 'learn_how' => 255, 'image_url' => 255, 'image_credit' => 255, 'similar_bg_url' => 255,
         'college_url' => 255, 'department_url' => 255, 'cms_path' => 255];
     private const FLAT_WIDTHS = ['learn_how' => 200, 'learn_how_links' => 65000, 'main_image_url' => 200, 'main_image_credit' => 200,
         'curriculum_link_text' => 200, 'curriculum_link_url' => 200, 'admissions_headline' => 300, 'admissions_link_text' => 200, 'admissions_link_url' => 200,
@@ -463,6 +521,73 @@ final class Importer
         $row = $stmt->get_result()->fetch_row();
         $stmt->close();
         return $row === null ? null : (string) $row[0];
+    }
+
+    /**
+     * Add only what earlier imports did not capture, without touching anything else (so edits
+     * made in the editor survive): full-width sections for pages that have none yet, and the
+     * Similar Programs background photo where it is still empty. Returns SQL keyed by page name
+     * when $sql is true (for a server where the import cannot run), else applies the change.
+     *
+     * @param list<array<string,mixed>> $pages parsed pages
+     * @return array{bands:int,backgrounds:int,sql:string}
+     */
+    public function supplement(array $pages, bool $sql = false): array
+    {
+        $q = static fn (?string $v): string => $v === null ? 'NULL' : "'" . str_replace(["\\", "'"], ["\\\\", "''"], $v) . "'";
+        $bands = 0;
+        $backgrounds = 0;
+        $out = "-- Full-width sections and Similar Programs background photos from the CMS pages.\n"
+             . "-- Adds only what is missing; nothing that exists is changed. Keyed by page name. Meant to run once,\n"
+             . "-- right after 008: a photo cleared in the editor stays cleared, but a band removed since would come back.\n"
+             . "SET NAMES utf8mb4;\nSTART TRANSACTION;\n";
+        $existing = $this->existingPrograms();
+        foreach ($pages as $p) {
+            $row   = $existing[$p['basename']] ?? null;
+            $pBand = array_values(array_filter($p['sections'], static fn ($s) => $s['kind'] === 'band'));
+            $bg    = (string) ($p['similar_bg'] ?? '');
+            if ($pBand === [] && $bg === '') {
+                continue;
+            }
+            if ($sql) {
+                $out .= "\n-- {$p['basename']}\nSET @p := (SELECT `id` FROM `majors_academic_programs` WHERE `basename` = " . $q($p['basename']) . ");\n";
+                if ($bg !== '') {
+                    $out .= 'UPDATE `majors_academic_programs` SET `similar_bg_url` = ' . $q(mb_substr($bg, 0, 255)) . " WHERE `id` = @p AND `similar_bg_url` IS NULL;\n";
+                    $backgrounds++;
+                }
+                if ($pBand !== []) {
+                    // Only beside the page's own sections: a program still on the old flat row would otherwise show just the band.
+                    $out .= "SET @has := (SELECT COUNT(*) FROM `majors_program_sections` WHERE `program_id` = @p AND `kind` = 'band')"
+                          . " + IF((SELECT COUNT(*) FROM `majors_program_sections` WHERE `program_id` = @p AND `kind` IN ('teaser', 'feature')) = 0, 1, 0);\n";
+                    foreach ($pBand as $b) {
+                        $out .= "SET @pos := (SELECT COALESCE(MAX(`position`), 0) + 1 FROM `majors_program_sections` WHERE `program_id` = @p);\n"
+                              . "INSERT INTO `majors_program_sections` (`program_id`, `position`, `kind`, `label`, `headline`, `body`, `links`, `image_url`, `image_alt`, `theme`, `updated_at`) "
+                              . "SELECT @p, @pos, 'band', '', " . $q(mb_substr((string) $b['headline'], 0, 255)) . ', ' . $q((string) $b['body']) . ", '[]', '', '', " . $q((string) $b['theme']) . ", NOW() FROM DUAL WHERE @p IS NOT NULL AND @has = 0;\n";
+                        $bands++;
+                    }
+                }
+                continue;
+            }
+            if ($row === null) {
+                $this->notes[] = "supplement: no program for {$p['basename']}";
+                continue;
+            }
+            $id = (int) $row['id'];
+            if ($bg !== '' && $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `id` = ? AND `similar_bg_url` IS NULL', 'i', [$id]) !== null) {
+                $this->exec('UPDATE `majors_academic_programs` SET `similar_bg_url` = ? WHERE `id` = ?', 'si', [mb_substr($bg, 0, 255), $id]);
+                $backgrounds++;
+            }
+            if ($pBand !== [] && (int) $this->scalar('SELECT COUNT(*) FROM `majors_program_sections` WHERE `program_id` = ? AND `kind` = "band"', 'i', [$id]) === 0
+                && (int) $this->scalar('SELECT COUNT(*) FROM `majors_program_sections` WHERE `program_id` = ? AND `kind` IN ("teaser", "feature")', 'i', [$id]) > 0) {
+                foreach ($pBand as $b) {
+                    $pos = (int) $this->scalar('SELECT COALESCE(MAX(`position`), 0) + 1 FROM `majors_program_sections` WHERE `program_id` = ?', 'i', [$id]);
+                    $this->exec('INSERT INTO `majors_program_sections` (`program_id`, `position`, `kind`, `label`, `headline`, `body`, `links`, `image_url`, `image_alt`, `theme`, `updated_at`)
+                                 VALUES (?, ?, "band", "", ?, ?, "[]", "", "", ?, NOW())', 'iisss', [$id, $pos, mb_substr((string) $b['headline'], 0, 255), (string) $b['body'], (string) $b['theme']]);
+                    $bands++;
+                }
+            }
+        }
+        return ['bands' => $bands, 'backgrounds' => $backgrounds, 'sql' => $out . "\nCOMMIT;\n"];
     }
 
     private ?bool $listingsTable = null;

@@ -32,19 +32,24 @@ body.ma-busy { cursor: progress; }
 	outline-color: rgba(39, 37, 31, .55); background-color: rgba(255, 219, 0, .12);
 }
 .majors-inplace [data-ma-text]:focus-visible, .majors-inplace [data-ma-html]:focus-visible, .majors-inplace [data-ma-form]:focus-visible { outline-width: 2px; outline-style: solid; }
+/* dark backgrounds (the new design's neutral-900 slabs, the old design's shade-dark bands): light outlines */
 [data-tw-theme="neutral-900"] [data-ma-text]:hover, [data-tw-theme="neutral-900"] [data-ma-html]:hover, [data-tw-theme="neutral-900"] [data-ma-form]:hover,
 [data-tw-theme="neutral-900"] [data-ma-text]:focus-visible, [data-tw-theme="neutral-900"] [data-ma-html]:focus-visible, [data-tw-theme="neutral-900"] [data-ma-form]:focus-visible,
-.section-wrap--shade-dark [data-ma-form]:hover, .section-wrap--shade-dark [data-ma-form]:focus-visible, .section-wrap--wheat [data-ma-text]:focus-visible, .section-wrap--wheat [data-ma-html]:focus-visible { outline-color: rgba(255, 255, 255, .9); background-color: rgba(255, 255, 255, .08); }
+.section-wrap--shade-dark [data-ma-text]:hover, .section-wrap--shade-dark [data-ma-html]:hover, .section-wrap--shade-dark [data-ma-form]:hover,
+.section-wrap--shade-dark [data-ma-text]:focus-visible, .section-wrap--shade-dark [data-ma-html]:focus-visible, .section-wrap--shade-dark [data-ma-form]:focus-visible { outline-color: rgba(255, 255, 255, .9); background-color: rgba(255, 255, 255, .08); }
 .majors-inplace [data-ma-form] a { pointer-events: none; }            /* the popover owns the link, not the browser */
 .majors-inplace [data-ma-static] { cursor: not-allowed; opacity: .85; }
 .majors-inplace .ma-editing { outline: 2px solid var(--ma-yellow) !important; outline-offset: 4px; background-color: #fff; color: var(--ma-ink); box-shadow: 0 0 0 6px rgba(255, 219, 0, .25); cursor: text; }
-[data-tw-theme="neutral-900"] .ma-editing, .section-wrap--wheat .ma-editing { background-color: #fff; color: var(--ma-ink); }
+[data-tw-theme="neutral-900"] .ma-editing, .section-wrap--shade-dark .ma-editing, .section-wrap--wheat .ma-editing { background-color: #fff; color: var(--ma-ink); }
 .majors-inplace [contenteditable]:focus { outline: 2px solid var(--ma-yellow); }
 .majors-inplace .ma-editing--html { min-height: 3rem; }
 /* the placeholder text inside an empty rich-text field */
 .ma-ph-text, .majors-inplace [data-ma-empty] { color: #6b6963 !important; font-style: italic; }
 .majors-inplace .prose .ma-ph-text { margin: 0; }
 .majors-inplace [data-ma-empty]:hover { color: var(--ma-ink) !important; }
+[data-tw-theme="neutral-900"] .ma-ph-text, [data-tw-theme="neutral-900"] [data-ma-empty]:not(.ma-editing),
+.section-wrap--shade-dark .ma-ph-text, .section-wrap--shade-dark [data-ma-empty]:not(.ma-editing) { color: rgba(255, 255, 255, .75) !important; }
+[data-tw-theme="neutral-900"] [data-ma-empty]:not(.ma-editing):hover, .section-wrap--shade-dark [data-ma-empty]:not(.ma-editing):hover { color: #fff !important; }
 
 /* CKEditor 5 balloon editable sits on the page's own element: no chrome of its own */
 .majors-inplace .ck.ck-editor__editable_inline { border: 0 !important; padding: 0 !important; box-shadow: none !important; background: transparent !important; overflow: visible !important; }
@@ -82,6 +87,7 @@ body.ma-busy { cursor: progress; }
 .majors-new .nc-teaser[data-section] { padding-top: 2.75rem; }
 .majors-new .nc-teaser[data-section] .ma-tools__kind { display: none; }   /* a card is obviously a card; the strip must fit a 24rem column with the shared badge */
 .majors-new .generic-slab[data-section] > [data-ma-tools] { top: 1rem; right: 1rem; }
+.majors-new .majors-band[data-section] .generic-slab-content-outer-wrapper { padding-top: 2.25rem; }   /* room for the strip inside the band, above its headline (editor only; padding the section itself would stop the slab's margin collapsing) */
 .majors-new .generic-slab[data-arrowhead-top][data-section] > [data-ma-tools] { top: calc(var(--arrowhead-h, 32px) + .75rem); }   /* clear the arrowhead band */
 .majors-old .teaser[data-section] { padding-top: 2.4rem; }
 .majors-old .section-wrap[data-section] > [data-ma-tools] { top: .75rem; right: .75rem; }
@@ -146,4 +152,19 @@ body.ma-busy { cursor: progress; }
 .majors-new.majors-admin .ma-new-program .ma-field input, .majors-new.majors-admin .ma-new-program .ma-field select { margin: 0; }
 
 /* ---- print: the editor never prints its chrome ------------------------------ */
-@media print { .ma-edit-bar, [data-ma-tools], .ma-add-bar, .ma-ph, .ma-similar__remove, .ma-similar--add, .ma-popover, .ma-toasts { display: none !important; } }
+@media print { .ma-edit-bar, [data-ma-tools], .ma-add-bar, .ma-ph, .ma-similar__remove, .ma-similar--add, .ma-similar-bg-btn, .ma-popover, .ma-toasts { display: none !important; } }
+
+/* ---- full-width sections: background picker; Similar Programs photo button ---- */
+.ma-theme-picker { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.ma-theme-swatch { display: flex; align-items: center; gap: .5rem; margin: 0; padding: .5rem .6rem; border: 1px solid var(--ma-line); border-radius: 3px; background: #fff; color: var(--ma-ink); font: 600 .85rem/1.2 var(--ma-font); cursor: pointer; text-align: left; }
+.ma-theme-swatch:hover, .ma-theme-swatch:focus-visible { border-color: var(--ma-ink); outline: none; }
+.ma-theme-swatch.is-current { box-shadow: inset 0 0 0 2px var(--ma-ink); }
+.ma-theme-swatch__chip { width: 1.4rem; height: 1.4rem; border: 1px solid rgba(0, 0, 0, .2); border-radius: 2px; flex: 0 0 auto; }
+.ma-theme-swatch--white .ma-theme-swatch__chip { background: #fff; }
+.ma-theme-swatch--light .ma-theme-swatch__chip { background: #e6e4df; }
+.ma-theme-swatch--yellow .ma-theme-swatch__chip { background: #ffc217; }
+.ma-theme-swatch--dark .ma-theme-swatch__chip { background: #27251f; }
+.majors-inplace [data-ma-part="similar"] { position: relative; }
+.majors-inplace .ma-similar-bg-btn { position: absolute; z-index: 6; top: 1rem; right: 1rem; background: #fff; }
+.majors-inplace .section-wrap--shade-dark .ma-similar-bg-btn:hover, .majors-inplace .section-wrap--shade-dark .ma-similar-bg-btn:focus-visible { background: #fff; color: var(--ma-ink); outline: 2px solid var(--ma-yellow); outline-offset: 2px; }
+.ma-forward-chosen { display: flex; align-items: center; gap: .5rem; margin: 0 0 .4rem; padding: .35rem .55rem; background: var(--ma-shade); border: 1px solid var(--ma-line); font-size: .9rem; }

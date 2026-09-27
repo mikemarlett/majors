@@ -12,6 +12,8 @@
  *   php bin/majors-listing-import.php --site=www
  *   php bin/majors-listing-import.php --dry-run --show=nursing_family_nurse_practitioner_dnp_313,counseling_med_41
  *
+ * Refuses to run once majors.cms_import is false in the config (pass --force to override).
+ *
  * Re-runnable while the CMS listings are the live ones. Pages whose listings were changed in
  * the editor are left alone, and so are programs created in the editor that no CMS list shows.
  * Needs the Modern Campus helpers at /data/www/config; the database comes from the app config
@@ -23,7 +25,13 @@ declare(strict_types=1);
 use Majors\Majors\CmsClient;
 use Majors\Majors\ListingImporter;
 
-$opts  = getopt('', ['dry-run', 'site::', 'cache::', 'tags::', 'sql::', 'show::']);
+$opts  = getopt('', ['dry-run', 'site::', 'cache::', 'tags::', 'sql::', 'show::', 'force']);
+foreach (['site', 'cache', 'tags', 'sql', 'show'] as $o) {           // getopt only takes these as --name=value; "--sql /path" arrives empty
+    if (isset($opts[$o]) && ($opts[$o] === false || $opts[$o] === '')) {
+        fwrite(STDERR, "--{$o} needs a value, written as --{$o}=…\n");
+        exit(1);
+    }
+}
 $dry   = isset($opts['dry-run']);
 $site  = (string) ($opts['site'] ?? 'www');
 $cache = isset($opts['cache']) ? rtrim((string) $opts['cache'], '/') : null;
@@ -31,6 +39,11 @@ $tags  = (string) ($opts['tags'] ?? (sys_get_temp_dir() . '/majors-cms-tags-' . 
 $sqlTo = isset($opts['sql']) ? (string) $opts['sql'] : null;
 
 $app = require dirname(__DIR__) . '/bootstrap.php';
+if (!(bool) $app->config->get('majors.cms_import', true) && !isset($opts['force'])) {
+    fwrite(STDERR, "The CMS import is switched off in the config (majors.cms_import = false): the listings are kept in the\n"
+        . "editor now, and the CMS listing pages are out of date. Pass --force to run it anyway.\n");
+    exit(1);
+}
 $db  = $app->db();
 $cms = new CmsClient($site, tagCache: $tags);
 $imp = new ListingImporter();

@@ -365,12 +365,11 @@
 			{ name: 'graduate', label: 'Graduate program (listed under Graduate Degrees)', type: 'check' },
 			{ name: 'is_stem', label: 'STEM program (shows the STEM tag)', type: 'check' }
 		] },
-		crumbs: { title: 'College and department', fields: [
+		crumbs: { title: 'College and departments', fields: [
 			{ name: 'college', label: 'College', type: 'text', list: cfg.colleges || [] },
-			{ name: 'college_url', label: 'College page', type: 'text', placeholder: '/academics/…' },
-			{ name: 'department', label: 'Department', type: 'text', list: cfg.departments || [] },
-			{ name: 'department_url', label: 'Department page', type: 'text', placeholder: '/academics/…' }
-		], help: 'Only entries with both a name and a link show on the page.' },
+			{ name: 'college_url', label: 'College page', type: 'text', placeholder: '/academics/…' }
+		], list: 'departments', listLast: true, listLabel: 'Departments (a joint program can list more than one)', labels: ['Department', 'Department page'], listSuggest: cfg.departments || [],
+			help: 'Names and links show on the page when both are given. The program is listed under every department named here.' },
 		facts: { title: 'Program details', fields: [
 			{ name: 'degree_title', label: 'Degree', type: 'text', placeholder: 'PhD, MS, Graduate Certificate…', maxlength: 120 },
 			{ name: 'modality', label: 'Modality', type: 'select', options: cfg.modalities || ['', 'On Campus', 'Online', 'Hybrid'] },
@@ -389,16 +388,27 @@
 			{ name: 'image_caption', label: 'Caption', type: 'text' },
 			{ name: 'image_credit', label: 'Credit', type: 'text', maxlength: 255 }
 		] },
+		'similar-bg': { title: 'Similar Programs background', image: true, imageField: 'similar_bg_url', fields: [],
+			help: 'The photo behind the Similar Programs band on the current site design. Without one, the program\'s own photo is used.' },
 		'section-image': { title: 'Photo', image: true, fields: [
 			{ name: 'image_alt', label: 'Alt text (what the photo shows, for screen readers)', type: 'text' }
 		] }
 	};
 
-	function listEditor(name, rows, labels) {
+	function listEditor(name, rows, labels, suggest) {
 		var wrap = el('div', { class: 'ma-list-edit' });
+		var listId = null;
+		if (suggest && suggest.length) {
+			listId = 'ma_suggest_' + name;
+			if (!document.getElementById(listId)) {
+				var dl = el('datalist', { id: listId });
+				suggest.forEach(function (o) { dl.appendChild(el('option', { value: o })); });
+				document.body.appendChild(dl);
+			}
+		}
 		function addRow(r) {
 			var row = el('div', { class: 'ma-list-edit__row' },
-				el('input', { type: 'text', name: name + '[text][]', value: r.text || '', placeholder: labels[0], maxlength: 200, 'aria-label': labels[0] }),
+				el('input', { type: 'text', name: name + '[text][]', value: r.text || '', placeholder: labels[0], maxlength: 200, 'aria-label': labels[0], list: listId }),
 				el('input', { type: 'text', name: name + '[href][]', value: r.href || '', placeholder: 'https://… or /academics/…', maxlength: 500, 'aria-label': labels[1] }),
 				el('button', { type: 'button', class: 'ma-btn ma-btn--ghost ma-btn--small', text: '−', title: 'Remove', 'aria-label': 'Remove this row', onclick: function () { row.remove(); if (!wrap.querySelector('.ma-list-edit__row')) { addRow({}); } } }));
 			wrap.insertBefore(row, add);
@@ -454,12 +464,16 @@
 			if (scope !== scope0) { node = sameField(scope, 'form', name) || node; }
 			var form = el('form', { class: 'ma-form' });
 			var pop;
-			if (spec.list) {
-				form.appendChild(listEditor(spec.list, values[spec.list] || [], spec.labels));
-			}
+			var addList = function () {
+				if (spec.listLabel) { form.appendChild(el('div', { class: 'ma-label ma-list-label', text: spec.listLabel })); }
+				form.appendChild(listEditor(spec.list, values[spec.list] || [], spec.labels, spec.listSuggest));
+			};
+			if (spec.list && !spec.listLast) { addList(); }
 			if (spec.image) {
-				var urlInput = el('input', { type: 'text', name: 'image_url', value: values.image_url || '', placeholder: '/academics/majors/_images/… or https://…', maxlength: 255, autocomplete: 'off' });
-				var preview = el('img', { class: 'ma-preview', alt: '', hidden: !values.image_url, src: values.image_url ? imgUrl(values.image_url) : '' });
+				var imgField = spec.imageField || 'image_url';
+				var current = values[imgField] || '';
+				var urlInput = el('input', { type: 'text', name: imgField, value: current, placeholder: '/academics/majors/_images/… or https://…', maxlength: 255, autocomplete: 'off' });
+				var preview = el('img', { class: 'ma-preview', alt: '', hidden: !current, src: current ? imgUrl(current) : '' });
 				urlInput.addEventListener('change', function () { preview.src = urlInput.value ? imgUrl(urlInput.value) : ''; preview.hidden = !urlInput.value; });
 				var pickerWrap = el('div', { hidden: true });
 				form.appendChild(preview);
@@ -470,10 +484,11 @@
 						if (!pickerWrap.hidden && !pickerWrap.firstChild) { pickerWrap.appendChild(imagePicker(urlInput, preview)); }
 						pop.reposition();
 					} }),
-					values.image_url ? el('button', { type: 'button', class: 'ma-btn ma-btn--ghost ma-btn--small', text: 'Remove photo', onclick: function () { urlInput.value = ''; preview.hidden = true; form.requestSubmit(); } }) : null));
+					current ? el('button', { type: 'button', class: 'ma-btn ma-btn--ghost ma-btn--small', text: 'Remove photo', onclick: function () { urlInput.value = ''; preview.hidden = true; form.requestSubmit(); } }) : null));
 				form.appendChild(pickerWrap);
 			}
 			(spec.fields || []).forEach(function (f) { form.appendChild(U.field(Object.assign({}, f, { value: values[f.name] }))); });
+			if (spec.list && spec.listLast) { addList(); }
 			if (spec.help) { form.appendChild(el('div', { class: 'ma-help', text: spec.help })); }
 			var err = el('div', { class: 'ma-error' });
 			form.appendChild(err);
@@ -530,13 +545,17 @@
 			var box = el('div', { class: 'ma-btn-row ma-btn-row--stack' },
 				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Card (two across)', onclick: function () { pop.close(); fire(act('add_section', { kind: 'teaser', after: sid }).then(function (r) { scrollToSection(r.section_id); })); } }),
 				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Feature (full width, with photo)', onclick: function () { pop.close(); fire(act('add_section', { kind: 'feature', after: sid }).then(function (r) { scrollToSection(r.section_id); })); } }),
+				el('button', { type: 'button', class: 'ma-btn ma-btn--accent', text: '+ Full-width section (with a background)', onclick: function () { pop.close(); fire(act('add_section', { kind: 'band', after: sid }).then(function (r) { scrollToSection(r.section_id); })); } }),
 				el('button', { type: 'button', class: 'ma-btn', text: '+ Shared text…', onclick: function () { pop.close(); blockSelect(function (bid) { fire(act('add_section', { kind: 'teaser', after: sid, block_id: bid }).then(function (r) { scrollToSection(r.section_id); })); }, btn, 'Add shared text'); } }));
 			var pop = U.popover(btn, { title: 'Add after this section', content: box, width: 320 });
 			return;
 		}
 		if (a === 'section-menu') {
 			var items = el('div', { class: 'ma-btn-row ma-btn-row--stack' });
-			if (shared) {
+			var isBand = sec && sec.getAttribute('data-ma-kind') === 'band';
+			if (isBand) {
+				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Background colour…', onclick: function () { menu.close(); themePicker(btn, sid); } }));
+			} else if (shared) {
 				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Customize: give this page its own copy', onclick: function () { menu.close(); fire(act('detach_section', { section_id: sid })); } }));
 			} else {
 				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Use shared text instead…', onclick: function () { menu.close(); blockSelect(function (bid) { fire(act('swap_section_block', { section_id: sid, block_id: bid })); }, btn, 'Use shared text'); } }));
@@ -546,7 +565,7 @@
 				fire(act('delete_section', { section_id: sid }).then(function (r) {
 					var rm = r.removed || {};
 					toast(shared ? 'Section removed (the shared text stays on the other pages).' : 'Section removed.', { undo: function () {
-						var body = { kind: rm.kind, after: rm.after, label: rm.label, headline: rm.headline, body: rm.body, image_url: rm.image_url, image_alt: rm.image_alt, block_id: rm.block_id || null };
+						var body = { kind: rm.kind, after: rm.after, label: rm.label, headline: rm.headline, body: rm.body, image_url: rm.image_url, image_alt: rm.image_alt, block_id: rm.block_id || null, theme: rm.theme || null };
 						var links = []; try { links = JSON.parse(rm.links || '[]'); } catch (e) { links = []; }
 						var q = new URLSearchParams();
 						Object.keys(body).forEach(function (k) { if (body[k] != null) { q.append(k, body[k]); } });
@@ -569,6 +588,20 @@
 			});
 			return;
 		}
+	}
+	/* Full-width section background: white, light gray, yellow or dark (both designs map these to their own bands). */
+	function themePicker(anchor, sid) {
+		var sec = document.querySelector('[data-section="' + sid + '"]');
+		var now = sec ? (sec.getAttribute('data-ma-theme') || 'light') : 'light';
+		var themes = cfg.themes || { white: 'White', light: 'Light gray', yellow: 'Yellow', dark: 'Dark' };
+		var box = el('div', { class: 'ma-theme-picker' });
+		Object.keys(themes).forEach(function (k) {
+			box.appendChild(el('button', { type: 'button', class: 'ma-theme-swatch ma-theme-swatch--' + k + (k === now ? ' is-current' : ''), 'aria-pressed': k === now ? 'true' : 'false', onclick: function () {
+				pop.close();
+				if (k !== now) { fire(act('save_section_fields', { section_id: sid, theme: k })); }
+			} }, el('span', { class: 'ma-theme-swatch__chip', 'aria-hidden': 'true' }), el('span', { text: themes[k] })));
+		});
+		var pop = U.popover(anchor, { title: 'Background colour', content: box, width: 320 });
 	}
 	function scrollToSection(id) {
 		var s = id ? document.querySelector('[data-section="' + id + '"]') : null;
@@ -619,6 +652,39 @@
 			var form = pop.el.querySelector('form');
 			var base = form.querySelector('[name=basename]');
 			var echo = form.querySelector('[data-ma-basename-echo]');
+			// Retired: optionally forward to another program (search as you type).
+			var statusSel = form.querySelector('[data-ma-status-select]');
+			var fwd = form.querySelector('[data-ma-forward]');
+			if (statusSel && fwd) {
+				statusSel.addEventListener('change', function () { fwd.hidden = statusSel.value !== 'retired'; pop.reposition(); });
+				var fId = fwd.querySelector('[data-ma-forward-id]'), fQ = fwd.querySelector('[data-ma-forward-q]'), fRes = fwd.querySelector('[data-ma-forward-results]');
+				var fChosen = fwd.querySelector('[data-ma-forward-chosen]'), fLabel = fwd.querySelector('[data-ma-forward-label]');
+				var ft = null, fseq = 0;
+				fwd.querySelector('[data-ma-forward-clear]').addEventListener('click', function () { fId.value = ''; fChosen.hidden = true; fQ.focus(); });
+				fQ.addEventListener('keydown', function (e) {   // Enter picks the first match instead of submitting the settings
+					if (e.key !== 'Enter') { return; }
+					e.preventDefault();
+					var first = fRes.querySelector('.ma-result');
+					if (first) { first.click(); }
+				});
+				fQ.addEventListener('input', function () {
+					clearTimeout(ft);
+					var q = fQ.value.trim();
+					if (q.length < 2) { fseq++; fRes.innerHTML = ''; return; }
+					ft = setTimeout(function () {
+						var my = ++fseq;
+						ajax('program_search', { q: q }, { method: 'GET' }).then(function (r) {
+							if (my !== fseq) { return; }
+							fRes.innerHTML = '';
+							(r.results || []).filter(function (x) { return x.id !== PID; }).slice(0, 8).forEach(function (x) {
+								fRes.appendChild(el('button', { type: 'button', class: 'ma-result', text: x.text, onclick: function () {
+									fId.value = x.id; fLabel.textContent = x.text; fChosen.hidden = false; fRes.innerHTML = ''; fQ.value = '';
+								} }));
+							});
+						}).catch(function () { /* search is a convenience */ });
+					}, 200);
+				});
+			}
 			var cleanName = function (v) { return v.toLowerCase().replace(/['\u2018\u2019]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 120); };
 			if (base && echo) { base.addEventListener('input', function () { echo.textContent = cleanName(base.value); }); }
 			form.querySelector('[data-ma-cancel]').addEventListener('click', function () { pop.close(); });

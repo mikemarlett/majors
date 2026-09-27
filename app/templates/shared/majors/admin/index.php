@@ -90,8 +90,9 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
     $department = trim((string) ($p['department'] ?? ''));
     $typeLine1  = $credential !== '' ? $credential : $type;                        // credential, or the type code when there is none
     $typeLine2  = $credential !== '' && $type !== '' && $type !== $credential ? $type : '';
-    $collLine1  = $college !== '' ? $college : $department;
-    $collLine2  = $college !== '' && $department !== '' && $department !== $college ? $department : '';
+    $depNames   = array_column(\Majors\Majors\ProgramRepository::departmentsOf($p), 'text');
+    $collLine1  = $college !== '' ? $college : implode(', ', $depNames);
+    $collLine2  = $college !== '' ? implode(', ', array_filter($depNames, static fn ($d) => $d !== $college)) : '';
     $similar   = array_values(array_map(static fn ($s) => ['id' => (int) $s['id'], 'name' => (string) $s['name']], $p['similar'] ?? []));
     $flags     = [];
     foreach ($flagLabels as $col => [$token, $label]) {
@@ -103,14 +104,14 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
     if (empty($p['has_description'])) { $reasons[] = 'no_description'; }
     if (empty($p['has_image'])) { $reasons[] = 'no_image'; }
     if (!empty($p['photo_no_alt']) || !empty($p['section_photo_no_alt'])) { $reasons[] = 'no_alt'; }
-    if (!empty($p['no_department']) || $department === '') { $reasons[] = 'no_department'; }
+    if ($depNames === []) { $reasons[] = 'no_department'; }
     if ($sections === 0) { $reasons[] = 'no_sections'; }
     if (!$similar) { $reasons[] = 'no_similar'; }
     if (!empty($p['long_headline'])) { $reasons[] = 'long_headline'; }
     if (isset($flags['online']) || isset($flags['online_only'])) { $reasons[] = 'online'; }
     $listedOn = $p['listing_lists'] ?? [];
     $search = mb_strtolower(trim((string) preg_replace('/\s+/', ' ', implode(' ', [
-        $name, $sortTitle, (string) ($p['basename'] ?? ''), (string) ($p['college'] ?? ''), (string) ($p['department'] ?? ''),
+        $name, $sortTitle, (string) ($p['basename'] ?? ''), (string) ($p['college'] ?? ''), implode(' ', $depNames),
         (string) ($p['credential'] ?? ''), (string) ($p['program_type'] ?? ''), $note, implode(' ', $p['listing_names'] ?? []),
     ]))));
 ?>
@@ -136,7 +137,8 @@ $sortable = static fn (string $key, string $label, string $type = 'text', string
 					data-search="<?= $t->e($search) ?>">
 					<td class="ma-cell-program"><a href="<?= $t->e($t->programUrl($p)) ?>" target="_blank" rel="noopener"><?= $t->e($name) ?></a><?php
                         if ($sortTitle !== '' && $sortTitle !== $name): ?><span class="ma-sub"><?= $t->e($sortTitle) ?></span><?php endif;
-                        if ($note !== ''): ?><span class="ma-sub ma-sub--note"><?= $t->e($note) ?></span><?php endif; ?></td>
+                        if ($note !== ''): ?><span class="ma-sub ma-sub--note"><?= $t->e($note) ?></span><?php endif;
+                        if ($retired && !empty($p['forward_name'])): ?><span class="ma-sub">Forwards to <?= $t->e($p['forward_name']) ?></span><?php endif; ?></td>
 					<td class="ma-cell-type"><?= $t->e($typeLine1) ?><?php if ($typeLine2 !== ''): ?><span class="ma-sub"><?= $t->e($typeLine2) ?></span><?php endif; ?></td>
 					<td class="ma-cell-college"><?= $t->e($collLine1) ?><?php if ($collLine2 !== ''): ?><span class="ma-sub"><?= $t->e($collLine2) ?></span><?php endif; ?></td>
 					<td class="ma-cell-level"><?= $graduate ? 'Graduate' : 'Undergraduate' ?></td>

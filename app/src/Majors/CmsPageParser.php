@@ -58,7 +58,8 @@ final class CmsPageParser
             'learn_how'        => '',
             'buttons'          => [],   // [['text','href','class'], …]
             'image'            => null, // ['url','alt','caption','credit']
-            'sections'         => [],   // ordered: teaser | feature | similar
+            'sections'         => [],   // ordered: teaser | feature | band | similar
+            'similar_bg'       => '',   // the photo behind the Similar Programs band (current design)
         ];
         if ($main === '') {
             return $page;
@@ -82,7 +83,15 @@ final class CmsPageParser
             if ($node->tagName === 'table' && str_contains($cls, 'ou-snippet-generic-section-two-column')) {
                 self::programCard($xp, $node, $page);
             } elseif ($node->tagName === 'table' && str_contains($cls, 'ou-snippet-section-collection-teaser-card')) {
-                $page['sections'][] = self::similar($xp, $node);
+                $sim = self::similar($xp, $node);
+                $page['similar_bg'] = $sim['bg'];
+                unset($sim['bg']);
+                $page['sections'][] = $sim;
+            } elseif ($node->tagName === 'table' && str_contains($cls, ' ou-snippet-generic-section ')) {
+                $band = self::band($xp, $node);
+                if ($band !== null) {
+                    $page['sections'][] = $band;
+                }
             } elseif ($node->tagName === 'section' && str_contains($cls, 'teaser-collection')) {
                 foreach ($xp->query('.//div[contains(concat(" ", normalize-space(@class), " "), " teaser ")]', $node) as $teaser) {
                     $page['sections'][] = self::teaser($xp, $teaser, 'teaser');
@@ -189,13 +198,49 @@ final class CmsPageParser
             $a   = $xp->query('.//a', $tr)->item(0);
             if ($i === 2) {
                 $title = $tds->length ? trim($tds->item($tds->length - 1)->textContent) : '';
+                $bg    = $img instanceof DOMElement ? $img->getAttribute('src') : '';   // the title row's photo: the band's background
                 continue;
             }
             if ($a instanceof DOMElement) {
                 $items[] = ['text' => trim($a->textContent), 'href' => $a->getAttribute('href'), 'image' => $img instanceof DOMElement ? $img->getAttribute('src') : ''];
             }
         }
-        return ['kind' => 'similar', 'label' => $title, 'headline' => $title, 'body' => '', 'links' => $items, 'image' => null];
+        return ['kind' => 'similar', 'label' => $title, 'headline' => $title, 'body' => '', 'links' => $items, 'image' => null, 'bg' => $bg ?? ''];
+    }
+
+    /** CMS background choice => full-width section theme. */
+    private const BAND_THEMES = [
+        'section-wrap--wheat' => 'yellow', 'section-wrap--wsuyellow' => 'yellow', 'section-wrap--arrows-bright' => 'yellow',
+        'section-wrap--shade-light' => 'light', 'section-wrap--dots' => 'light', 'section-wrap--shade-medium' => 'light',
+        'section-wrap--shade-dark' => 'dark', 'section-wrap--arrows-dark' => 'dark', 'section-wrap--none' => 'white',
+    ];
+
+    /**
+     * The "Generic Section" snippet: a full-width band with a background choice. Most pages carry
+     * an empty one ("Content Here"); those are skipped. @return array<string,mixed>|null
+     */
+    private static function band(DOMXPath $xp, DOMElement $table): ?array
+    {
+        $bgCell  = $xp->query('.//td[@data-select-list="backgrounds"]', $table)->item(0);
+        $content = $xp->query('.//td[@colspan="2"]', $table)->item(0);
+        if (!$content instanceof DOMElement) {
+            return null;
+        }
+        $text = trim(preg_replace('/\s+/u', ' ', str_replace("\u{a0}", ' ', $content->textContent)) ?? '');
+        if ($text === '' || strcasecmp($text, 'Content Here') === 0) {
+            return null;
+        }
+        $headline = '';
+        $h = $xp->query('.//h2|.//h3|.//h4', $content)->item(0);
+        if ($h instanceof DOMElement) {
+            $headline = trim(preg_replace('/\s+/u', ' ', $h->textContent) ?? '');
+            $h->parentNode->removeChild($h);
+        }
+        $bg = $bgCell instanceof DOMElement ? trim($bgCell->textContent) : '';
+        return [
+            'kind' => 'band', 'label' => '', 'headline' => $headline, 'body' => trim(\Majors\Support\Html::clean(self::innerHtml($content))), 'links' => [], 'image' => null,
+            'theme' => self::BAND_THEMES[$bg] ?? 'light',
+        ];
     }
 
     public static function innerHtml(DOMNode $node): string

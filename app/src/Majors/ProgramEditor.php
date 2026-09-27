@@ -17,7 +17,9 @@ use RuntimeException;
  */
 final class ProgramEditor
 {
-    public const KINDS      = ['teaser', 'feature'];
+    public const KINDS      = ['teaser', 'feature', 'band'];
+    /** Full-width section backgrounds (both designs map them to their own bands). */
+    public const THEMES     = ['white' => 'White', 'light' => 'Light gray', 'yellow' => 'Yellow', 'dark' => 'Dark'];
     public const MODALITIES = ['', 'On Campus', 'Online', 'Hybrid'];
 
     /** Columns the form may write, with their max widths. */
@@ -28,12 +30,14 @@ final class ProgramEditor
         'meta_description' => 65000, 'meta_keywords' => 65000, 'note' => 65000,
         'catalog_url' => 255, 'degree_title' => 120, 'credit_hours' => 40, 'modality' => 40, 'entry_terms' => 80,
         'coordinator_name' => 120, 'coordinator_email' => 120, 'coordinator_phone' => 40, 'basename' => 200,
+        'similar_bg_url' => 255,
     ];
     private const PROGRAM_FLAGS = ['graduate', 'certificate', 'minor', 'badge', 'online_learning', 'online_only', 'is_stem'];
 
     private bool $inTransaction = false;
 
-    public function __construct(private readonly mysqli $db)
+    /** @param bool $cmsImport the CMS import still runs (config majors.cms_import): imported page names stay fixed */
+    public function __construct(private readonly mysqli $db, private readonly bool $cmsImport = true)
     {
     }
 
@@ -161,8 +165,26 @@ final class ProgramEditor
      */
     public function saveProgram(int $id, array $d): void
     {
+        // One transaction: a page name, the forward from the old name and the flat row change together.
+        $this->transaction(function () use ($id, $d): void {
+            $this->writeProgram($id, $d);
+        });
+    }
+
+    /** @param array<string,mixed> $d */
+    private function writeProgram(int $id, array $d): void
+    {
         if (array_key_exists('academic_program', $d) && trim((string) $d['academic_program']) === '') {
             throw new RuntimeException('The program name is required.');
+        }
+        // Departments come as a list (the College and department form): the first is the main one,
+        // the rest go to more_departments; the program then lists under each of them.
+        $moreDepartments = null;
+        if (array_key_exists('departments', $d)) {
+            $deps = self::departmentRows($d['departments']);
+            $d['department']     = $deps[0]['text'] ?? '';
+            $d['department_url'] = $deps[0]['href'] ?? '';
+            $moreDepartments     = array_slice($deps, 1);
         }
         // A changed credential re-derives the listing flags unless the form set them itself.
         if (array_key_exists('credential', $d)) {
@@ -193,12 +215,17 @@ final class ProgramEditor
                 if ($v === $curBase || $v === self::cleanBasename($curBase)) {   // unchanged (an imported name may hold "__", which cleaning collapses)
                     continue;
                 }
-                if ((string) ($cur['cms_path'] ?? '') !== '') {
-                    throw new RuntimeException('This page name comes from the CMS page the program was imported from and is the key the importer matches on; it cannot be changed here.');
+                if ($this->cmsImport && (string) ($cur['cms_path'] ?? '') !== '') {
+                    throw new RuntimeException('This page name comes from the CMS page the program was imported from and is the key the importer matches on; it cannot be changed while the CMS import is still in use.');
                 }
-                if ($this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$v, $id]) !== null) {
+                if ($this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ? FOR UPDATE', 'si', [$v, $id]) !== null) {
                     throw new RuntimeException("Another program already uses the page name \"$v\".");
                 }
+                $aliasOf = $this->scalar('SELECT p.`academic_program` FROM `majors_program_aliases` a JOIN `majors_academic_programs` p ON p.`id` = a.`program_id` WHERE a.`basename` = ? AND a.`program_id` <> ? FOR UPDATE', 'si', [$v, $id]);
+                if ($aliasOf !== null) {
+                    throw new RuntimeException("\"$v\" was an earlier page name of {$aliasOf} and still forwards there; choose another name.");
+                }
+                $renamedFrom = $curBase;
             }
             if ($col === 'modality' && !in_array($v, self::MODALITIES, true)) {
                 throw new RuntimeException('Modality must be On Campus, Online or Hybrid.');
@@ -209,7 +236,7 @@ final class ProgramEditor
             if ($col === 'description') {
                 $v = Html::clean($v);
             }
-            if (in_array($col, ['college_url', 'department_url', 'catalog_url', 'image_url'], true)) {
+            if (in_array($col, ['college_url', 'department_url', 'catalog_url', 'image_url', 'similar_bg_url'], true)) {
                 $safe = Html::safeUrl($v);
                 if ($v !== '' && $safe === '') {
                     throw new RuntimeException(str_replace('_', ' ', $col) . ' must be a web address (https://…) or a path on the site (/academics/…).');
@@ -232,6 +259,23 @@ final class ProgramEditor
             $types .= 's';
             $vals[] = $d['status'] === 'retired' ? 'retired' : 'active';
         }
+        if (array_key_exists('forward_to', $d)) {
+            $to = (int) $d['forward_to'];
+            if ($to === $id) {
+                throw new RuntimeException('A program cannot forward to itself.');
+            }
+            if ($to > 0 && $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `id` = ?', 'i', [$to]) === null) {
+                throw new RuntimeException('The program to forward to no longer exists.');
+            }
+            $sets[] = '`forward_to` = ?';
+            $types .= 'i';
+            $vals[] = $to > 0 ? $to : null;
+        }
+        if ($moreDepartments !== null) {
+            $sets[] = '`more_departments` = ?';
+            $types .= 's';
+            $vals[] = $moreDepartments === [] ? null : json_encode($moreDepartments, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
         if (array_key_exists('buttons', $d)) {
             $sets[] = '`buttons` = ?';
             $types .= 's';
@@ -242,7 +286,26 @@ final class ProgramEditor
         }
         $sets[] = '`timestamp` = NOW()';
         $this->exec('UPDATE `majors_academic_programs` SET ' . implode(', ', $sets) . ' WHERE `id` = ?', $types . 'i', [...$vals, $id]);
+        if (isset($renamedFrom) && $renamedFrom !== '') {
+            // The old address keeps working: it forwards to the program's new name. Renaming back
+            // (departments do go back and forth) drops the forward for the name taken again.
+            $new = self::cleanBasename((string) $d['basename']);
+            $this->exec('INSERT INTO `majors_program_aliases` (`basename`, `program_id`, `created_at`) VALUES (?, ?, NOW())
+                         ON DUPLICATE KEY UPDATE `program_id` = VALUES(`program_id`)', 'si', [$renamedFrom, $id]);
+            $this->exec('DELETE FROM `majors_program_aliases` WHERE `basename` = ?', 's', [$new]);
+        }
         $this->syncFlat($id);
+    }
+
+    /** Earlier page names of a program (they forward to it). @return list<string> */
+    public function aliases(int $programId): array
+    {
+        $stmt = $this->db->prepare('SELECT `basename` FROM `majors_program_aliases` WHERE `program_id` = ? ORDER BY `created_at` DESC, `basename`');
+        $stmt->bind_param('i', $programId);
+        $stmt->execute();
+        $out = array_map('strval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'basename'));
+        $stmt->close();
+        return $out;
     }
 
     /**
@@ -277,10 +340,45 @@ final class ProgramEditor
     {
         $base = self::cleanBasename($base) ?: 'program';
         $b    = $base;
-        for ($i = 2; $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$b, (int) $exceptId]) !== null; $i++) {
+        for ($i = 2; $this->scalar('SELECT `id` FROM `majors_academic_programs` WHERE `basename` = ? AND `id` <> ?', 'si', [$b, (int) $exceptId]) !== null
+                     || $this->scalar('SELECT `program_id` FROM `majors_program_aliases` WHERE `basename` = ? AND `program_id` <> ?', 'si', [$b, (int) $exceptId]) !== null; $i++) {
             $b = $base . '_' . $i;
         }
         return $b;
+    }
+
+    /**
+     * Posted departments (parallel text/href arrays, or [{text, href}]): names required, links
+     * optional but safe. Duplicates dropped. @return list<array{text:string,href:string}>
+     */
+    public static function departmentRows(mixed $raw): array
+    {
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+        if (isset($raw['text']) && is_array($raw['text'])) {
+            foreach ($raw['text'] as $i => $text) {
+                $raw[] = ['text' => $text, 'href' => $raw['href'][$i] ?? ''];
+            }
+            unset($raw['text'], $raw['href']);
+        }
+        $out = [];
+        foreach ($raw as $r) {
+            $text = mb_substr(trim(strip_tags((string) ($r['text'] ?? ''))), 0, 255);
+            if (!is_array($r) || $text === '' || in_array($text, array_column($out, 'text'), true)) {
+                continue;
+            }
+            $hrefIn = trim((string) ($r['href'] ?? ''));
+            $href   = Html::safeUrl($hrefIn);
+            if ($hrefIn !== '' && $href === '') {
+                throw new RuntimeException("The link for {$text} must be a web address (https://…) or a path on the site (/academics/…).");
+            }
+            $out[] = ['text' => $text, 'href' => mb_substr($href, 0, 255)];
+        }
+        return $out;
     }
 
     /** Normalise a posted list of links ([['text'=>..,'href'=>..], …] or parallel arrays). @return list<array{text:string,href:string}> */
@@ -334,13 +432,14 @@ final class ProgramEditor
         $label = mb_substr(trim((string) ($d['label'] ?? '')), 0, 100);
         $img   = mb_substr(Html::safeUrl((string) ($d['image_url'] ?? '')), 0, 255);
         $alt   = trim((string) ($d['image_alt'] ?? ''));
+        $theme = $kind === 'band' ? (array_key_exists((string) ($d['theme'] ?? ''), self::THEMES) ? (string) $d['theme'] : 'light') : null;
         if ($sectionId !== null) {
-            $this->exec('UPDATE `majors_program_sections` SET `kind` = ?, `label` = ?, `headline` = ?, `body` = ?, `links` = ?, `image_url` = ?, `image_alt` = ?, `block_id` = ?, `updated_at` = NOW()
-                          WHERE `id` = ? AND `program_id` = ?', 'sssssssiii', [$kind, $label, $headline, $body, $links, $img, $alt, $blockId, $sectionId, $programId]);
+            $this->exec('UPDATE `majors_program_sections` SET `kind` = ?, `label` = ?, `headline` = ?, `body` = ?, `links` = ?, `image_url` = ?, `image_alt` = ?, `block_id` = ?, `theme` = ?, `updated_at` = NOW()
+                          WHERE `id` = ? AND `program_id` = ?', 'sssssssisii', [$kind, $label, $headline, $body, $links, $img, $alt, $blockId, $theme, $sectionId, $programId]);
         } else {
             $pos = (int) ($this->scalar('SELECT COALESCE(MAX(`position`), 0) + 1 FROM `majors_program_sections` WHERE `program_id` = ?', 'i', [$programId]) ?? 1);
-            $this->exec('INSERT INTO `majors_program_sections` (`program_id`, `position`, `kind`, `label`, `headline`, `body`, `links`, `image_url`, `image_alt`, `block_id`, `updated_at`)
-                         VALUES (?,?,?,?,?,?,?,?,?,?,NOW())', 'iisssssssi', [$programId, $pos, $kind, $label, $headline, $body, $links, $img, $alt, $blockId]);
+            $this->exec('INSERT INTO `majors_program_sections` (`program_id`, `position`, `kind`, `label`, `headline`, `body`, `links`, `image_url`, `image_alt`, `block_id`, `theme`, `updated_at`)
+                         VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())', 'iisssssssis', [$programId, $pos, $kind, $label, $headline, $body, $links, $img, $alt, $blockId, $theme]);
             $sectionId = (int) $this->db->insert_id;
         }
         $this->syncFlat($programId);
@@ -374,6 +473,7 @@ final class ProgramEditor
             'kind' => (string) $row['kind'], 'label' => (string) $row['label'], 'headline' => (string) ($row['headline'] ?? ''), 'body' => (string) ($row['body'] ?? ''),
             'links' => (string) ($row['links'] ?? ''), 'image_url' => (string) ($row['image_url'] ?? ''), 'image_alt' => (string) ($row['image_alt'] ?? ''),
             'block_id' => $row['block_id'] !== null ? (int) $row['block_id'] : 0, 'after' => $i !== false && $i > 0 ? $ids[$i - 1] : -1,   // -1: it was the first section
+            'theme' => (string) ($row['theme'] ?? ''),
         ];
     }
 
@@ -437,6 +537,14 @@ final class ProgramEditor
             $sets[] = "`$col` = ?";
             $types .= 's';
             $vals[] = mb_substr($col === 'body' ? Html::clean((string) $fields[$col]) : ($col === 'image_url' ? Html::safeUrl((string) $fields[$col]) : trim(strip_tags((string) $fields[$col]))), 0, $max);
+        }
+        if (array_key_exists('theme', $fields)) {
+            if ($row['kind'] !== 'band' || !array_key_exists((string) $fields['theme'], self::THEMES)) {
+                throw new RuntimeException('Background must be white, light gray, yellow or dark, on a full-width section.');
+            }
+            $sets[] = '`theme` = ?';
+            $types .= 's';
+            $vals[] = (string) $fields['theme'];
         }
         if (array_key_exists('links', $fields)) {
             if ($row['block_id'] !== null) {
@@ -583,7 +691,7 @@ final class ProgramEditor
     /** @return list<int> section ids in page order (cards and features only; legacy kind=similar rows are ignored). $lock = FOR UPDATE inside a transaction. */
     public function sectionIds(int $programId, bool $lock = false): array
     {
-        $stmt = $this->db->prepare('SELECT `id` FROM `majors_program_sections` WHERE `program_id` = ? AND `kind` IN ("teaser", "feature") ORDER BY `position`, `id`' . ($lock ? ' FOR UPDATE' : ''));
+        $stmt = $this->db->prepare('SELECT `id` FROM `majors_program_sections` WHERE `program_id` = ? AND `kind` IN ("' . implode('", "', self::KINDS) . '") ORDER BY `position`, `id`' . ($lock ? ' FOR UPDATE' : ''));
         $stmt->bind_param('i', $programId);
         $stmt->execute();
         $ids = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'id'));
@@ -803,7 +911,7 @@ final class ProgramEditor
             'program_links' => json_encode(array_values(array_filter([
                 ['link_text' => 'All Programs', 'href' => '/academics/majors/index.php'],
                 !empty($p['college']) ? ['link_text' => (string) $p['college'], 'href' => (string) ($p['college_url'] ?? '')] : null,
-                !empty($p['department']) ? ['link_text' => (string) $p['department'], 'href' => (string) ($p['department_url'] ?? '')] : null,
+                ...array_map(static fn ($dep) => ['link_text' => $dep['text'], 'href' => $dep['href']], ProgramRepository::departmentsOf($p)),
             ])), JSON_UNESCAPED_SLASHES),
             'similar_programs' => json_encode($similar), 'meta_description' => (string) ($p['meta_description'] ?? ''), 'meta_keywords' => (string) ($p['meta_keywords'] ?? ''),
         ];

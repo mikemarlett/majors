@@ -9,17 +9,17 @@
  * strip on each section; the "Add a section" bar). Public output is unchanged.
  *
  * Variables: $p (program row), $title, $kind, $crumbs, $description (HTML), $learn_how, $buttons (text/href), $facts, $is_stem, $coordinator,
- *            $image (url/alt/caption/credit|null), $sections, $degree_maps (id/label/url), $similar, $editing, $ed
+ *            $image (url/alt/caption/credit|null), $sections, $degree_maps (id/label/url), $similar, $similar_bg (photo behind the band), $editing, $ed
  * @var \Majors\View\Layout $t
  */
 $part = $editing ? ' data-ma-part="content"' : '';
-$links = static function (array $ls) use ($t): string {
+$links = static function (array $ls, string $cls = '') use ($t): string {
     if ($ls === []) {
         return '';
     }
     $out = '<div class="teaser__links">';
     foreach ($ls as $l) {
-        $out .= '<a class="link--rich" href="' . $t->e($l['href']) . '"><span>' . $t->e($l['text']) . '</span></a>';
+        $out .= '<a class="link--rich' . $cls . '" href="' . $t->e($l['href']) . '"><span>' . $t->e($l['text']) . '</span></a>';
     }
     return $out . '</div>';
 };
@@ -55,13 +55,16 @@ foreach ($sections as $s) {
         $groups[count($groups) - 1]['html'][] = $teaser($s, $extra);
     } elseif ($s['kind'] === 'feature') {
         $groups[] = ['type' => 'feature', 's' => $s];
+    } elseif ($s['kind'] === 'band') {
+        $groups[] = ['type' => 'band', 's' => $s];
     }
 }
+$bandClasses = ['white' => 'section-wrap--none', 'light' => 'section-wrap--shade-light', 'yellow' => 'section-wrap--wheat', 'dark' => 'section-wrap--shade-dark'];
 if (!$mapsPlaced && $mapsHtml !== '') {
     $groups[] = ['type' => 'cards', 'html' => ['<div class="teaser collection__item"><div class="teaser__body">' . $mapsHtml . '</div></div>']];
 }
 $identity = $ed->form('identity', ['credential' => (string) ($p['credential'] ?? ''), 'program_type' => (string) ($p['program_type'] ?? ''), 'graduate' => (int) !empty($p['graduate']), 'is_stem' => (int) $is_stem]);
-$crumbsForm = $ed->form('crumbs', ['college' => (string) ($p['college'] ?? ''), 'college_url' => (string) ($p['college_url'] ?? ''), 'department' => (string) ($p['department'] ?? ''), 'department_url' => (string) ($p['department_url'] ?? '')]);
+$crumbsForm = $ed->form('crumbs', ['college' => (string) ($p['college'] ?? ''), 'college_url' => (string) ($p['college_url'] ?? ''), 'departments' => \Majors\Majors\ProgramRepository::departmentsOf($p)]);
 $imageForm = $ed->form('image', ['image_url' => (string) ($p['image_url'] ?? ''), 'image_alt' => (string) ($p['image_alt'] ?? ''), 'image_caption' => (string) ($p['image_caption'] ?? ''), 'image_credit' => (string) ($p['image_credit'] ?? '')]);
 $factsForm = $ed->form('facts', ['degree_title' => (string) ($p['degree_title'] ?? ''), 'modality' => (string) ($p['modality'] ?? ''), 'credit_hours' => (string) ($p['credit_hours'] ?? ''), 'entry_terms' => (string) ($p['entry_terms'] ?? '')]);
 $coordForm = $ed->form('coordinator', ['coordinator_name' => (string) ($p['coordinator_name'] ?? ''), 'coordinator_email' => (string) ($p['coordinator_email'] ?? ''), 'coordinator_phone' => (string) ($p['coordinator_phone'] ?? '')]);
@@ -141,9 +144,25 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 <section class="teaser-collection section-wrap collection--two-columns<?= $i === count($groups) - 1 && !$editing ? ' section-wrap--nipple-down' : '' ?>"<?= $part ?>><div class="collection__items">
 	<?= implode("\n\t", $g['html']) ?>
 </div></section>
+<?php elseif ($g['type'] === 'band'): ?>
+<?php $s = $g['s']; $linksForm = $ed->form('links', ['links' => $s['links']]); $dark = ($s['theme'] ?? '') === 'dark'; ?>
+<section class="section-wrap <?= $bandClasses[$s['theme'] ?? 'light'] ?? 'section-wrap--shade-light' ?> majors-section majors-band" data-section="<?= (int) $s['id'] ?>"<?= $ed->scope($s) . $part ?>>
+<?= $t->partial('majors/admin/inplace/section_tools', ['s' => $s, 'ed' => $ed]) ?>
+<?php if ($s['headline'] !== '' || $editing): ?>
+	<header class="section-header section-header--no-border"><h2<?= $ed->text('headline', $s['headline'], 'Click to write the headline') ?>><?= $ed->show($s['headline'], 'Click to write the headline') ?></h2></header>
+<?php endif; ?>
+	<div class="majors-band__body">
+		<div class="teaser__editorial"<?= $ed->html('body', $s['body']) ?>><?= $ed->showHtml($s['body'], 'Click to write the text.') ?></div>
+<?php if ($s['links']): ?>
+		<div<?= $linksForm ?>><?= $links($s['links'], $dark ? ' link--ondark' : '') ?></div>
+<?php else: ?>
+<?= $ed->placeholder('+ Add a link', $linksForm, $dark ? 'ma-ph--on-dark' : '') ?>
+<?php endif; ?>
+	</div>
+</section>
 <?php else: ?>
 <?php $s = $g['s']; $imgForm = $ed->form('section-image', ['image_url' => (string) ($s['image']['url'] ?? ''), 'image_alt' => (string) ($s['image']['alt'] ?? '')]); $linksForm = $ed->form('links', ['links' => $s['links']]); ?>
-<section class="section-wrap section-wrap--wheat majors-section" data-section="<?= (int) $s['id'] ?>"<?= $ed->scope($s) . $part ?>>
+<section class="section-wrap section-wrap--dots majors-section" data-section="<?= (int) $s['id'] ?>"<?= $ed->scope($s) . $part ?>>
 <?= $t->partial('majors/admin/inplace/section_tools', ['s' => $s, 'ed' => $ed]) ?>
 	<header class="section-header section-header--no-border"><h2<?= $ed->text('label', $s['label'], 'Inside the Program') ?>><?= $t->e($s['label'] !== '' ? $s['label'] : 'Inside the Program') ?></h2></header>
 	<div class="teaser teaser--columned-intro">
@@ -166,8 +185,9 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 <?php endif; ?>
 <?php endforeach; ?>
 <?php $nipple = $editing && $groups !== [] && $groups[array_key_last($groups)]['type'] === 'cards'; ?>
-<?php if ($nipple): ?><section class="section-wrap section-wrap--nipple-down ma-add-bar-wrap"><?php endif; ?>
-<?= $t->partial('majors/admin/inplace/add_bar', ['ed' => $ed, 'empty' => $sections === []]) ?>
+<?php // The wrapper, when there is one, is the part: the editor swaps only top-level parts after a save. ?>
+<?php if ($nipple): ?><section class="section-wrap section-wrap--nipple-down ma-add-bar-wrap" data-ma-part="content"><?php endif; ?>
+<?= $t->partial('majors/admin/inplace/add_bar', ['ed' => $ed, 'empty' => $sections === [], 'part' => !$nipple]) ?>
 <?php if ($nipple): ?></section><?php endif; ?>
 
 <?php if ($similar || $editing): ?>
@@ -183,7 +203,7 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 <?php if (!empty($s['main_image_url'])): ?>
 			<div class="teaser__image"><img src="<?= $t->e($t->img($s['main_image_url'])) ?>" alt="" width="1000" height="1000"></div>
 <?php endif; ?>
-			<div class="teaser__body"><div class="teaser__headline"><div class="headline-group"><span class="head"><?= $t->e($s['academic_program']) ?> (<?= $t->e($s['credential'] ?? $s['program_simple_type'] ?? $s['program_type']) ?>)</span></div></div></div>
+			<div class="teaser__body"><div class="teaser__headline"><div class="headline-group"><span class="head"><?= $t->e(\Majors\Majors\ProgramRenderer::cardLabel($s)) ?></span></div></div></div>
 		</a>
 <?php if ($editing && $curated): ?>
 		<button type="button" class="ma-similar__remove" data-ma-similar-remove="<?= (int) $s['id'] ?>" title="Remove from similar programs" aria-label="Remove <?= $t->e($s['academic_program']) ?> from similar programs">×</button>
@@ -202,6 +222,9 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 		<div class="ma-similar ma-similar--add collection__item"><button type="button" class="ma-similar__add" data-ma-similar-add>+ Add a similar program</button></div>
 <?php endif; ?>
 	</div>
-	<div class="section-wrap__image"><img src="<?= $t->e($t->img($image['url'] ?? '/_resources/images/wichita.jpg')) ?>" alt="" width="1000" height="1000"></div>
+	<div class="section-wrap__image"><img src="<?= $t->e($t->img($similar_bg !== '' ? $similar_bg : ($image['url'] ?? '/_resources/images/wichita.jpg'))) ?>" alt="" width="1000" height="1000"></div>
+<?php if ($editing): ?>
+	<button type="button" class="ma-btn ma-btn--ghost ma-btn--small ma-similar-bg-btn noprint" data-ma-scope="program"<?= $ed->form('similar-bg', ['similar_bg_url' => $similar_bg]) ?>>Background photo</button>
+<?php endif; ?>
 </section>
 <?php endif; ?>

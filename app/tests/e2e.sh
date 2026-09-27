@@ -153,6 +153,80 @@ chk "$(Q "SELECT basename FROM majors_academic_programs WHERE id=$NP")" "e2e_tes
 chk "$(Q "SELECT CONCAT(lists,':',source) FROM majors_listing_entries WHERE program_id=$NP")" "all,undergrad:editor" "a new Minor starts listed on All and Undergrad"
 Q "DELETE FROM majors_listing_entries WHERE program_id=$NP" >/dev/null; echo "$R" | grep -q 'program.php?program=e2e_test_program_minor' && ok "redirect goes to the in-place editor by basename" || bad "redirect: $R"
 Q "DELETE FROM majors_programs_content WHERE academic_program_id=$NP; DELETE FROM majors_academic_programs WHERE id=$NP" >/dev/null
+echo "[full-width sections, photo, departments]"
+R=$(MP -d "program_id=$PROG&kind=band&after=0" "$MA?action=add_section"); BAND=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$BAND" ] && ok "add a full-width section → $BAND" || bad "add band: $R"
+chk "$(Q "SELECT CONCAT(kind,'|',COALESCE(theme,'')) FROM majors_program_sections WHERE id=$BAND")" "band|light" "a new full-width section starts on light gray"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$BAND" --data-urlencode "headline=E2E band" --data-urlencode "body=<p>e2e band body</p>" --data-urlencode "theme=yellow" "$MA?action=save_section_fields"); echo "$R" | grep -q '"success":true' && ok "save a band's text and background" || bad "band fields: $R"
+chk "$(Q "SELECT CONCAT(theme,'|',headline) FROM majors_program_sections WHERE id=$BAND")" "yellow|E2E band" "band background stored"
+GET "$B/index.php?program=$PBN" >/dev/null; has $S/out.html "section-wrap--wheat majors-section majors-band\" data-section=\"$BAND\"" 'the yellow band is on the public page (current design: wheat)'
+GET -b $M "$B/_admin/program.php?program=$PBN" >/dev/null; has $S/out.html "data-section=\"$BAND\" data-ma-kind=\"band\" data-ma-theme=\"yellow\"" 'the editor marks the band with its background'
+chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$BAND" --data-urlencode "theme=purple" "$MA?action=save_section_fields")" 422 "an unknown background is refused"
+CARD=$(Q "SELECT id FROM majors_program_sections WHERE program_id=$PROG AND kind='teaser' AND block_id IS NULL ORDER BY position LIMIT 1")
+[ -n "$CARD" ] && chk "$(MP -o /dev/null -w "%{http_code}" --data-urlencode "program_id=$PROG" --data-urlencode "section_id=$CARD" --data-urlencode "theme=dark" "$MA?action=save_section_fields")" 422 "a card takes no background"
+R=$(MP -d "program_id=$PROG&section_id=$BAND" "$MA?action=delete_section"); echo "$R" | grep -q '"theme":"yellow"' && ok "removing a band reports its background (for Undo)" || bad "band removed payload: $R"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "kind=band" --data-urlencode "after=0" --data-urlencode "theme=yellow" --data-urlencode "headline=E2E band" --data-urlencode "body=<p>e2e band body</p>" "$MA?action=add_section"); BAND=$(echo "$R" | grep -o '"section_id":[0-9]*' | grep -o '[0-9]*$')
+chk "$(Q "SELECT CONCAT(kind,'|',theme,'|',headline) FROM majors_program_sections WHERE id=$BAND")" "band|yellow|E2E band" "Undo brings the band back with its background"
+MP -d "program_id=$PROG&section_id=$BAND" "$MA?action=delete_section" >/dev/null
+Q "DROP TABLE IF EXISTS e2e_prog_backup; CREATE TABLE e2e_prog_backup AS SELECT * FROM majors_academic_programs WHERE id=$PROG; DROP TABLE IF EXISTS e2e_flat_backup; CREATE TABLE e2e_flat_backup AS SELECT * FROM majors_programs_content WHERE academic_program_id=$PROG" >/dev/null
+DEP0=$(Q "SELECT CONCAT_WS('|',COALESCE(department,'-'),COALESCE(department_url,'-'),COALESCE(more_departments,'-'),COALESCE(similar_bg_url,'-')) FROM majors_academic_programs WHERE id=$PROG")
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "similar_bg_url=/academics/majors/_images/e2e_bg.jpg" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save the Similar Programs photo" || bad "similar_bg: $R"
+GET "$B/index.php?program=$PBN" >/dev/null; has $S/out.html 'e2e_bg.jpg' 'the chosen photo is behind Similar Programs'
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "similar_bg_url=javascript:alert(1)" "$MA?action=save_program"); echo "$R" | grep -q 'must be a web address' && ok "an unsafe photo address is refused" || bad "similar_bg unsafe: $R"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "departments[text][]=E2E Main Department" --data-urlencode "departments[href][]=/academics/e2e-main/" --data-urlencode "departments[text][]=E2E Second Department" --data-urlencode "departments[href][]=/academics/e2e-second/" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "save two departments" || bad "departments: $R"
+chk "$(Q "SELECT CONCAT(department,'|',department_url,'|',more_departments) FROM majors_academic_programs WHERE id=$PROG")" 'E2E Main Department|/academics/e2e-main/|[{"text":"E2E Second Department","href":"/academics/e2e-second/"}]' "the first is the main department, the rest are kept in order"
+GET "$B/index.php?program=$PBN" >/dev/null; has $S/out.html 'href="/academics/e2e-second/"' 'the page links the second department'
+GET "$B/index.php?department=E2E%20Second%20Department" >/dev/null; has $S/out.html "program=$PBN\"" 'the program lists under its second department'
+chk "$(Q "SELECT program_links LIKE '%E2E Second Department%' FROM majors_programs_content WHERE academic_program_id=$PROG")" 1 "the flat row lists every department"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "departments[text][]=E2E" --data-urlencode "departments[href][]=javascript:alert(1)" "$MA?action=save_program"); echo "$R" | grep -q 'must be a web address' && ok "an unsafe department link is refused" || bad "department link: $R"
+Q "UPDATE majors_academic_programs p JOIN e2e_prog_backup b ON b.id=p.id SET p.department=b.department, p.department_url=b.department_url, p.more_departments=b.more_departments, p.similar_bg_url=b.similar_bg_url; DELETE FROM majors_programs_content WHERE academic_program_id=$PROG; INSERT INTO majors_programs_content SELECT * FROM e2e_flat_backup; DROP TABLE e2e_prog_backup; DROP TABLE e2e_flat_backup" >/dev/null
+chk "$(Q "SELECT CONCAT_WS('|',COALESCE(department,'-'),COALESCE(department_url,'-'),COALESCE(more_departments,'-'),COALESCE(similar_bg_url,'-')) FROM majors_academic_programs WHERE id=$PROG")" "$DEP0" "departments and photo restored"
+
+echo "[renames and forwarding]"
+R=$(MP --data-urlencode "program_id=$PROG" --data-urlencode "basename=${PBN}_renamed" "$MA?action=save_program"); echo "$R" | grep -q 'CMS import is still in use' && ok "an imported page's name stays fixed while the CMS import runs" || bad "imported rename: $R"
+chk "$(GET -b $M "$MA?action=get_settings_form&program_id=$PROG")" 200 "settings form (imported)"; has $S/out.html 'it is fixed for now' 'the settings form says why the name is fixed'
+R=$(MP --data-urlencode "academic_program=E2E Rename Program" --data-urlencode "credential=Minor" "$MA?action=new_program"); RP=$(echo "$R" | grep -o '"program_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$RP" ] && ok "a program to rename → $RP" || bad "new_program: $R"
+RB0=$(Q "SELECT basename FROM majors_academic_programs WHERE id=$RP")
+R=$(MP --data-urlencode "program_id=$RP" --data-urlencode "basename=e2e_renamed_minor" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "rename a program made in the editor" || bad "rename: $R"
+chk "$(Q "SELECT basename FROM majors_academic_programs WHERE id=$RP")" "e2e_renamed_minor" "the new page name is stored"
+chk "$(Q "SELECT program_id FROM majors_program_aliases WHERE basename='$RB0'")" "$RP" "the old name is kept as an earlier address"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=$RB0")" "301 $B/index.php?program=e2e_renamed_minor" "the old public address forwards to the new one"
+curl -s -D $S/hdr.txt -o /dev/null "$B/index.php?program=$RB0"; has $S/hdr.txt '^Cache-Control: no-cache' 'the forward is not remembered by browsers (a name can be changed back)'
+chk "$(curl -s -o /dev/null -b $M -w "%{http_code} %{redirect_url}" "$B/_admin/program.php?program=$RB0")" "302 $B/_admin/program.php?program=e2e_renamed_minor" "the old editor address forwards too"
+chk "$(GET -b $M "$MA?action=get_settings_form&program_id=$RP")" 200 "settings form (renamed)"; has $S/out.html "?program=$RB0" 'the settings form lists the earlier address'; hasnt $S/out.html 'it is fixed for now' 'a program made in the editor can be renamed'
+R=$(MP --data-urlencode "academic_program=E2E Other Program" --data-urlencode "credential=Minor" "$MA?action=new_program"); RP2=$(echo "$R" | grep -o '"program_id":[0-9]*' | grep -o '[0-9]*$'); RB2=$(Q "SELECT basename FROM majors_academic_programs WHERE id=$RP2")
+R=$(MP --data-urlencode "program_id=$RP2" --data-urlencode "basename=$RB0" "$MA?action=save_program"); echo "$R" | grep -q 'earlier page name' && ok "another program cannot take a name that still forwards" || bad "alias conflict: $R"
+R=$(curl -s -b $M "$MA?action=basename_preview&basename=$RB0"); echo "$R" | grep -q "\"basename\":\"${RB0}_2\"" && ok "a new page name steers clear of earlier names" || bad "alias uniqueness: $R"
+R=$(MP --data-urlencode "program_id=$RP" --data-urlencode "basename=$RB0" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "rename back to the first name" || bad "rename back: $R"
+chk "$(Q "SELECT GROUP_CONCAT(basename ORDER BY basename) FROM majors_program_aliases WHERE program_id=$RP")" "e2e_renamed_minor" "renaming back frees the first name and keeps the second as an earlier address"
+chk "$(GET "$B/index.php?program=$RB0")" 200 "the first name serves the page again"
+OTHER_BN=$(Q "SELECT basename FROM majors_academic_programs WHERE id=$OTHER"); OTHER_NAME=$(Q "SELECT academic_program FROM majors_academic_programs WHERE id=$OTHER")
+R=$(MP --data-urlencode "program_id=$RP" --data-urlencode "status=retired" --data-urlencode "forward_to=$OTHER" "$MA?action=save_program"); echo "$R" | grep -q '"success":true' && ok "retire and forward to another program" || bad "forward: $R"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=$RB0")" "301 $B/index.php?program=$OTHER_BN" "a retired program forwards to the page it was combined into"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=e2e_renamed_minor")" "301 $B/index.php?program=$OTHER_BN" "so do its earlier addresses"
+MP --data-urlencode "program_id=$RP2" --data-urlencode "status=retired" --data-urlencode "forward_to=$RP" "$MA?action=save_program" >/dev/null
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=$RB2")" "301 $B/index.php?program=$OTHER_BN" "forwarding follows a chain of retired programs to the active one"
+R=$(MP --data-urlencode "program_id=$RP" --data-urlencode "forward_to=$RP" "$MA?action=save_program"); echo "$R" | grep -q 'cannot forward to itself' && ok "a program cannot forward to itself" || bad "self forward: $R"
+R=$(MP --data-urlencode "program_id=$RP" --data-urlencode "forward_to=999999" "$MA?action=save_program"); echo "$R" | grep -q 'no longer exists' && ok "forwarding to a missing program is refused" || bad "missing forward: $R"
+GET -b $M "$B/_admin/index.php" >/dev/null; has $S/out.html "Forwards to $OTHER_NAME" 'the control panel shows where a retired program forwards'
+GET -b $M "$MA?action=get_settings_form&program_id=$RP" >/dev/null; has $S/out.html 'data-ma-forward-chosen><span data-ma-forward-label>' 'the settings form shows the chosen forward'
+MP --data-urlencode "program_id=$RP" --data-urlencode "forward_to=" "$MA?action=save_program" >/dev/null
+chk "$(Q "SELECT COALESCE(forward_to,'none') FROM majors_academic_programs WHERE id=$RP")" "none" "clearing the forward stores none"
+chk "$(GET "$B/index.php?program=$RB0")" 404 "a retired program with no forward is not found"
+chk "$(GET "$B/index.php?program=$RB2")" 404 "a chain that ends at a retired program is not found"
+printf '<?php\nreturn ["majors" => ["cms_import" => false]];\n' > app/config/app.www-e2e.php
+OUT=$(MAJORS_SITE=www-e2e php app/bin/majors-import.php --dry-run 2>&1); RC=$?; [ $RC -eq 1 ] && echo "$OUT" | grep -q 'switched off' && ok "the page import refuses once the CMS import is switched off" || bad "import refusal ($RC): $OUT"
+OUT=$(MAJORS_SITE=www-e2e php app/bin/majors-listing-import.php --dry-run 2>&1); RC=$?; [ $RC -eq 1 ] && echo "$OUT" | grep -q 'switched off' && ok "so does the listing import" || bad "listing import refusal ($RC): $OUT"
+RENAME='$app = require "app/bootstrap.php"; (new Majors\Majors\ProgramEditor($app->db(), (bool) $app->config->get("majors.cms_import", true)))->saveProgram((int) $argv[1], ["basename" => $argv[2]]); echo "ok";'
+OUT=$(MAJORS_SITE=www-e2e php -r "$RENAME" $PROG ${PBN}_e2e 2>&1); [ "$OUT" = "ok" ] && ok "with the CMS import switched off, an imported page can be renamed" || bad "rename with import off: $OUT"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=$PBN")" "301 $B/index.php?program=${PBN}_e2e" "and its CMS address forwards to the new name"
+OUT=$(MAJORS_SITE=www-e2e php -r "$RENAME" $PROG $PBN 2>&1); [ "$OUT" = "ok" ] || bad "rename back: $OUT"
+rm -f app/config/app.www-e2e.php
+Q "DELETE FROM majors_program_aliases WHERE program_id=$PROG" >/dev/null
+chk "$(Q "SELECT basename FROM majors_academic_programs WHERE id=$PROG")" "$PBN" "the imported page name restored"
+for P in $RP $RP2; do Q "DELETE FROM majors_listing_entries WHERE program_id=$P; DELETE FROM majors_program_aliases WHERE program_id=$P; DELETE FROM majors_program_sections WHERE program_id=$P; DELETE FROM majors_programs_content WHERE academic_program_id=$P; DELETE FROM majors_academic_programs WHERE id=$P" >/dev/null; done
+chk "$(Q "SELECT COUNT(*) FROM majors_program_aliases")" 0 "test programs and their earlier names removed"
+
+echo "[degree maps admin as advisor]"
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027")" 200 "advisor views own-college current-year map"; has $S/out.html 'id="cloneMap"' 'clone offered'; hasnt $S/out.html 'name="editMap"' 'no edit on current year'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$LAS2027")" 200 "advisor views other-college map"; hasnt $S/out.html 'id="cloneMap"' 'no clone outside own colleges'
 chk "$(GET -b $J "$B/degree_maps/admin/maps.php?degree_map_id=$ENG2027&editMap=Edit")" 200 "advisor asks to edit current-year map"; hasnt $S/out.html 'id="degree-map-editor"' 'advisor gets the view, not the editor'

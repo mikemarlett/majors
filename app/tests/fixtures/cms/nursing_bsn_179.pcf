@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pcf-stylesheet path="/_resources/xsl/landing.xsl" title="HTML" extension="php"?>
+
+<!DOCTYPE document SYSTEM "http://commons.omniupdate.com/dtd/standard.dtd"> 
+
+<document xmlns:ouc="http://omniupdate.com/XSL/Variables">
+
+	<headcode></headcode> <!-- before closing head tag -->
+	<bodycode></bodycode> <!-- after opening body tag -->
+	<footcode></footcode> <!-- before closing body tag -->
+	<ouc:info><tcf>standard-landing.tcf</tcf><tmpl>standard-landing.tmpl</tmpl></ouc:info>
+
+	<ouc:properties label="metadata">
+		<title>Details: Nursing - Bachelor of Science in Nursing, Major, CHP</title>
+		<meta name="Description" content="Wichita State's Bachelor of Science in Nursing (BSN) in nursing prepares you for entry-level professional nursing positions in a variety of health care settings and provides a foundation for graduate study in nursing. The program combines CCNE accreditation, experienced instructors, exclusive scholarships — and applied learning in Kansas' health care hub." />
+		<meta name="Keywords" content="Nursing - Traditional Program, Bachelor of Science in Nursing, BSN, Major, Undergraduate, School of Nursing, College of Health Professions" />
+	</ouc:properties>
+
+	<ouc:properties label="config">
+		<parameter name="heading" type="text" group="Everyone" prompt="Page Heading" alt="Optional - Please enter the page heading. If blank, the 'title' value above will be used.">Details: Nursing - Bachelor of Science in Nursing, Major</parameter>
+		<parameter section="Page Layout" name="options" type="checkbox" group="Everyone" prompt="Options" alt="Select Page Options">
+<option value="navigation" selected="false">Navigation</option>
+</parameter>	
+	</ouc:properties>
+
+	<ouc:div label="hero" group="Everyone" button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header Hero / CTA Section"/></ouc:div>
+	<ouc:div label="header-hero"  group="Everyone"  button="hide"><ouc:multiedit type="image" dependency="yes" prompt="Hero Image" alt="Select Hero Image" lockout="no" section="Header Hero Image *required"/><img src="" alt="" /></ouc:div>
+	<ouc:div label="hero-video"  group="Everyone"  button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Hero Video" alt="Select Hero Video" lockout="no" section="Header Hero Video *image required for mobile view"/></ouc:div>
+
+
+	<ouc:div label="cta" group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Header CTA Image/Video Overlay"/></ouc:div>
+	<ouc:div label="cta-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="CTA Content" alt="Enter content"/></ouc:div>
+	<ouc:div label="cta-link-text" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="cta-link" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link" alt="Enter Link URL."/></ouc:div>
+
+	<ouc:div label="intro-panel"  group="Everyone"  button="hide"><ouc:multiedit type="checkbox" prompt="Display" alt="" options="Display if checked:true" section="Page Intro Panel"/></ouc:div>
+
+	<ouc:div label="intro-panel-content"  group="Everyone"  button="hide"><ouc:multiedit type="textarea" prompt="Intro Panel" alt="Enter content"/></ouc:div><ouc:div label="intro-panel-background"  group="Everyone"  button="hide"><ouc:multiedit type="select" prompt="Panel Background" options="Wheat:section-wrap--wheat;Yellow:section-wrap--wsuyellow;Yellow with Arrows:section-wrap--arrows-bright;Light:section-wrap--shade-light;Gray:section-wrap--shade-medium;Gray with Dots:section-wrap--dots;Dark:section-wrap--shade-dark;Dark With Arrows:section-wrap--arrows-dark;None:section-wrap"/>section-wrap--wheat</ouc:div>
+	<ouc:div label="intro-panel-link-text-1" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text One" alt="Enter Link Text."/>Our Innovative Approach</ouc:div>
+	<ouc:div label="intro-panel-link-1" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link One" alt="Enter Link URL."/></ouc:div>
+
+
+	
+	<ouc:div label="intro-panel-link-text-2" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Two" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-2" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Two" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="intro-panel-link-text-3" group="Everyone" button="hide"><ouc:multiedit type="text" prompt="Link Text Three" alt="Enter Link Text."/></ouc:div>
+	<ouc:div label="intro-panel-link-3" group="Everyone" button="hide"><ouc:multiedit type="filechooser" dependency="yes" prompt="Link Three" alt="Enter Link URL."/></ouc:div>
+	
+	<ouc:div label="teaser-content" group="Everyone" button-text="Teaser Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/></ouc:div>
+
+	<ouc:div label="maincontent" data-table-separator-options="" group="Everyone" button-text="Main Content"><ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="maincontent"/><table class="ou-snippet-generic-section-two-column"><caption>Snippet: Section For Program Card - Two Column Content</caption>
+<tbody>
+<tr>
+<td data-select-list="backgrounds">section-wrap--shade-light</td>
+<td data-select-list="arrows">&nbsp;</td>
+</tr>
+<tr>
+<td>
+<table class="ou-snippet-program-card"><caption>Snippet: Program Card</caption>
+<tbody>
+<tr>
+<td>Major</td>
+</tr>
+<tr>
+<td>Nursing - Bachelor of Science in Nursing</td>
+</tr>
+<tr>
+<td>
+<ul>
+<li><a href="{{f:22192582}}">All Programs</a></li>
+<li><a href="{{f:21883545}}">College of Health Professions</a></li>
+<li><a href="{{d:3473712}}">Ascension Via Christi &ndash; Wichita State University School of Nursing</a></li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<p>Wichita State's Bachelor of Science in Nursing (BSN) prepares you for entry-level professional nursing positions in a variety of health care settings and provides a foundation for graduate study in nursing. The program combines CCNE accreditation, experienced instructors, exclusive scholarships &mdash; and applied learning in Kansas' health care hub.</p>
+</td>
+</tr>
+<tr>
+<td>
+<h3 class="heading4">Learn how nursing is the right fit for you.</h3>
+<table class="ou-snippet-generic-button-collection"><caption>Button Collection</caption>
+<tbody>
+<tr>
+<td data-select-list="buttons">landing-panel__buttons button-collection--accent-first</td>
+<td><a class="button" href="https://slate.wichita.edu/register/ugrfi">Request Info </a> <a class="button" href="https://my.wsu-info.org/apply-get-started">Start Your Application</a></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>&nbsp;
+<table class="ou-snippet-media-with-caption"><caption>Snippet: Media With Caption</caption>
+<thead>
+<tr>
+<td data-select-list="orientation">captioned-media--right</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="{{f:43545520}}" alt="Two students work with a mannequin" width="800" height="600" /></td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<section class="teaser-collection section-wrap collection--two-columns">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Applied learning at Wichita State</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>At Wichita State, applied learning is everything. In fact, every degree we offer has a guaranteed applied learning or research experience built right into it equipping you with the relevant skills and experience to make you workforce ready before graduation.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="{{d:3378519}}"> <span>Learn about our innovative approach</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Admission to the program</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>To qualify as a candidate for admission to the BSN program, students must meet the following requirements:</p>
+<ul>
+<li>Be enrolled in, or admitted to, WSU</li>
+<li>Have completed prerequisite requirements</li>
+<li>Have an overall minimum 2.75 GPA, and a 3.00 cumulative GPA in the specified science courses</li>
+<li>Submit application materials by Jan. 15 for fall or Aug. 15 for spring</li>
+</ul>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="https://catalog.wichita.edu/undergraduate/health-professions/nursing/bachelor-science-nursing-traditional-program/#admissiontext"> <span>Admission requirements</span> </a></div>
+</div>
+</div>
+</div>
+</section>
+<section class="section-wrap section-wrap--dots"><header class="section-header section-header--no-border">
+<h2>Inside the Program</h2>
+</header>
+<div class="teaser teaser--columned-intro">
+<div class="teaser__image"><a> <img style="max-width: 115%; min-height: auto;" src="{{f:36443658}}" alt="Nursing students receive an interactive experience with state-of-the-art simulation mannequins in a realistic and safe environment." width="1400" height="1050" /></a></div>
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">State-of-the-art simulation technology prepares students for real-world nursing</span><span class="head"></span></h3>
+</div>
+<div class="teaser__editorial">
+<p>Our students gain hands-on, interactive experience using state-of-the-art simulation mannequins in a realistic and supportive environment.</p>
+<p>These high-fidelity mannequins replicate a wide range of symptoms and scenarios, including childbirth, seizures, blood pressure fluctuations and bleeding &mdash; giving students the chance to practice critical skills before stepping into clinical settings.</p>
+<p>Virtual Reality (VR) experiences immerse students in realistic healthcare environments and complex patient scenarios, strengthening clinical decision-making, communication, patient assessment skills and confidence.</p>
+<p>Research shows that combining simulation with classroom learning and clinical practice helps better prepare future nurses and enhances patient safety.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="teaser-collection section-wrap collection--two-columns">
+<div class="collection__items">
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Curriculum</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>A minimum total of 120 credit hours is required for the Bachelor of Science in Nursing (BSN) and includes 60 credit hours of major (professional) courses.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="http://catalog.wichita.edu/undergraduate/health-professions/nursing/bachelor-science-nursing-traditional-program/#requirementstext"> <span>View the curriculum</span> </a></div>
+</div>
+</div>
+<div class="teaser collection__item ">
+<div class="teaser__body">
+<div class="teaser__headline">
+<h3 class="headline-group "><span class="head">Careers</span></h3>
+</div>
+<div class="teaser__editorial">
+<p>A nursing degree from Wichita State will give you the knowledge and practical skills for high-paying, high-demand nursing careers in diverse health care settings such as hospitals, nursing and residential care facilities, schools and government.</p>
+</div>
+<div class="teaser__links"><a class=" link--rich" href="https://www.bls.gov/ooh/healthcare/registered-nurses.htm#tab-1"> <span>Learn more about careers in this field</span> </a></div>
+</div>
+</div>
+</div>
+</section>
+<table class="ou-snippet-generic-section"><caption><img class="snippet-preview" src="/_resources/images/snippet_previews/generic-section.png" alt="Use to contain other Snippets on landing pages and additional content areas" />Snippet: Generic Section</caption>
+<tbody>
+<tr>
+<td data-select-list="backgrounds">section-wrap--wheat</td>
+<td data-select-list="arrows">section-wrap--pointer-down</td>
+</tr>
+<tr>
+<td colspan="2">
+<h3>Wichita State and Kansas State Pathway to Nursing Program</h3>
+<p><span style="font-size: 18px;">The <strong><a title="Learn more about the Pathway to Nursing Program" href="{{f:34045592}}">Wichita State and Kansas State Pathway to Nursing Program</a></strong>&nbsp;is a unique dual degree program that gives students the opportunity to earn both a Bachelor of Science (BS) degree from the College of Health and Human Sciences at Kansas State and a Bachelor of Science in nursing (BSN) from the College of Health Professions at Wichita State University.</span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="ou-snippet-section-collection-teaser-card"><caption>Teaser Card (Horizontal or Vertical)</caption>
+<thead></thead>
+<tbody>
+<tr>
+<td colspan="2" data-select-list="Horizontal,Vertical">Vertical</td>
+</tr>
+<tr>
+<td><img role="presentation" src="{{f:22198459}}" alt="" width="1400" height="1050" /></td>
+<td>Similar Programs</td>
+</tr>
+<tr>
+<td><img role="presentation" src="{{f:22198431}}" alt="" width="1400" height="1050" /></td>
+<td><a href="{{f:22200776}}">Nursing - RN to BSN</a></td>
+</tr>
+<tr>
+<td><img role="presentation" src="{{f:22198978}}" alt="" width="1000" height="1000" /></td>
+<td><a href="{{f:22200681}}">Dental Hygiene - Entry Level Program</a></td>
+</tr>
+<tr>
+<td><img role="presentation" src="{{f:22198314}}" alt="" width="1000" height="1000" /></td>
+<td><a href="{{f:22200524}}">Aging Studies</a></td>
+</tr>
+<tr>
+<td><img role="presentation" src="{{f:74980124}}" alt="" width="800" height="600" /></td>
+<td><a href="{{f:22200788}}">Health Management</a></td>
+</tr>
+<tr>
+<td><img role="presentation" src="{{f:22928146}}" alt="" width="800" height="600" /></td>
+<td><a href="{{f:22200637}}">Pre-Medicine</a></td>
+</tr>
+</tbody>
+</table></ouc:div>
+
+
+	<ouc:div label="additional-content" data-table-separator-options="" group="Everyone" button-text="Additional Content">
+		<ouc:editor csspath="/_resources/ou/editor/wysiwyg.css" cssmenu="/_resources/ou/editor/styles.txt" wysiwyg-class="additional-content"/>
+
+		<table class="ou-snippet-generic-section"><caption>Snippet: Generic Section</caption>
+			<tbody>
+				<tr>
+					<td data-select-list="backgrounds">section-wrap--none</td>
+					<td data-select-list="arrows">&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<p>Content Here</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+	</ouc:div>
+
+</document>

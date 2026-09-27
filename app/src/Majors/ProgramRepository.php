@@ -183,6 +183,50 @@ final class ProgramRepository
         return $row ? $this->hydrate($row) : null;
     }
 
+    /** The program an earlier page name now belongs to (it forwards there), or null. @return array<string,mixed>|null */
+    /**
+     * Where a retired program forwards to: its forward_to target, following a chain of retired
+     * programs that forward on (a merge of a merge), up to a few steps. Null when the chain does
+     * not end at an active program.
+     *
+     * @param array<string,mixed> $program
+     * @return array<string,mixed>|null
+     */
+    public function forwardTarget(array $program): ?array
+    {
+        $seen = [(int) ($program['id'] ?? 0) => true];
+        $to   = (int) ($program['forward_to'] ?? 0);
+        for ($hop = 0; $hop < 5 && $to > 0 && !isset($seen[$to]); $hop++) {
+            $seen[$to] = true;
+            $stmt = $this->db->prepare('SELECT `id`, `basename`, `academic_program`, `status`, `forward_to` FROM `majors_academic_programs` WHERE `id` = ?');
+            $stmt->bind_param('i', $to);
+            $stmt->execute();
+            $next = $stmt->get_result()->fetch_assoc() ?: null;
+            $stmt->close();
+            if ($next === null) {
+                return null;
+            }
+            if (($next['status'] ?? 'active') !== 'retired') {
+                return $next;
+            }
+            $to = (int) ($next['forward_to'] ?? 0);
+        }
+        return null;
+    }
+
+    public function findByAlias(string $basename): ?array
+    {
+        if ($basename === '') {
+            return null;
+        }
+        $stmt = $this->db->prepare('SELECT p.* FROM `majors_program_aliases` a JOIN `majors_academic_programs` p ON p.`id` = a.`program_id` WHERE a.`basename` = ? LIMIT 1');
+        $stmt->bind_param('s', $basename);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ?: null;
+    }
+
     private function hydrate(array $row): array
     {
         $id = (int) $row['id'];
@@ -202,11 +246,11 @@ final class ProgramRepository
      */
     public function sections(int $programId): array
     {
-        $stmt = $this->db->prepare('SELECT s.`id`, s.`kind`, s.`label`, s.`block_id`, s.`image_url`, s.`image_alt`,
+        $stmt = $this->db->prepare('SELECT s.`id`, s.`kind`, s.`label`, s.`block_id`, s.`image_url`, s.`image_alt`, s.`theme`,
                                            COALESCE(s.`headline`, b.`headline`, "") AS headline, COALESCE(s.`body`, b.`body`, "") AS body, COALESCE(s.`links`, b.`links`, "[]") AS links
                                       FROM `majors_program_sections` s
                                  LEFT JOIN `majors_content_blocks` b ON b.`id` = s.`block_id`
-                                     WHERE s.`program_id` = ? AND s.`kind` IN ("teaser", "feature") ORDER BY s.`position`, s.`id`');
+                                     WHERE s.`program_id` = ? AND s.`kind` IN ("' . implode('", "', ProgramEditor::KINDS) . '") ORDER BY s.`position`, s.`id`');
         $stmt->bind_param('i', $programId);
         $stmt->execute();
         $out = [];
@@ -222,6 +266,7 @@ final class ProgramRepository
                 'image'    => (string) $r['image_url'] !== '' ? ['url' => (string) $r['image_url'], 'alt' => (string) $r['image_alt']] : null,
                 'block_id' => $r['block_id'] !== null ? (int) $r['block_id'] : null,
                 'shared'   => $r['block_id'] !== null,
+                'theme'    => (string) ($r['theme'] ?? '') !== '' ? (string) $r['theme'] : ($r['kind'] === 'band' ? 'light' : null),
             ];
         }
         $stmt->close();
@@ -353,13 +398,14 @@ final class ProgramRepository
     public function adminList(): array
     {
         $sql = 'SELECT m.*,
-                       (SELECT COUNT(*) FROM `majors_program_sections` x WHERE x.`program_id` = m.`id` AND x.`kind` IN ("teaser", "feature")) AS `section_count`,
+                       (SELECT COUNT(*) FROM `majors_program_sections` x WHERE x.`program_id` = m.`id` AND x.`kind` IN ("' . implode('", "', ProgramEditor::KINDS) . '")) AS `section_count`,
                        (m.`description` IS NOT NULL AND m.`description` <> "") AS `has_description`,
                        (m.`image_url` IS NOT NULL AND m.`image_url` <> "") AS `has_image`,
                        (m.`image_url` IS NOT NULL AND m.`image_url` <> "" AND (m.`image_alt` IS NULL OR m.`image_alt` = "")) AS `photo_no_alt`,
                        EXISTS (SELECT 1 FROM `majors_program_sections` y WHERE y.`program_id` = m.`id` AND y.`image_url` <> "" AND (y.`image_alt` IS NULL OR y.`image_alt` = "")) AS `section_photo_no_alt`,
                        (m.`department` IS NULL OR m.`department` = "") AS `no_department`,
-                       EXISTS (SELECT 1 FROM `majors_program_sections` z WHERE z.`program_id` = m.`id` AND z.`block_id` IS NULL AND CHAR_LENGTH(COALESCE(z.`headline`, "")) > 120) AS `long_headline`
+                       EXISTS (SELECT 1 FROM `majors_program_sections` z WHERE z.`program_id` = m.`id` AND z.`block_id` IS NULL AND CHAR_LENGTH(COALESCE(z.`headline`, "")) > 120) AS `long_headline`,
+                       (SELECT f.`academic_program` FROM `majors_academic_programs` f WHERE f.`id` = m.`forward_to`) AS `forward_name`
                   FROM `majors_academic_programs` m
                  ORDER BY (m.`status` = "retired"), m.`academic_program`, m.`program_type`';
         $rows = $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);

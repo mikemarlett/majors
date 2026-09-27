@@ -153,10 +153,16 @@ database, which is now the source the Majors pages render from:
 | `majors_content_blocks` | text that appeared verbatim on many pages, stored once (Applied learning at Wichita State: 268 pages; Making your graduate education affordable: 92; each college's Admission paragraph…). A section that points at a block shows the block, so **editing the block changes every page that uses it** |
 | `majors_similar_programs` | from each page's Similar Programs card |
 | `majors_programs_content` | the old flat row per program, kept in step by the importer because `ai-meta.php` on www reads it |
+| `majors_listing_entries` | the **listing pages**: one row per line a program shows as — the name (NULL = the program's name, so it follows a rename), the text after the dash (NULL = the degree written out from the type), which lists (All Programs, Undergrad Majors & Minors, Graduate Degrees, Online, Certificates, Badges), A–Z only / by-college only / both, and for Certificates the half (graduate/undergraduate) and topic(s). A program can have several lines (concentrations, "Public Health Practice, Advanced"-style cross references). **No lines = not listed**; the page stays live and linkable. Imported from the hand-kept CMS listing pages by `app/bin/majors-listing-import.php` |
+| `majors_program_aliases` | earlier page names; a request for one forwards (301) to the program's current address |
+| (programs, since 008) | `similar_bg_url` (photo behind Similar Programs, current design), `more_departments` (JSON list; a joint program shows and lists under each), `forward_to` (a retired program forwards there) |
+| (sections, since 008) | kind `band` = a full-width section with a background (`theme`: white, light, yellow, dark), like the CMS generic section on the Nursing page |
 
 `app/bin/majors-import.php` does the import (parse the PCF source through the
-MC API, resolve `{{f:…}}` links, match rows by basename then by catalog
-number so renamed pages keep their id, retire the rest). Re-runs are safe.
+MC API, resolve `{{f:…}}` links, match rows by basename, then by an earlier
+page name, then by catalog number so renamed pages keep their id; a page the
+CMS renamed keeps its old address as a forward; retire imported programs whose
+page is gone, never ones made in the editor). Re-runs are safe.
 `docs/majors-reconciliation-2026-09-24.md` records what the first import found.
 
 ## Rebuilding the theme stylesheet
@@ -173,16 +179,34 @@ Programs are addressed by their **page name** (`basename`, the CMS page's
 name, unique): `index.php?program=aerospace_engineering_bs_101`. The old
 `index.php?id=N` links redirect (301) to that address. A new program gets
 `<name>_<type>` (e.g. `data_science_ms`), made unique with `_2`, `_3`… and
-editable before it is created; Page settings can change it later (old links
-then break, and the importer matches on it).
+editable before it is created. Page settings can rename a program; every
+earlier name keeps forwarding (301) to the current one, and no other program
+can take a name that still forwards. While the CMS program pages are still
+imported (`majors.cms_import`, default `true`), an imported page's name is
+fixed, because the importer matches on it. Set it to `false` in the site
+config once the CMS pages retire: imported names become editable too, and
+both importers refuse to run without `--force`.
+
+A retired program can **forward** to another one (Page settings → Status:
+Retired → "Forward visitors to…"), for programs combined into one page;
+its address and earlier names then 301 there instead of answering 404.
+
+The listing pages keep the CMS addresses: `index.php` (All Programs),
+`index_by_college.php`, `majors.php` and `majors_by_college.php` (Undergrad
+Majors & Minors), `graduate.php`, `graduate_by_college.php`, `online.php`,
+`online_by_college.php` and `certificates.php` (graduate and undergraduate
+halves by topic, with the intro callouts as the shared blocks
+`listing-intro-certificates-*`). Badges goes to badges.wichita.edu.
 
 - `_admin/index.php` — the **control panel**: every program in one table.
   Sort any column; filter by search, level (undergraduate/graduate),
   credential, college, status and "needs attention" (no text, no photo, no
   alt text, no department, no sections, no similar programs, overlong
-  headline, online); the view is bookmarkable (`?level=graduate&status=all`).
-  Two things are edited right there: status (active/retired) and the similar
-  programs (a popover with remove and search-to-add). Everything else is on
+  headline, online) and "Listed on" (a list, or Not listed); the view is
+  bookmarkable (`?level=graduate&status=all`). Three things are edited right
+  there: status (active/retired), the listings (the same popover as the
+  page's Listings button) and the similar programs (a popover with remove and
+  search-to-add). Retired rows say where they forward. Everything else is on
   the page.
 - `_admin/program.php?program=<basename>` — the **in-place editor**: the
   public page itself (same templates and site chrome, both designs) with an
@@ -196,8 +220,24 @@ then break, and the importer matches on it).
   text / Remove); an "Add a section" bar closes the column; similar programs
   are removed with × on the card and added from the "+ Add a similar
   program" tile. **Page settings** (edit bar) holds what is not on the page:
-  sort-as, page name, listing note, status, listing flags, search-engine
-  description and keywords, catalog link. Every change saves as you go
+  sort-as, page name (with the earlier names that forward), listing note,
+  status and forwarding, listing flags, the Similar Programs background
+  photo, search-engine description and keywords, catalog link.
+  **Listings** (edit bar) edits the program's listing lines: listed as,
+  the text after the dash, which lists, A–Z/by college, and the Certificates
+  half and topics; a page on no list is badged "not listed".
+- **Full-width section** ("+ Full-width section" in the add bar or a
+  section's add menu): headline, text and links across the column on a
+  background chosen from the section's ⋯ menu (white, light gray, yellow,
+  dark; each design maps these to its own bands). The import brought in the
+  two the CMS pages had (Nursing's K-State Pathway, English pedagogy's HLC
+  note).
+- **Departments**: the College and departments form takes a list; the first
+  is the main department and the program also shows and lists under the
+  others (joint programs such as Biochemistry).
+- **Similar Programs photo** (current design only): the "Background photo"
+  button on the band; without one the program's own photo is used. The
+  import brought in the photo each CMS page had chosen. Every change saves as you go
   (Enter or click away; Esc cancels) and the server answers with the
   re-rendered page, so what you see is what the public gets; text changes get
   an **Undo** in the toast.
@@ -232,6 +272,11 @@ then break, and the importer matches on it).
   (55 MB) out of `_images/` on 2026-09-14 into `/srv/work/majors-backups/images-archive-20260914`;
   565 referenced files remain (see [docs/images-manifest.txt](docs/images-manifest.txt)).
   Deploy the trimmed `_images/` to the servers, or run the same command there.
+  Since 2026-09-27 the audit reads every table that can hold a photo (programs,
+  sections, shared blocks, the Similar Programs photos) and file names with
+  spaces; 29 Similar Programs photos it had archived were copied back, so 611
+  files are referenced. A server whose `_images/` was trimmed with the old audit
+  needs those 29 back (they are in the archive folder).
   Two referenced files are missing everywhere: `PHS.jpg` and
   `HP_Nursing_Accelerated_Program_ITP.jpg` (those pages show broken images today).
 - Two 2026-27 maps had been cloned twice (770/965, 789/791). Decision: keep

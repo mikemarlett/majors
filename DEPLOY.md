@@ -198,6 +198,68 @@ MAJORS_SITE=www-test php bin/majors-catalog-seed.php --overwrite --sql=/srv/work
 mysql formshandlerdb < majors-catalog-seed-YYYYMMDD.sql
 ```
 
+## 2g. Listings, full-width sections, departments, renames (sql/008)
+
+Run the migration **before** unpacking the new app bundle: the listing pages
+read the new `majors_listing_entries` table. It only adds tables and
+nullable columns, so the code already on the server is unaffected, and it is
+safe to re-run.
+
+```bash
+cd /data/www/config/majors
+mysql formshandlerdb < sql/007_drop_similar_sections.sql   # only if 2f has not run on this database
+mysql formshandlerdb < sql/008_listings_and_more.sql        # then unpack the app and docroot bundles
+```
+
+The first run gives every active program one listing line on the lists its
+credential implies. Then bring in the hand-kept CMS listing pages (who is on
+which list, under which names, the Certificates topics and intro callouts):
+
+```bash
+mysql formshandlerdb < majors-listings-YYYYMMDD.sql         # generated on the sandbox, keyed by page name
+# or read the CMS from the server:
+MAJORS_SITE=www-test php bin/majors-listing-import.php --dry-run
+MAJORS_SITE=www-test php bin/majors-listing-import.php
+```
+
+And add what the first page import missed (the two full-width sections and
+the Similar Programs background photos). It changes nothing else. Run it once,
+right after 008:
+
+```bash
+mysql formshandlerdb < majors-supplement-YYYYMMDD.sql
+# or: MAJORS_SITE=www-test php bin/majors-import.php --supplement
+```
+
+The listing import leaves editor work alone: a program whose listings were
+saved in the editor keeps them. The supplement only fills photos that were
+never set (one cleared in the editor stays cleared) and adds a band only to a
+page that has no band yet, so a second run changes nothing unless an editor
+has removed one of the two bands since.
+
+### When the CMS program pages retire (cutover; plan, not done)
+
+1. Set `'majors' => ['cms_import' => false]` in the site config
+   (`app.www.php` etc.). Imported page names become editable in Page
+   settings (earlier names keep forwarding), and both importers refuse to
+   run unless given `--force`. A forced page import still finds a renamed
+   page by its earlier name and keeps the new name, but it replaces the
+   page's content with the CMS copy, so it is for emergencies only.
+2. The app's listing front controllers use the CMS listing pages' own
+   addresses (`/academics/majors/index.php`, `majors.php`, `graduate.php`,
+   `online.php`, `certificates.php`, the `*_by_college.php` pages). On www a
+   CMS publish of those pages would overwrite the app's files, so they have to
+   be retired in the CMS (or excluded from publishing) before the app goes
+   live there.
+3. Each CMS program page (`/academics/majors/<basename>.php`) needs a
+   permanent forward to `index.php?program=<basename>`. `.htaccess` is not
+   honoured on these servers, so either ITS adds one rewrite rule to the
+   Apache config, or a script writes a two-line PHP forward at each old
+   address from the database (page names never change while
+   `cms_import` is on, so the list is exact on cutover day).
+4. Anything else that links the old pages (CMS navigation, other sites) can
+   then move to the `?program=` addresses at leisure.
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.

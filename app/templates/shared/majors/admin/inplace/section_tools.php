@@ -9,7 +9,7 @@ if (empty($ed) || !$ed->on) {
 }
 $shared = !empty($s['block_id']);
 $uses   = $shared ? $ed->uses((int) $s['block_id']) : 0;
-$kind   = $s['kind'] === 'feature' ? 'Feature' : 'Card';
+$kind   = ['feature' => 'Feature', 'band' => 'Full width'][$s['kind']] ?? 'Card';
 ?>
 <div class="ma-tools noprint" data-ma-tools data-ma-section="<?= (int) $s['id'] ?>">
 	<span class="ma-tools__kind"><?= $t->e($kind) ?></span>

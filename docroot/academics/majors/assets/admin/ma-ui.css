@@ -37,6 +37,8 @@
 
 /* ---- fields --------------------------------------------------------------- */
 .ma-field { display: flex; flex-direction: column; gap: .2rem; margin: 0 0 .6rem; font-family: var(--ma-font); }
+/* [hidden] must beat our own display rules (.ma-field is flex): the new design's reset makes it !important, the old design's does not */
+.ma-popover [hidden], .ma-edit-bar [hidden] { display: none !important; }
 .ma-field > label { font-size: .8rem; font-weight: 700; color: var(--ma-ink); margin: 0; display: block; }
 .ma-field input[type="text"], .ma-field input[type="url"], .ma-field input[type="email"], .ma-field input[type="search"], .ma-field input[type="number"],
 .ma-field textarea, .ma-field select {
@@ -106,3 +108,4 @@
 .ma-checks { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .2rem; }
 .ma-checks .ma-field--check { margin: 0; font-size: .85rem; }
 .ma-listing-none { margin: .5rem 0; padding: .6rem .8rem; background: var(--ma-shade); border: 1px dashed var(--ma-line); font-size: .9rem; }
+.ma-list-label { display: block; margin: .5rem 0 .3rem; }

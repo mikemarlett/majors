@@ -74,9 +74,12 @@ final class ProgramRenderer
             $buttons = array_map(static fn ($l) => ['text' => $l['link_text'] ?? '', 'href' => $l['href'] ?? '#'], $json($c['learn_how_links'] ?? null));
         }
         $crumbs = [];
-        foreach ([['college', 'college_url'], ['department', 'department_url']] as [$name, $url]) {
-            if (!empty($program[$url]) && !empty($program[$name])) {
-                $crumbs[] = ['text' => (string) $program[$name], 'href' => (string) $program[$url]];
+        if (!empty($program['college_url']) && !empty($program['college'])) {
+            $crumbs[] = ['text' => (string) $program['college'], 'href' => (string) $program['college_url']];
+        }
+        foreach (ProgramRepository::departmentsOf($program) as $dep) {      // every department with a link (joint programs list both)
+            if ($dep['href'] !== '') {
+                $crumbs[] = $dep;
             }
         }
         if ($crumbs === []) {
@@ -116,6 +119,7 @@ final class ProgramRenderer
             ] : null,
             'degree_maps'    => $maps,
             'similar'        => $editing && isset($program['similar_editing']) ? $program['similar_editing'] : ($program['similar_programs'] ?? []),
+            'similar_bg'     => trim((string) ($program['similar_bg_url'] ?? '')),
             'nav_items'      => $this->sectionNav($program),
         ];
     }
@@ -161,6 +165,20 @@ final class ProgramRenderer
             $out[] = $mk('teaser', $c['careers_headline'], (string) ($c['careers_text'] ?? ''), $c['careers_link_text'] ?? null, $c['careers_link_url'] ?? null);
         }
         return $out;
+    }
+
+    /** A Similar Programs card's label: "Name (Major)", or just the name when the program has no credential or type. */
+    public static function cardLabel(array $s): string
+    {
+        $kind = '';
+        foreach (['credential', 'program_simple_type', 'program_type'] as $k) {
+            if (trim((string) ($s[$k] ?? '')) !== '') {
+                $kind = trim((string) $s[$k]);
+                break;
+            }
+        }
+        $name = trim((string) ($s['academic_program'] ?? ''));
+        return $kind !== '' ? $name . ' (' . $kind . ')' : $name;
     }
 
     public static function title(array $program): string

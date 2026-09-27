@@ -1,7 +1,8 @@
 <?php
 /**
  * In-place editor: the Page settings form (things that are not on the page).
- * Loaded into a popover; posts to save_program. Variables: $program, $cms_url, $degree_maps, $maps_url, $modalities, $basename_locked
+ * Loaded into a popover; posts to save_program. Variables: $program, $cms_url, $degree_maps, $maps_url, $modalities, $basename_locked,
+ * $aliases (earlier page names that forward here), $forward (id/label of the program a retired one forwards to, or null)
  * @var \Majors\View\Layout $t
  */
 $p = $program;
@@ -14,11 +15,21 @@ $flags = ['online_learning' => 'Available online', 'online_only' => 'Online only
 		<div class="ma-field"><label for="ms_sort">Sort as (optional)</label><input type="text" id="ms_sort" name="sort_title" value="<?= $t->e($v('sort_title')) ?>" maxlength="255" placeholder="e.g. Engineering, Aerospace"><div class="ma-help">Also lists the program under this name in the A–Z list.</div></div>
 		<div class="ma-field"><label for="ms_note">Listing note</label><input type="text" id="ms_note" name="note" value="<?= $t->e($v('note')) ?>" maxlength="255"></div>
 <?php if (!empty($basename_locked)): ?>
-		<div class="ma-field ma-field--span"><label>Page name (the public address)</label><div class="ma-static"><?= $t->e($t->url('index.php')) ?>?program=<strong><?= $t->e($v('basename')) ?></strong></div><div class="ma-help">This is the name of the CMS page the program was imported from and the key the importer matches on, so it is fixed here.</div></div>
+		<div class="ma-field ma-field--span"><label>Page name (the public address)</label><div class="ma-static"><?= $t->e($t->url('index.php')) ?>?program=<strong><?= $t->e($v('basename')) ?></strong></div><div class="ma-help">This is the name of the CMS page the program was imported from, which the import still matches on, so it is fixed for now. Once the CMS pages are retired it can be changed here, and the old address will keep forwarding.</div></div>
 <?php else: ?>
-		<div class="ma-field ma-field--span"><label for="ms_basename">Page name (the public address)</label><input type="text" id="ms_basename" name="basename" value="<?= $t->e($v('basename')) ?>" maxlength="120" pattern="[a-z0-9_]+"><div class="ma-help"><?= $t->e($t->url('index.php')) ?>?program=<span data-ma-basename-echo><?= $t->e($v('basename')) ?></span> — lower-case letters, digits and underscores. Changing it changes the public link; anything that linked to the old address breaks.</div></div>
+		<div class="ma-field ma-field--span"><label for="ms_basename">Page name (the public address)</label><input type="text" id="ms_basename" name="basename" value="<?= $t->e($v('basename')) ?>" maxlength="120" pattern="[a-z0-9_]+"><div class="ma-help"><?= $t->e($t->url('index.php')) ?>?program=<span data-ma-basename-echo><?= $t->e($v('basename')) ?></span> — lower-case letters, digits and underscores. Changing a program's name does not change this. If you change it, the old address keeps forwarding to the new one.</div></div>
 <?php endif; ?>
-		<div class="ma-field"><label for="ms_status">Status</label><select id="ms_status" name="status"><option value="active"<?= $v('status') !== 'retired' ? ' selected' : '' ?>>Active</option><option value="retired"<?= $v('status') === 'retired' ? ' selected' : '' ?>>Retired (hidden from the public lists)</option></select></div>
+<?php if (!empty($aliases)): ?>
+		<div class="ma-field ma-field--span"><span class="ma-label">Earlier addresses that forward here</span><div class="ma-help"><?= implode(', ', array_map(static fn ($a) => '?program=' . $t->e($a), $aliases)) ?></div></div>
+<?php endif; ?>
+		<div class="ma-field"><label for="ms_status">Status</label><select id="ms_status" name="status" data-ma-status-select><option value="active"<?= $v('status') !== 'retired' ? ' selected' : '' ?>>Active</option><option value="retired"<?= $v('status') === 'retired' ? ' selected' : '' ?>>Retired (the page is no longer public)</option></select></div>
+		<div class="ma-field ma-field--span" data-ma-forward<?= $v('status') === 'retired' ? '' : ' hidden' ?>><label for="ms_forward_q">Forward visitors to another program (optional)</label>
+			<input type="hidden" name="forward_to" value="<?= (int) ($forward['id'] ?? 0) ?: '' ?>" data-ma-forward-id>
+			<div class="ma-forward-chosen" data-ma-forward-chosen<?= $forward ? '' : ' hidden' ?>><span data-ma-forward-label><?= $t->e($forward['label'] ?? '') ?></span> <button type="button" class="ma-btn ma-btn--ghost ma-btn--small" data-ma-forward-clear>Clear</button></div>
+			<input type="search" id="ms_forward_q" placeholder="Type a program name…" autocomplete="off" data-ma-forward-q>
+			<div class="ma-results" data-ma-forward-results></div>
+			<div class="ma-help">Use this when a program is combined into another page: its address then forwards there instead of showing "not found".</div></div>
+		<div class="ma-field ma-field--span"><label for="ms_similar_bg">Similar Programs background photo (current site design)</label><input type="text" id="ms_similar_bg" name="similar_bg_url" value="<?= $t->e($v('similar_bg_url')) ?>" maxlength="255" placeholder="/academics/majors/_images/…"><div class="ma-help">Shown behind the Similar Programs band on the current design. Blank uses the program's own photo; the new design has no photo there.</div></div>
 		<div class="ma-field"><label for="ms_catalog">Catalog page</label><input type="url" id="ms_catalog" name="catalog_url" value="<?= $t->e($v('catalog_url')) ?>" maxlength="255" placeholder="https://catalog.wichita.edu/…"><div class="ma-help">Seeded from the catalog; not shown on the page.</div></div>
 	</div>
 <?php if (empty($p['graduate'])): ?>

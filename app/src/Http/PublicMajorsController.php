@@ -36,6 +36,13 @@ final class PublicMajorsController extends Controller
         $id       = $r->id('id');
         if (($basename !== null || $id !== null) && !$isJson) {
             $program = $basename !== null ? $programs->findByBasename($basename) : $programs->find((int) $id);
+            if ($program === null && $basename !== null && ($renamed = $programs->findByAlias($basename)) !== null) {
+                $program = $renamed;                          // an earlier page name: forward to the current one
+                $basename = null;
+            }
+            if ($program !== null && ($program['status'] ?? 'active') === 'retired' && ($target = $programs->forwardTarget($program)) !== null) {
+                $this->redirect($layout->programUrl($target), 301);   // a retired program combined into another page
+            }
             if ($program === null || ($program['status'] ?? 'active') === 'retired') {
                 $this->notFound('That program could not be found.');
             }

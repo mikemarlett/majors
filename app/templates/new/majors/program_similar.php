@@ -35,7 +35,7 @@ if (!$similar && !$editing) {
 									</div>
 								</div>
 								<div class="px-5 py-4 w-full bg-neutral-800 flex items-center h-full leading-tight">
-									<div class="nc-fancy-link-wrapper"><div class="nc-fancy-link uppercase"><?= $t->e(trim($s['academic_program'] . ' (' . ($s['credential'] ?? $s['program_simple_type'] ?? $s['program_type']) . ')')) ?></div></div>
+									<div class="nc-fancy-link-wrapper"><div class="nc-fancy-link uppercase"><?= $t->e(\Majors\Majors\ProgramRenderer::cardLabel($s)) ?></div></div>
 								</div>
 							</a>
 <?php if ($editing && $curated): ?>

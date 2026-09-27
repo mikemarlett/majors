@@ -77,6 +77,14 @@ return [
         'lifetime_minutes' => 480,
     ],
 
+    'majors' => [
+        // true while the program pages are still imported from the CMS (bin/majors-import.php):
+        // an imported page's name (its address) is the importer's match key, so the editor keeps it
+        // fixed. Set false once the CMS program pages are retired; page names can then be changed
+        // in Page settings, and every earlier name keeps forwarding to the current one.
+        'cms_import' => true,
+    ],
+
     // Colleges get renamed but the maps keep the name they were created with.
     // Map legacy or current spellings onto the row in majors_colleges so
     // advisor scoping still matches. key = name as found in degree_maps /

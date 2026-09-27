@@ -21,7 +21,7 @@ final class AdminProgramController extends Controller
         $layout = $this->app->layout();
         $csrf   = $this->app->guard()->csrfToken();
         $db     = $this->app->db();
-        $editor = new ProgramEditor($db);
+        $editor = new ProgramEditor($db, (bool) $this->app->config->get('majors.cms_import', true));
 
         $head = [
             '<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">',
@@ -49,6 +49,10 @@ final class AdminProgramController extends Controller
         $basename = $r->strOrNull('program');
         $program  = $basename !== null ? $this->app->programs()->findByBasename($basename) : null;
         if ($program === null && $basename !== null && $r->id('id') === null) {
+            $renamed = $this->app->programs()->findByAlias($basename);
+            if ($renamed !== null) {
+                $this->redirect($layout->editUrl($renamed));   // an earlier page name
+            }
             $this->notFound('No program has the page name "' . $basename . '". It may have been renamed; find it in the Majors admin list.');
         }
         if ($program === null) {
@@ -75,6 +79,7 @@ final class AdminProgramController extends Controller
             'departments' => $departments,
             'credentials' => ['Major', 'Minor', "Master's", 'Doctorate', 'Graduate Certificate', 'Undergraduate Certificate', "Bachelor's to Master's", 'Badge', 'Field Major', 'Postbaccalaureate'],
             'modalities'  => ProgramEditor::MODALITIES,
+            'themes'      => ProgramEditor::THEMES,
         ];
         $foot = [
             // balloon-block build: formatting balloon on a selection, plus the block handle (⋮) for lists and headings

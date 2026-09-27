@@ -168,6 +168,18 @@ body {
 .majors-new .majors-callout > h3 { margin: 0 0 .75rem; }
 .majors-old .majors-callout { margin: 1rem 0 2rem; }
 .majors-cert-section + .majors-cert-section { margin-top: 3rem; }
+/* Inside the Program (new design): the text wraps around the photo on desktop; photo first on mobile */
+.majors-new .majors-feature { display: flow-root; }
+.majors-new .majors-feature__media { margin: 0 0 2rem; }
+.majors-new .majors-feature__media img { display: block; width: 100%; height: auto; }
+.majors-new .majors-feature__label { margin: 0 0 1.25rem; }
+.majors-new .majors-feature__text > h3 { margin-top: 0; }
+.majors-new .majors-feature__links { margin-top: 1.5rem; }
+@media (min-width: 48em) {
+	.majors-new .majors-feature__media { float: right; width: 48%; margin: .4rem 0 1.5rem 2.5rem; }
+}
+/* Full-width section: the heading sits closer to its text than a slab's default rhythm */
+.majors-new .majors-band .generic-slab-content-inner-wrapper { gap: 1.25rem; }
 /* feature band: the body sits in its own wrapper after the h3 (so it can be edited on its own); keep prose rhythm */
 .majors-new .prose .majors-body > :first-child { margin-top: 0; }
 .majors-new .prose .majors-body > :last-child { margin-bottom: 0; }
@@ -219,3 +231,11 @@ body {
 	ul, ol { margin-bottom: 1rem; margin-left: 0; list-style-position: inside; }
 	.dm-sge { font-size: xx-small; }
 }
+
+/* ---- current design: full-width section and the Similar Programs photo --------------------------- */
+.majors-old .majors-band__body { max-width: 75rem; margin: 0 auto; font-size: 1.125rem; }
+.majors-old .majors-band__body > :last-child { margin-bottom: 0; }
+.majors-old .majors-band .teaser__links { margin-top: 1rem; }
+/* a dark band: the theme's own link colours are for light backgrounds (its rich links are the band's grey) */
+.majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:link, .majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:visited { color: #fff; }
+.majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:hover, .majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:focus { color: #ffc217; }

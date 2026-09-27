@@ -22,7 +22,7 @@ final class ProgramActions
 
     public function __construct(private readonly Kernel $app)
     {
-        $this->editor   = new ProgramEditor($app->db());
+        $this->editor   = new ProgramEditor($app->db(), (bool) $app->config->get('majors.cms_import', true));
         $this->programs = $app->programs();
     }
 
@@ -141,10 +141,13 @@ final class ProgramActions
     public function settingsForm(Request $r, User $user): string
     {
         $p = $this->program($r);
+        $forward = (int) ($p['forward_to'] ?? 0) > 0 ? $this->programs->find((int) $p['forward_to']) : null;
         return $this->app->layout()->render('majors/admin/inplace/settings_form', [
             'program'     => $p,
             'modalities'  => ProgramEditor::MODALITIES,
-            'basename_locked' => (string) ($p['cms_path'] ?? '') !== '',
+            'basename_locked' => (bool) $this->app->config->get('majors.cms_import', true) && (string) ($p['cms_path'] ?? '') !== '',
+            'aliases'     => $this->editor->aliases((int) $p['id']),
+            'forward'     => $forward !== null ? ['id' => (int) $forward['id'], 'label' => ProgramRenderer::cardLabel($forward)] : null,
             'cms_url'     => !empty($p['cms_path']) ? 'https://www.wichita.edu' . preg_replace('/\.pcf$/', '.php', (string) $p['cms_path']) : '',
             'degree_maps' => $this->app->maps()->forProgram((int) $p['id']),
             'maps_url'    => $this->app->layout()->url('degree_maps/admin/maps.php') . '?degree_map_id=',
@@ -257,7 +260,7 @@ final class ProgramActions
         $p = $this->program($r);
         return $this->guard(function () use ($r, $p) {
             $sid    = $r->id('section_id') ?? throw new ActionException('Missing section_id.');
-            $posted = self::posted(['headline', 'body', 'label', 'links', 'image_url', 'image_alt']);
+            $posted = self::posted(['headline', 'body', 'label', 'links', 'image_url', 'image_alt', 'theme']);
             $this->editor->updateSection((int) $p['id'], $sid, $posted);
             $row    = $this->editor->section((int) $p['id'], $sid);
             $fields = self::stored($row, array_keys($posted));
@@ -287,7 +290,7 @@ final class ProgramActions
             $id = $this->editor->insertSectionAfter((int) $p['id'], $r->int('after'), [
                 'kind' => $r->str('kind') ?: 'teaser', 'block_id' => $r->id('block_id'), 'label' => $r->str('label'),
                 'headline' => $r->str('headline'), 'body' => (string) ($_POST['body'] ?? ''), 'links' => $_POST['links'] ?? [],
-                'image_url' => $r->str('image_url'), 'image_alt' => $r->str('image_alt'),
+                'image_url' => $r->str('image_url'), 'image_alt' => $r->str('image_alt'), 'theme' => $r->str('theme'),
             ]);
             return ['success' => true, 'section_id' => $id] + $this->parts((int) $p['id']);
         });
