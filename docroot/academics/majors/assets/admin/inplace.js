@@ -554,7 +554,7 @@
 			var items = el('div', { class: 'ma-btn-row ma-btn-row--stack' });
 			var isBand = sec && sec.getAttribute('data-ma-kind') === 'band';
 			if (isBand) {
-				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Background colour…', onclick: function () { menu.close(); themePicker(btn, sid); } }));
+				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Background color…', onclick: function () { menu.close(); themePicker(btn, sid); } }));
 			} else if (shared) {
 				items.appendChild(el('button', { type: 'button', class: 'ma-btn', text: 'Customize: give this page its own copy', onclick: function () { menu.close(); fire(act('detach_section', { section_id: sid })); } }));
 			} else {
@@ -601,7 +601,7 @@
 				if (k !== now) { fire(act('save_section_fields', { section_id: sid, theme: k })); }
 			} }, el('span', { class: 'ma-theme-swatch__chip', 'aria-hidden': 'true' }), el('span', { text: themes[k] })));
 		});
-		var pop = U.popover(anchor, { title: 'Background colour', content: box, width: 320 });
+		var pop = U.popover(anchor, { title: 'Background color', content: box, width: 320 });
 	}
 	function scrollToSection(id) {
 		var s = id ? document.querySelector('[data-section="' + id + '"]') : null;

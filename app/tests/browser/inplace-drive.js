@@ -217,7 +217,7 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
   await click('.ma-popover [data-ma-cancel]', { wait: 400 });
   ok('Cancel closes the listings popover and saves nothing', !(await ev(`!!document.querySelector('.ma-popover')`)) && !sent(/save_listings/));
 
-  // 11. full-width section: add after the first section, pick yellow, remove, Undo keeps the colour, remove for good
+  // 11. full-width section: add after the first section, pick yellow, remove, Undo keeps the color, remove for good
   const nb0 = await ev(`document.querySelectorAll('[data-section]').length`);
   const band0 = await maxBand();
   await click('[data-ma-tools] [data-ma-act="add-after"]');
@@ -227,9 +227,9 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
   ok('full-width section added', bandId > band0 && (await ev(`document.querySelectorAll('[data-section]').length`)) === nb0 + 1, `band ${bandId}`);
   ok('it starts on light gray', (await ev(`document.querySelector('[data-section="${bandId}"]').getAttribute('data-ma-theme')`)) === 'light');
   await click(`[data-section="${bandId}"] [data-ma-act="section-menu"]`);
-  ok('the section menu offers Background colour', await clickButton('/Background colour/'));
+  ok('the section menu offers Background color', await clickButton('/Background color/'));
   await sleep(500);
-  ok('colour picker with four swatches', (await ev(`document.querySelectorAll('.ma-popover .ma-theme-swatch').length`)) === 4);
+  ok('color picker with four swatches', (await ev(`document.querySelectorAll('.ma-popover .ma-theme-swatch').length`)) === 4);
   await shot('10-theme-picker');
   await click('.ma-popover .ma-theme-swatch--yellow', { wait: 1800 });
   ok('yellow chosen and shown in the page', (await ev(`document.querySelector('[data-section="${bandId}"]').getAttribute('data-ma-theme')`)) === 'yellow'
