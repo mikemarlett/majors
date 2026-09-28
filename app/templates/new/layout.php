@@ -14,7 +14,8 @@
  *
  * The include fragments must therefore NOT be wrapped in anything.
  *
- * Variables: $content, $top (full-width strip under the title band), $bottom (full-width strip after the grid), $title, $description, $head[], $foot[], $body_class, $user, $csrf,
+ * Variables: $content, $bar (sticky strip, a direct child of <main> so it sticks for the whole page, not just the top strip),
+ *            $top (full-width strip under the title band), $bottom (full-width strip after the grid), $title, $description, $head[], $foot[], $body_class, $user, $csrf,
  *            $page_header, $nav_html, $section_nav (array{desktop,mobile}|null), $header_print, $chrome[]
  * @var \Majors\View\Layout $t
  */
@@ -47,6 +48,7 @@ $hasNav = $section_nav !== null || $nav_html !== '';
 <?= $t->partial('partials/page_header', ['title' => $page_header]) ?>
 	</div>
 <?php endif; ?>
+<?= $bar ?>
 <?php if ($top !== ''): ?>
 	<div class="majors-top">
 <?= $top ?>

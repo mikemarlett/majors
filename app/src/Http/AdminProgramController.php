@@ -96,7 +96,8 @@ final class AdminProgramController extends Controller
             'listed'     => $this->app->programs()->listingEntries($pid) !== [],
         ]);
         $this->page($parts['content'], [
-            'top'          => $editBar . $parts['top'],
+            'bar'          => $editBar,          // its own slot: inside the new design's top strip it would scroll away with it
+            'top'          => $parts['top'],
             'bottom'       => $parts['bottom'],
             'title'        => 'Editing: ' . ProgramRenderer::title($program),
             'page_header'  => 'Details: ' . ProgramRenderer::title($program),

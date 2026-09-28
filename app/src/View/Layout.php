@@ -120,6 +120,7 @@ final class Layout
         }
         return $this->render('layout', [
             'content'      => $content,
+            'bar'          => $opts['bar'] ?? '',   // sticky strip (the editor's bar): a direct child of <main>, so it stays up for the whole page
             'top'          => $opts['top'] ?? '',   // full-width strip under the page title (new design); before the content (old)
             'bottom'       => $opts['bottom'] ?? '', // full-width strip after the sidebar grid (new design); after the content (old)
             'title'        => $opts['title'] ?? $this->site('site_name', 'Wichita State University'),

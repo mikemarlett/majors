@@ -133,6 +133,17 @@ foreach (['old', 'new'] as $design) {
     check(str_ends_with($nav['Degrees from Biological Sciences'] ?? '', '?department=Biological%20Sciences') && isset($nav['Degrees from Chemistry and Biochemistry']), "$design: the section menu lists every department's programs");
 }
 
+echo "[edit bar]\n";
+// Sticky only works within its parent: the editor's bar must be a direct child of <main>, not of
+// the new design's top strip, or it scrolls away once the program card has gone past.
+foreach (['old', 'new'] as $design) {
+    $html = test_layout($design)->page('<p>content</p>', ['bar' => '<div class="ma-edit-bar" data-ma-edit-bar>bar</div>', 'top' => '<div data-ma-part="card">top</div>', 'page_header' => 'Details: X']);
+    $doc = new DOMDocument();
+    @$doc->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR);
+    $bar = (new DOMXPath($doc))->query('//*[@data-ma-edit-bar]')->item(0);
+    check($bar !== null && $bar->parentNode instanceof DOMElement && $bar->parentNode->nodeName === 'main', "$design: the edit bar is a direct child of <main>, so it stays up for the whole page");
+}
+
 echo "[card labels]\n";
 check(ProgramRenderer::cardLabel(['academic_program' => 'Pre-Medicine', 'credential' => '', 'program_simple_type' => '', 'program_type' => '']) === 'Pre-Medicine', 'no credential: the name alone, no empty brackets');
 check(ProgramRenderer::cardLabel(['academic_program' => 'Biology', 'credential' => '', 'program_type' => 'BS']) === 'Biology (BS)', 'falls back to the program type');

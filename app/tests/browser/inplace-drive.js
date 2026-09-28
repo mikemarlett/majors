@@ -83,6 +83,17 @@ async function getJson(url) { return new Promise((res, rej) => http.get(url, r =
   ok('balloon editor loaded', await ev(`typeof window.BalloonEditor === 'function'`));
   ok('no console errors at load', consoleErrors.length === 0, consoleErrors.join(' | '));
 
+  // 0. the edit bar stays at the top of the window however far the page scrolls, and nothing covers it
+  const barState = () => ev(`(function(){var b=document.querySelector('[data-ma-edit-bar]'); var r=b.getBoundingClientRect(); var hit=document.elementFromPoint(Math.round(window.innerWidth/2), Math.round(r.top + r.height/2)); return {top: Math.round(r.top), onTop: !!(hit && hit.closest('[data-ma-edit-bar]')), y: Math.round(window.scrollY)};})()`);
+  await ev(`window.scrollTo(0, Math.max(0, document.documentElement.scrollHeight - window.innerHeight - 200)), true`); await sleep(900);
+  const far = await barState();
+  ok('edit bar stays at the top near the bottom of the page', far.top === 0 && far.onTop && far.y > 1500, JSON.stringify(far));
+  await shot('0-bar-scrolled');
+  await ev(`window.scrollBy(0, -600), true`); await sleep(900);
+  const back = await barState();
+  ok('and after scrolling back up a little (where a site header may reappear)', back.top === 0 && back.onTop, JSON.stringify(back));
+  await ev(`window.scrollTo(0, 0), true`); await sleep(500);
+
   // 1. text edit: learn_how → Enter saves → parts swapped
   const learn0 = await ev(`document.querySelector('[data-ma-text="learn_how"]').textContent.trim()`);
   await ev(`window.__probe = document.querySelector('[data-ma-html="description"]'); true`);
