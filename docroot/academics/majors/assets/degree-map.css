@@ -144,7 +144,6 @@ body {
 .majors-new .majors-alert-slab .majors-slab__inner { padding: 1.5rem 0; }
 .majors-new .majors-alert__title { font-size: 1.35rem; }
 .majors-new .majors-alert .prose ul { margin: 0; }
-.majors-new .dm-help [data-accordion-section-contents] p { max-width: 65ch; }
 /* map header: the logo is wide (4.4:1), so centre it against the two title lines */
 .majors-new .dm-header { align-items: center; gap: 1.5rem; margin-top: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgb(39 37 31 / .15); }
 .majors-new .dm-logo { width: auto; height: 3.5rem; min-width: 0; padding-top: 0; flex: 0 0 auto; }
