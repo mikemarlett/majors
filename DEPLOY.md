@@ -275,6 +275,42 @@ Copy the same files to www. The admin is now safe to leave enabled on www
 `degree_maps*` tables across, as today, still works — run `bin/migrate.php`
 on www too so `majors_users` matches.
 
+## 5. Revised maps for the current year, then the maps to www
+
+Advisors cannot edit a published catalog year, so a revision to a current-year
+map is built as a copy in next year's catalog. Two tools in `sql/tools` move it
+back (run on the test box; www-test and www-dev share the database):
+
+```bash
+cd /data/www/config/majors/sql/tools
+mysqldump --single-transaction formshandlerdb degree_maps degree_maps_courses degree_maps_footnotes degree_maps_semester_hours degree_maps_year_hours | gzip > ~/degree-maps-before-$(date +%Y%m%d).sql.gz
+mysql formshandlerdb -t < degree-maps-revisions.sql          # read-only: each copy and the current map it replaces
+mysql formshandlerdb -e "SET @current=<current_id>, @revised=<revised_id>; source degree-maps-replace.sql"   # once per pair
+```
+
+`degree-maps-replace.sql` puts the revised content onto the current map, so the
+map keeps its id and every link to it, and removes the copy. It changes nothing
+unless the two ids are the current map and next year's copy of the same degree.
+A copy with no current map (a new degree) only needs its year changed:
+`UPDATE degree_maps SET academic_year = <current> WHERE id = <id> AND academic_year = <next>`.
+
+Then copy the five tables to www. The dump drops and recreates them there, so
+www ends up identical to the test box, including any next-year maps already
+started (the viewers list every year in the table):
+
+```bash
+# test box
+mysqldump --single-transaction formshandlerdb degree_maps degree_maps_courses degree_maps_footnotes degree_maps_semester_hours degree_maps_year_hours > degree-maps-$(date +%Y%m%d).sql
+# www, after copying the file over
+mysqldump --single-transaction formshandlerdb degree_maps degree_maps_courses degree_maps_footnotes degree_maps_semester_hours degree_maps_year_hours | gzip > degree-maps-www-before-$(date +%Y%m%d).sql.gz
+mysql formshandlerdb < degree-maps-YYYYMMDD.sql
+mysql formshandlerdb -e "SELECT academic_year, COUNT(*) FROM degree_maps GROUP BY academic_year"   # same counts as the test box
+```
+
+Roll back with `gunzip < degree-maps-www-before-YYYYMMDD.sql.gz | mysql formshandlerdb`.
+Neither viewer reads `program_id`, so program ids that differ between the two
+databases do no harm.
+
 ## Rollback
 
 The old flat files are in git history (`git show 7e0fb7b`) and the www-test
