@@ -84,9 +84,11 @@ if (!in_array('role', $users, true)) {
                 WHEN 'administrator' THEN 'super_admin' WHEN 'admin' THEN 'super_admin'
                 WHEN 'editor' THEN 'advisor' WHEN 'approver' THEN 'advisor' ELSE 'none' END");
     }
-} else {
+} elseif ((string) ($db->query("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'majors_users' AND COLUMN_NAME = 'role'")->fetch_row()[0] ?? '')
+           !== "enum('advisor','advisor_admin','marketing','super_admin','none')") {
     // Column exists but may be a VARCHAR with legacy values, or an ENUM without the
     // new names (www-test): widen first so the normalizing UPDATEs cannot truncate.
+    // Skipped once the column is the final ENUM, so a dry run shows only real work.
     $run("ALTER TABLE `majors_users` MODIFY COLUMN `role` VARCHAR(32) NULL");
     $run("UPDATE `majors_users` SET `role` = 'super_admin' WHERE LOWER(`role`) IN ('admin','administrator')");
     $run("UPDATE `majors_users` SET `role` = 'advisor' WHERE LOWER(`role`) IN ('editor','approver')");
@@ -104,7 +106,8 @@ foreach (['created_at', 'updated_at'] as $c) {
         $run("ALTER TABLE `majors_users` ADD COLUMN `{$c}` DATETIME NULL");
     }
 }
-if (in_array('ouauth_id', $users, true)) {
+if (in_array('ouauth_id', $users, true) && in_array('netid', $users, true)
+    && (int) $db->query("SELECT COUNT(*) FROM `majors_users` WHERE `netid` IS NULL AND `ouauth_id` REGEXP '^[A-Za-z][A-Za-z0-9]{2,7}$'")->fetch_row()[0] > 0) {
     $run("UPDATE `majors_users` SET `netid` = LOWER(`ouauth_id`)
            WHERE `netid` IS NULL AND `ouauth_id` REGEXP '^[A-Za-z][A-Za-z0-9]{2,7}$'");
 }
@@ -123,13 +126,17 @@ if (!in_array('uq_majors_users_email', $uidx, true)) {
 }
 
 colleges:
-$run('CREATE TABLE IF NOT EXISTS `majors_user_colleges` (
-        `user_id` INT UNSIGNED NOT NULL, `college_id` INT UNSIGNED NOT NULL,
-        PRIMARY KEY (`user_id`, `college_id`), KEY `idx_college` (`college_id`)
-     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-if (!$fresh && in_array('default_college_id', $users, true)) {
-    $run('INSERT IGNORE INTO `majors_user_colleges` (`user_id`, `college_id`)
-          SELECT `id`, `default_college_id` FROM `majors_users` WHERE `default_college_id` > 0');
+// Created and seeded from default_college_id once. Seeding again on a later run would
+// hand back colleges a super admin has since removed in Manage Users.
+if ($columns('majors_user_colleges') === []) {
+    $run('CREATE TABLE IF NOT EXISTS `majors_user_colleges` (
+            `user_id` INT UNSIGNED NOT NULL, `college_id` INT UNSIGNED NOT NULL,
+            PRIMARY KEY (`user_id`, `college_id`), KEY `idx_college` (`college_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+    if (!$fresh && in_array('default_college_id', $users, true)) {
+        $run('INSERT IGNORE INTO `majors_user_colleges` (`user_id`, `college_id`)
+              SELECT `id`, `default_college_id` FROM `majors_users` WHERE `default_college_id` > 0');
+    }
 }
 
 // degree_maps_semester_hours never had a unique key, so the old REPLACE INTO
@@ -208,7 +215,7 @@ if ($prog !== []) {
         $run('ALTER TABLE `majors_academic_programs` ADD UNIQUE KEY `uq_majors_programs_basename` (`basename`)');
     }
 }
-$run('CREATE TABLE IF NOT EXISTS `majors_content_blocks` (
+if ($columns('majors_content_blocks') === []) $run('CREATE TABLE IF NOT EXISTS `majors_content_blocks` (
         `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `slug` VARCHAR(80) NOT NULL,
         `headline` VARCHAR(255) NOT NULL DEFAULT "",
@@ -218,7 +225,7 @@ $run('CREATE TABLE IF NOT EXISTS `majors_content_blocks` (
         `updated_at` DATETIME NULL,
         PRIMARY KEY (`id`), UNIQUE KEY `uq_blocks_slug` (`slug`)
      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-$run('CREATE TABLE IF NOT EXISTS `majors_program_sections` (
+if ($columns('majors_program_sections') === []) $run('CREATE TABLE IF NOT EXISTS `majors_program_sections` (
         `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `program_id` INT UNSIGNED NOT NULL,
         `position` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -237,7 +244,7 @@ $run('CREATE TABLE IF NOT EXISTS `majors_program_sections` (
 // 008: listing entries, page-name history, full-width section backgrounds, Similar Programs
 // background photo, more departments, forwarding a retired program (same as sql/008).
 $listingsExisted = $columns('majors_listing_entries') !== [];
-$run('CREATE TABLE IF NOT EXISTS `majors_listing_entries` (
+if (!$listingsExisted) $run('CREATE TABLE IF NOT EXISTS `majors_listing_entries` (
         `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `program_id` INT UNSIGNED NOT NULL,
         `position` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -251,7 +258,7 @@ $run('CREATE TABLE IF NOT EXISTS `majors_listing_entries` (
         `updated_at` DATETIME NULL,
         PRIMARY KEY (`id`), KEY `idx_listing_program` (`program_id`, `position`)
      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-$run('CREATE TABLE IF NOT EXISTS `majors_program_aliases` (
+if ($columns('majors_program_aliases') === []) $run('CREATE TABLE IF NOT EXISTS `majors_program_aliases` (
         `basename` VARCHAR(200) NOT NULL,
         `program_id` INT UNSIGNED NOT NULL,
         `created_at` DATETIME NULL,
