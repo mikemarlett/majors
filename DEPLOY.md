@@ -270,10 +270,47 @@ has removed one of the two bands since.
 
 ## 4. Going live on www
 
-Copy the same files to www. The admin is now safe to leave enabled on www
-(everything is behind CAS + the list), but editing on www-test and copying the
-`degree_maps*` tables across, as today, still works — run `bin/migrate.php`
-on www too so `majors_users` matches.
+Two separate steps. **Degree Maps** can go any time. **The Majors switch** waits
+for marketing, and has to happen together with retiring the CMS listing pages.
+
+**Do not unpack the full docroot bundle on www before the Majors switch.** Its
+listing pages (`index.php`, `majors.php`, `graduate.php`, `online.php`,
+`certificates.php`, the `*_by_college.php` pages) use the same addresses as the
+CMS's live listing pages there and would replace them. For Degree Maps alone,
+build a bundle without them:
+
+```bash
+git archive --format=tar --prefix=majors/ HEAD:docroot/academics/majors _bootstrap.php approot.example.php assets auth degree_maps ':(exclude)degree_maps/_nav.ounav' | gzip > majors-docroot-www-degreemaps-$(git rev-parse --short HEAD).tgz
+```
+
+### Degree Maps on www
+
+1. Sign-in: add `https://www.wichita.edu/academics/majors/auth/login.php` to the
+   Azure app registration's redirect URIs, and check that the box has
+   `/data/www/config/phpAzure/loader.php`. (Or have ITS register it on cas.wichita.edu.)
+2. Users: copy `majors_users`, `majors_user_colleges` and `majors_colleges` from the
+   test box (mysqldump there, load on www). The college ids in the first two refer to
+   the third, so they travel together. The maps themselves came over in section 5.
+3. Move the old admin out of the docroot. The original folder had an admin with no
+   real sign-in, including 27 scripts in `degree_maps/admin/ajax/`; unpacking does not
+   delete them. Move `degree_maps/admin` and `_admin` aside if they exist.
+4. Unpack the app to `/data/www/config/majors`, copy `config/app.www.example.php` to
+   `config/app.www.php`, and run `MAJORS_SITE=www php bin/migrate.php --dry-run`
+   (it should find nothing missing).
+5. Unpack the Degree-Maps-only docroot bundle into `/data/www/main/academics`.
+
+From then on, maps are edited on www. Do not copy the test box's map tables over
+www again; that would undo www's edits. Advisors still cannot edit a published
+year: a revision is still a next-year copy moved back with section 5's
+`degree-maps-replace.sql`, or a super admin's correction.
+
+### The Majors switch
+
+Copy the Majors tables from the test box, unpack the full docroot bundle, retire the
+CMS listing pages in the CMS at the same time (or a publish overwrites the app's
+files), set `'majors' => ['cms_import' => false]` once the CMS program pages are
+retired, and forward each old program page (see "When the CMS program pages retire"
+in section 2g).
 
 ## 5. Revised maps for the current year, then the maps to www
 
