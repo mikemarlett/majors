@@ -294,9 +294,11 @@ git archive --format=tar --prefix=majors/ HEAD:docroot/academics/majors _bootstr
 3. Move the old admin out of the docroot. The original folder had an admin with no
    real sign-in, including 27 scripts in `degree_maps/admin/ajax/`; unpacking does not
    delete them. Move `degree_maps/admin` and `_admin` aside if they exist.
-4. Unpack the app to `/data/www/config/majors`, copy `config/app.www.example.php` to
-   `config/app.www.php`, and run `MAJORS_SITE=www php bin/migrate.php --dry-run`
-   (it should find nothing missing).
+4. Unpack the app to `/data/www/config/majors` and copy `config/app.www.example.php`
+   to `config/app.www.php`. Do **not** run `bin/migrate.php` on www yet: Degree Maps
+   needs nothing from it once the users tables are copied, and the rest of what it
+   lists is the Majors schema, which belongs to the Majors switch (it reshapes tables
+   the CMS's old scripts on www still read).
 5. Unpack the Degree-Maps-only docroot bundle into `/data/www/main/academics`.
 
 From then on, maps are edited on www. Do not copy the test box's map tables over
