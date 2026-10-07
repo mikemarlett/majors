@@ -285,9 +285,19 @@ git archive --format=tar --prefix=majors/ HEAD:docroot/academics/majors _bootstr
 
 ### Degree Maps on www
 
+Done 2026-10-07 with the app and docroot bundles from c744e89. Maps are edited on
+www from that date; the test box's map tables are a stale copy and must not be
+copied over www again.
+
 1. Sign-in: add `https://www.wichita.edu/academics/majors/auth/login.php` to the
-   Azure app registration's redirect URIs, and check that the box has
-   `/data/www/config/phpAzure/loader.php`. (Or have ITS register it on cas.wichita.edu.)
+   Azure app registration's redirect URIs. The box needs the site's own
+   `/data/www/config/phpAzure/` folder (the loader with the `WSU_OAUTH2_*`
+   constants plus the OAuth library it loads); www did not have it, so copy the
+   whole folder from the test box with `scp -rp`, then match the test box's
+   owner/group so the web server can read the loader and nobody else can. The same
+   client id, secret and tenant serve every box; only the redirect URI is per host.
+   `auth/login.php?diag=1` confirms all of it without signing in. (Or have ITS
+   register the URL on cas.wichita.edu and use `'provider' => 'cas'`.)
 2. Users: copy `majors_users`, `majors_user_colleges` and `majors_colleges` from the
    test box (mysqldump there, load on www). The college ids in the first two refer to
    the third, so they travel together. The maps themselves came over in section 5.
