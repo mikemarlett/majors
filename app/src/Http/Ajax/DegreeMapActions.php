@@ -139,6 +139,34 @@ final class DegreeMapActions extends BaseAction
         return ['success' => true, 'degree_map_id' => $newId, 'message' => 'Map cloned into ' . ($newYear - 1) . '-' . $newYear . '.'];
     }
 
+    /**
+     * Approve (put on the public site) or withdraw a set of maps. Advisor admins
+     * and super admins only (the route says so); any college, any year.
+     * POST ids[]=… (and/or degree_map_id=…), approved=1|0.
+     */
+    public function setApproval(Request $r, User $user): array
+    {
+        $ids = array_map('intval', $r->arr('ids'));
+        if (($one = $r->id('degree_map_id')) !== null) {
+            $ids[] = $one;
+        }
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $i): bool => $i > 0)));
+        if ($ids === []) {
+            throw new ActionException('No maps selected.');
+        }
+        $approved = $r->int('approved') === 1;
+        $n        = $this->editor->setApproval($ids, $approved, $user->name());
+        $maps     = $n === 1 ? '1 map' : $n . ' maps';
+        return [
+            'success'  => true,
+            'count'    => $n,
+            'approved' => $approved,
+            'by'       => $user->name(),
+            'at'       => date('Y-m-d H:i:s'),
+            'message'  => $approved ? "Approved {$maps}: now on the public site." : "Withdrew {$maps}: hidden from the public site.",
+        ];
+    }
+
     /** <option>s for the department select, given a college name (HTML). */
     public function departmentOptions(Request $r, User $user): string
     {

@@ -36,6 +36,7 @@ final class AjaxKernel extends Controller
         'save_map_hours'      => [DegreeMapActions::class, 'saveHours',         ['advisor'],              'POST', true],
         'delete_degree_map'   => [DegreeMapActions::class, 'delete',            ['super_admin'],          'POST', true],
         'clone_degree_map'    => [DegreeMapActions::class, 'clone',             ['advisor'],              'POST', true],
+        'set_approval'        => [DegreeMapActions::class, 'setApproval',       ['advisor_admin'],        'POST', true],
         'get_departments'     => [DegreeMapActions::class, 'departmentOptions', ['advisor', 'marketing'], 'ANY',  false],
         // courses
         'edit_course'         => [CourseActions::class,    'editForm',          ['advisor'],              'ANY',  false],

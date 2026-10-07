@@ -238,3 +238,7 @@ body {
 /* a dark band: the theme's own link colours are for light backgrounds (its rich links are the band's grey) */
 .majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:link, .majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:visited { color: #fff; }
 .majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:hover, .majors-old .majors-band.section-wrap--shade-dark .teaser__editorial a:focus { color: #ffc217; }
+
+/* ---- not-approved preview (signed-in advisors on the public page) ---------- */
+.dm-preview-notice { margin: 0 0 1rem; padding: .6rem .9rem; border-left: 4px solid #e80000; background: #fff5f5; color: #27251f; font-size: .95rem; line-height: 1.4; }
+.dm-preview-notice a { font-weight: 600; }

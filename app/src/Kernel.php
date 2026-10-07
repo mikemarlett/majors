@@ -129,6 +129,19 @@ final class Kernel
         return $this->guard ??= new Guard($this, $this->csrf());
     }
 
+    /**
+     * The signed-in user, or null, without starting a session (and setting a
+     * cookie) for a visitor who has none. Public pages use it to let an
+     * editor see a map that students cannot see yet.
+     */
+    public function signedInUser(): ?Auth\User
+    {
+        if ($this->sessionStarted || isset($_COOKIE[$this->config->string('session.name', 'wsumajors')])) {
+            return $this->guard()->user();
+        }
+        return null;
+    }
+
     public function csrf(): Csrf
     {
         $this->session();

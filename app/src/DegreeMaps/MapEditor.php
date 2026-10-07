@@ -416,6 +416,33 @@ final class MapEditor
         }
     }
 
+    // ---- approval ---------------------------------------------------------------
+
+    /**
+     * Approve (public) or withdraw (hidden again) a set of maps, recording who and
+     * when. The content timestamp is left as it is: approving is not an edit, and
+     * "changed since approval" compares the two. Returns the number of rows touched.
+     *
+     * @param list<int> $ids
+     */
+    public function setApproval(array $ids, bool $approved, string $by): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+        $flag = $approved ? 1 : 0;
+        $stmt = $this->db->prepare(
+            'UPDATE `degree_maps` SET `approved` = ?, `approved_by` = ?, `approved_at` = NOW(), `timestamp` = `timestamp`
+              WHERE `id` IN (' . implode(',', array_fill(0, count($ids), '?')) . ')'
+        );
+        $stmt->bind_param('is' . str_repeat('i', count($ids)), $flag, $by, ...$ids);
+        $stmt->execute();
+        $n = $stmt->affected_rows;
+        $stmt->close();
+        return $n;
+    }
+
     private function touch(int $mapId): void
     {
         $stmt = $this->db->prepare('UPDATE `degree_maps` SET `timestamp` = NOW() WHERE `id` = ?');

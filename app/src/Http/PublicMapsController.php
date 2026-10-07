@@ -23,9 +23,10 @@ final class PublicMapsController extends Controller
         $maps   = $this->app->maps();
         $layout = $this->app->layout();
 
-        // Permanent link: ?latest=<any version's id> → newest catalog year of that degree.
+        // Permanent link: ?latest=<any version's id> → newest approved catalog year of that degree.
+        // The id only names the family, so a withdrawn or not-yet-approved map still resolves.
         if (($familyId = $r->id('latest')) !== null) {
-            $header = $maps->header($familyId);
+            $header = $maps->includingUnapproved()->header($familyId);
             if ($header === null) {
                 $this->notFound('That degree map could not be found.');
             }
@@ -40,19 +41,35 @@ final class PublicMapsController extends Controller
 
         $title = 'Degree Maps';
         if ($mapId !== null) {
-            $map = $maps->find($mapId);
+            $map     = $maps->find($mapId);
+            $preview = false;
             if ($map === null) {
-                $this->notFound('That degree map could not be found.');
+                // Not approved (so not public), or gone. Signed-in advisors may still look at it.
+                $editor = $this->app->signedInUser();
+                if ($editor !== null && $editor->canEditDegreeMaps()) {
+                    $map     = $maps->includingUnapproved()->find($mapId);
+                    $preview = $map !== null;
+                }
+                if ($map === null) {
+                    $this->notFound('That degree map could not be found.');
+                }
             }
-            $title    = $maps->title($mapId) ?? $title;
+            $title    = $map['degree_type'] . ' in ' . $map['major'] . ' — ' . $map['academic_year'];
             $year     = (int) $map['academic_year'];
-            $versions = $maps->versions($map);
+            $versions = $maps->versions($map); // public versions only: the year switcher never points at a hidden map
             $results  = (new MapRenderer($layout))->render($map, [
                 'versions'  => $versions,
                 'latest_id' => (int) ($versions[0]['id'] ?? $map['id']),
                 'link_base' => $layout->url('degree_maps/maps.php') . '?degree_map_id=',
                 'latest_url' => $layout->url('degree_maps/maps.php') . '?latest=' . (int) $map['id'],
             ]);
+            if ($preview) {
+                header('Cache-Control: private, no-store');
+                $results = $layout->render('degree_maps/preview_notice', [
+                    'map'       => $map,
+                    'admin_url' => $layout->url('degree_maps/admin/maps.php') . '?degree_map_id=' . (int) $map['id'],
+                ]) . $results;
+            }
         } else {
             $rows    = $maps->list($year, $order, $college);
             $groups  = $order === 'college' ? Listing::byCollege($rows) : Listing::byAlpha($rows);

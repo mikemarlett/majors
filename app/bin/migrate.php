@@ -291,4 +291,19 @@ if (!$listingsExisted) {
            WHERE p.`status` = 'active' AND NOT EXISTS (SELECT 1 FROM `majors_listing_entries` x)");
 }
 
+// 009: degree map approval (sql/009_degree_maps_approval.sql). A map is public only once approved.
+// First time only: every map for the current catalog year and earlier is approved, so students see no change.
+$dm = $columns('degree_maps');
+if ($dm !== []) {
+    $firstTime = !in_array('approved_at', $dm, true);
+    foreach (['approved' => 'TINYINT(1) NULL', 'approved_by' => 'VARCHAR(256) NULL', 'approved_at' => 'DATETIME NULL'] as $col => $def) {
+        if (!in_array($col, $dm, true)) {
+            $run("ALTER TABLE `degree_maps` ADD COLUMN `{$col}` {$def}");
+        }
+    }
+    if ($firstTime) {
+        $run('UPDATE `degree_maps` SET `approved` = 1 WHERE `approved` IS NULL AND `academic_year` <= YEAR(CURDATE()) + IF(MONTH(CURDATE()) >= 8, 1, 0)');
+    }
+}
+
 echo $dry ? "dry run complete\n" : "migration complete\n";

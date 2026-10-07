@@ -2,10 +2,15 @@
 /**
  * Degree Maps admin toolbar: the search/select bar and the Actions row, as two
  * full-bleed slabs (light, then dark) rendered by the layout in the top slot.
+ * In list mode the controls filter the table on the client (map-list.js) and the
+ * approval select appears; on a map's page the search goes to the server.
  * Variables: $user, $mode ('list'|'view'|'edit'), $map (header or null), $order, $year, $years, $colleges, $college,
- *            $can_edit (bool), $can_clone (bool), $editable_year (bool), $self_url, $search_url
+ *            $status ('all'|'approved'|'pending'), $can_edit (bool), $can_clone (bool), $can_approve (bool),
+ *            $editable_year (bool), $self_url, $search_url
  * @var \Majors\View\Layout $t
  */
+use Majors\DegreeMaps\MapRepository;
+
 ob_start();
 ?>
 	<div class="<?= $t->cls('filters') ?> dm-filters" id="dm-filters" data-search-url="<?= $t->e($search_url) ?>" data-self-url="<?= $t->e($self_url) ?>" data-link-base="<?= $t->e($self_url) ?>?degree_map_id=">
@@ -18,7 +23,7 @@ ob_start();
 			<label class="<?= $t->cls('sr_only') ?>" for="selected_year">Catalog Year</label>
 			<select id="selected_year" name="selected_year"><optgroup label="Catalog Year">
 <?php foreach ($years as $y): ?>
-				<option value="<?= (int) $y ?>"<?= (int) $y === (int) $year ? ' selected' : '' ?>><?= (int) $y - 1 ?> - <?= (int) $y ?><?= (int) $y > \Majors\DegreeMaps\MapRepository::currentAcademicYear() ? ' (editable)' : '' ?></option>
+				<option value="<?= (int) $y ?>"<?= (int) $y === (int) $year ? ' selected' : '' ?>><?= (int) $y - 1 ?> - <?= (int) $y ?><?= (int) $y > MapRepository::currentAcademicYear() ? ' (editable)' : '' ?></option>
 <?php endforeach; ?>
 			</optgroup></select>
 			<input type="hidden" name="order" value="<?= $t->e($order) ?>">
@@ -34,6 +39,17 @@ ob_start();
 			<input type="hidden" name="order" value="<?= $t->e($order) ?>">
 			<input type="hidden" name="selected_year" value="<?= (int) $year ?>">
 		</form>
+<?php if ($mode === 'list'): ?>
+		<form class="<?= $t->cls('filters.select') ?>" method="get" action="<?= $t->e($self_url) ?>">
+			<label class="<?= $t->cls('sr_only') ?>" for="selected_status">Approval</label>
+			<select id="selected_status" name="selected_status"><optgroup label="Approval">
+				<option value="all"<?= $status === 'all' ? ' selected' : '' ?>>Approved or not</option>
+				<option value="approved"<?= $status === 'approved' ? ' selected' : '' ?>>Approved (public)</option>
+				<option value="pending"<?= $status === 'pending' ? ' selected' : '' ?>>Not approved</option>
+			</optgroup></select>
+			<input type="hidden" name="selected_year" value="<?= (int) $year ?>">
+		</form>
+<?php endif; ?>
 	</div>
 <?php echo $t->partial('partials/slab', ['theme' => 'neutral-200', 'class' => 'noprint majors-slab--filters', 'body' => (string) ob_get_clean()]); ?>
 <?php ob_start(); ?>
@@ -52,12 +68,31 @@ ob_start();
 <?php if (!$editable_year && $can_clone): ?>
 			<button id="cloneMap" class="<?= $t->cls('button.accent') ?>" type="button" data-map-id="<?= (int) $map['id'] ?>">Clone to Next Year</button>
 <?php endif; ?>
-			<a class="<?= $t->cls('button') ?>" href="<?= $t->e($t->url('degree_maps/maps.php')) ?>?degree_map_id=<?= (int) $map['id'] ?>" target="_blank" rel="noopener">Public page</a>
+<?php $isApproved = MapRepository::isApproved($map); ?>
+<?php if ($can_approve): ?>
+			<button id="approveMap" class="<?= $t->cls('button') ?>" type="button" data-map-id="<?= (int) $map['id'] ?>" data-approved="<?= $isApproved ? 1 : 0 ?>"><?= $isApproved ? 'Withdraw from public site' : 'Approve for public site' ?></button>
+<?php endif; ?>
+			<a class="<?= $t->cls('button') ?>" id="publicPageLink" href="<?= $t->e($t->url('degree_maps/maps.php')) ?>?degree_map_id=<?= (int) $map['id'] ?>" target="_blank" rel="noopener"><?= $isApproved ? 'Public page' : 'Preview public page' ?></a>
 <?php if ($user->isSuperAdmin()): ?>
 			<button id="deleteMap" class="<?= $t->cls('button.subtle') ?> ma-danger" type="button" data-map-id="<?= (int) $map['id'] ?>" data-map-title="<?= $t->e($map['degree_type'] . ' in ' . $map['major'] . ' (' . $map['academic_year'] . ')') ?>">Delete Map</button>
 <?php endif; ?>
 <?php endif; ?>
 		</form>
+<?php if ($map): ?>
+<?php
+    $by   = trim((string) ($map['approved_by'] ?? ''));
+    $at   = !empty($map['approved_at']) ? date('M j, Y', (int) strtotime((string) $map['approved_at'])) : '';
+    $meta = trim(($by !== '' ? ' by ' . $by : '') . ($at !== '' ? ' on ' . $at : ''));
+?>
+		<p class="help-block ma-approval" id="map_approval" data-approved="<?= $isApproved ? 1 : 0 ?>">
+<?php if ($isApproved): ?>
+			<strong>Approved</strong><?= $meta !== '' ? ' ' . $t->e($meta) : '' ?>: this map is on the public site.
+<?php if (MapRepository::changedSinceApproval($map)): ?> It has been saved again since, and the change is already public.<?php endif; ?>
+<?php else: ?>
+			<strong>Not approved</strong><?= $meta !== '' ? ' (withdrawn ' . $t->e($meta) . ')' : '' ?>: students cannot see this map. <?= $can_approve ? 'Approve it when it is ready.' : 'An advisor admin or a super admin approves it when it is ready; you can preview the public page meanwhile.' ?>
+<?php endif; ?>
+		</p>
+<?php endif; ?>
 <?php if ($map && $mode === 'view' && !$can_edit): ?>
 		<p class="help-block">
 <?php if (!$editable_year): ?>

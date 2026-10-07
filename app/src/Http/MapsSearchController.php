@@ -26,10 +26,16 @@ final class MapsSearchController extends Controller
         $text    = $r->str('searchList');
         $college = $r->strOrNull('selected_college');
         $order   = $r->enum('order', ['alpha', 'college'], 'alpha');
-        $year    = $r->int('selected_year') ?: $maps->defaultYear();
         $linkBase = ($r->strOrNull('link_base') !== null && str_starts_with($r->str('link_base'), '/'))
             ? $r->str('link_base')
             : $layout->url('degree_maps/maps.php') . '?degree_map_id=';
+        // The admin page links its results back into the admin; a signed-in editor there also
+        // gets the maps students cannot see yet, flagged. The public page never does.
+        $admin = $r->strOrNull('link_base') !== null && ($this->app->signedInUser()?->canEditDegreeMaps() ?? false);
+        if ($admin) {
+            $maps = $maps->includingUnapproved();
+        }
+        $year = $r->int('selected_year') ?: $maps->defaultYear();
 
         if ($text !== '' && mb_strlen($text) < 2) {
             Json::send(['success' => false, 'message' => 'Your search must have two or more letters.',
@@ -55,9 +61,20 @@ final class MapsSearchController extends Controller
             $note = $layout->render('degree_maps/message', ['message' => 'Results are capped at ' . self::CAP . '. Refine your search.']);
         }
         $groups = $order === 'college' ? Listing::byCollege($rows) : Listing::byAlpha($rows);
+        $flags  = [];
+        if ($admin) {
+            foreach ($rows as $row) {
+                if (!\Majors\DegreeMaps\MapRepository::isApproved($row)) {
+                    $flags[(int) $row['id']] = 'not approved';
+                }
+            }
+            foreach ($maps->duplicateIds($year) as $dupId) {
+                $flags[$dupId] = isset($flags[$dupId]) ? $flags[$dupId] . ', duplicate' : 'duplicate';
+            }
+        }
         Json::send([
             'success' => true,
-            'results' => $note . $layout->render('degree_maps/listing', ['groups' => $groups, 'link_base' => $linkBase, 'alpha_nav' => $order === 'alpha']),
+            'results' => $note . $layout->render('degree_maps/listing', ['groups' => $groups, 'link_base' => $linkBase, 'alpha_nav' => $order === 'alpha', 'flags' => $flags]),
             'count'   => count($rows),
         ]);
     }

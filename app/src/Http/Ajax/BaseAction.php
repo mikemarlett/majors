@@ -20,7 +20,7 @@ abstract class BaseAction
 
     public function __construct(protected readonly Kernel $app)
     {
-        $this->maps    = $app->maps();
+        $this->maps    = $app->maps()->includingUnapproved(); // the admin sees what students cannot yet
         $this->editor  = new MapEditor($app->db());
         $this->lookups = new Lookups($app->db(), (array) $app->config->get('college_aliases', []));
         $this->forms   = new Forms($app->layout(), $this->maps, $this->lookups);

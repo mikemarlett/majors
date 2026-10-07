@@ -2,11 +2,19 @@
 /**
  * A–Z or by-college list of maps.
  * Variables: $groups (Listing::byAlpha/byCollege), $link_base (url prefix that takes the map id),
- *            optional $flag_ids (list of ids to tag) + $flag_text (admin: duplicates)
+ *            optional $flags (map id => label; admin: duplicates, not approved)
  * @var \Majors\View\Layout $t
  */
-$flag_ids  = $flag_ids ?? [];
-$flag_text = $flag_text ?? '';
+/* $flags: map id => label ("duplicate", "not approved", "not approved, duplicate"); $flag_ids + $flag_text is the older one-label form. */
+$flags = $flags ?? [];
+foreach (($flag_ids ?? []) as $fid) {
+    $flags[(int) $fid] = (string) ($flag_text ?? '');
+}
+$flagTitles = [
+    'duplicate'    => 'Another map with the same name, degree type and college exists for this catalog year',
+    'not approved' => 'Not on the public site until an advisor admin or a super admin approves it',
+];
+$flagTitle = static fn (string $label): string => implode('. ', array_filter(array_map(static fn (string $part): string => $flagTitles[trim($part)] ?? '', explode(',', $label))));
 ?>
 <div class="<?= $t->cls('alpha_list') ?> dm-listing">
 <?php if ($groups === []): ?>
@@ -19,7 +27,7 @@ $flag_text = $flag_text ?? '';
 	</div>
 	<ul>
 <?php foreach ($group['items'] as $m): ?>
-		<li><a href="<?= $t->e($link_base . (int) $m['id']) ?>"><?= $t->e($m['major']) ?></a> — <?= $t->e($m['degree_type']) ?><?php if (in_array((int) $m['id'], $flag_ids, true)): ?> <span class="dm-flag" title="Another map with the same name, degree type and college exists for this catalog year (id <?= (int) $m['id'] ?>)"><?= $t->e($flag_text) ?></span><?php endif; ?></li>
+		<li><a href="<?= $t->e($link_base . (int) $m['id']) ?>"><?= $t->e($m['major']) ?></a> — <?= $t->e($m['degree_type']) ?><?php if (isset($flags[(int) $m['id']])): ?> <span class="dm-flag" title="<?= $t->e($flagTitle($flags[(int) $m['id']])) ?> (id <?= (int) $m['id'] ?>)"><?= $t->e($flags[(int) $m['id']]) ?></span><?php endif; ?></li>
 <?php endforeach; ?>
 	</ul>
 <?php endforeach; ?>

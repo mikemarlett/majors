@@ -221,3 +221,23 @@ th[aria-sort="descending"] .ma-sort::after { content: "\25BC"; opacity: 1; }
 .majors-admin .ma-listed-btn:hover, .majors-admin .ma-listed-btn:focus-visible { border-color: rgba(39, 37, 31, .45); background: rgba(255, 219, 0, .15); outline: none; }
 .ma-flag--unlisted { background: #fff; border: 1px dashed #8a8a8a; color: #55534d; }
 .ma-flag--lines { background: transparent; border: 1px solid rgba(39, 37, 31, .3); }
+
+/* ---- degree maps listing (degree_maps/admin/maps.php, map-list.js) ------- */
+/* The same compact table as the control panel, plus the approval state, the
+   tick boxes and the bulk bar above it. */
+.ma-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; margin: 1rem 0 .5rem; padding: .5rem .75rem; background: #f5f4f2; border: 1px solid rgba(39, 37, 31, .15); font-size: .85rem; }
+.ma-bulk .button, .ma-bulk button { margin: 0; }
+.ma-bulk__selected { font-weight: 700; }
+.ma-bulk__hint { flex: 1 1 100%; color: #55534d; font-size: .8rem; }
+.majors-admin .ma-panel-wrap .ma-maps-table .ma-cell-check { width: 1%; white-space: nowrap; }
+.majors-admin .ma-maps-table input[type="checkbox"] { width: 1rem; height: 1rem; margin: .1rem 0 0; vertical-align: top; }
+.majors-admin .ma-panel-wrap .ma-maps-table .ma-cell-status { white-space: normal; min-width: 11rem; }
+.majors-admin .ma-panel-wrap .ma-maps-table .ma-cell-type { white-space: nowrap; width: 1%; }
+.ma-state { font-weight: 700; white-space: nowrap; }
+.ma-state--approved { color: #1f6f2e; }
+.ma-state--pending { color: #8a5a00; }
+.ma-issue--warn { background: #fff0c2; color: #6b4600; }
+.ma-maps__preview { display: inline-block; margin-left: .35rem; font-size: .8rem; white-space: nowrap; }
+.ma-maps__empty td { padding: 1rem !important; color: #55534d; }
+.ma-approval strong { font-weight: 700; }
+.majors-admin .ma-bulk button[disabled] { opacity: .45; cursor: not-allowed; }

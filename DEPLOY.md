@@ -260,6 +260,37 @@ has removed one of the two bands since.
 4. Anything else that links the old pages (CMS navigation, other sites) can
    then move to the `?program=` addresses at leisure.
 
+## 2h. Degree map approval (sql/009)
+
+A map is on the public site only once an advisor admin or a super admin has
+approved it (`degree_maps.approved` = 1, with `approved_by` / `approved_at`).
+The public viewer, the search, the CMS intro-page shim and the program pages
+all read through the approved-only repository; the admin sees every map and
+approves or withdraws from the map's Actions row or, several at once, from
+the listing table (filter by year, college, approval; tick; Approve selected).
+Until approved, a map's public address answers 404 to students and shows a
+"Not approved" preview to signed-in advisors. New maps and clones start out
+not approved.
+
+Order matters on every box (the shared test database, then www): **run the SQL
+first, then unpack the bundles**. The new code filters on `approved`, and
+nothing is approved until the SQL has run.
+
+```bash
+mysql formshandlerdb < /data/www/config/majors/sql/009_degree_maps_approval.sql
+```
+
+First run: every map for the current catalog year and earlier is approved
+(no name or date), so students see no change; later years wait for a real
+approval. Re-running is harmless. `bin/migrate.php` applies the same step on
+the test boxes; on www use the SQL file (section 4: no `migrate.php` there
+before the Majors switch).
+
+A consequence worth telling the advisors: the public page's catalog-year menu
+lists a year once it has one approved map, and after August 1 the public
+default stays on the previous year until something in the new year is
+approved. Approving a year's maps together is the intended workflow.
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.
@@ -316,6 +347,10 @@ www again; that would undo www's edits. Advisors still cannot edit a published
 year: a revision is still a next-year copy moved back with section 5's
 `degree-maps-replace.sql`, or a super admin's correction.
 
+Later Degree Maps releases on www: `sql/` files first (section 2h's 009 is the
+first), then the app bundle, then the Degree-Maps-only docroot bundle built with
+the command above. Never the full docroot bundle before the Majors switch.
+
 ### The Majors switch
 
 Copy the Majors tables from the test box, unpack the full docroot bundle, retire the
@@ -327,8 +362,10 @@ in section 2g).
 ## 5. Revised maps for the current year, then the maps to www
 
 Advisors cannot edit a published catalog year, so a revision to a current-year
-map is built as a copy in next year's catalog. Two tools in `sql/tools` move it
-back (run on the test box; www-test and www-dev share the database):
+map is built as a copy in next year's catalog. Since sql/009 that copy is not
+approved, so building it on www exposes nothing. Two tools in `sql/tools` move
+it back (since 2026-10-07 on www itself, where the maps now live; the replace
+step keeps the current map's approval, so the revision is public at once):
 
 ```bash
 cd /data/www/config/majors/sql/tools

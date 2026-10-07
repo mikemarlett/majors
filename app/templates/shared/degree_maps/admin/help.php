@@ -8,7 +8,7 @@ $mail = $contact !== '' ? '<a href="mailto:' . $t->e($contact) . '">' . $t->e($c
 <section class="<?= $t->cls('section') ?>">
 <div class="<?= $t->cls('prose') ?> majors-help">
 
-	<p class="majors-help__lead">Degree maps are the semester-by-semester plans students print from the public site. This page walks through adding a course, then covers everything else you can do in the editor and, at the end, what the editor does <em>not</em> do.</p>
+	<p class="majors-help__lead">Degree maps are the semester-by-semester plans students print from the public site. This page walks through adding a course, then covers everything else you can do in the editor, how a map gets approved for the public site and, at the end, what the editor does <em>not</em> do.</p>
 
 	<nav class="majors-help__toc" aria-label="On this page">
 		<strong>On this page:</strong>
@@ -20,24 +20,26 @@ $mail = $contact !== '' ? '<a href="mailto:' . $t->e($contact) . '">' . $t->e($c
 		<a href="#h-footnotes">Footnotes and notes</a> ·
 		<a href="#h-sge">The general-education check</a> ·
 		<a href="#h-details">Map details</a> ·
-		<a href="#h-publish">When students see it</a> ·
+		<a href="#h-publish">Approval: when students see it</a> ·
 		<a href="#h-limits">What the editor can't do</a>
 	</nav>
 
 	<h2 id="h-who">Who can edit what</h2>
 	<ul>
 		<li><strong>Advisors</strong> edit the maps of their own college or colleges. You can look at every map, but Edit and Clone only appear on yours.</li>
+		<li><strong>Advisor admins</strong> edit every college's maps and <strong>approve</strong> them: a map is on the public site only once an advisor admin or a super admin has approved it (see <a href="#h-publish">approval</a>).</li>
 		<li><strong>Only next year's maps are editable.</strong> Once a catalog year has started, its maps are frozen: students have printed them and advising has been given on them. The current year, and everything older, is view-only for advisors. A change that genuinely has to be made to a published map goes through <?= $mail ?>, and is visible to students the moment it is saved.</li>
 		<li>The catalog year rolls over on <strong>August 1</strong>. From then on the year that just started is frozen and the following year opens for editing.</li>
 	</ul>
 
 	<h2 id="h-find">1. Find the map</h2>
-	<p>Start at <a href="<?= $t->e($maps_url) ?>">the admin listing</a>. Type part of a degree name in the search box, or pick a <strong>catalog year</strong> and a <strong>college</strong> to narrow the list. Each map has an <strong>Actions</strong> row:</p>
+	<p>Start at <a href="<?= $t->e($maps_url) ?>">the admin listing</a>: a table of every map for the <strong>catalog year</strong> chosen at the top, with each map's approval state. Type part of a degree name in the search box, pick a <strong>college</strong> or an <strong>approval</strong> state to narrow the table, or click a column heading to sort it. A map's name opens it; <strong>Edit</strong> appears on the maps you may change. On a map's page the <strong>Actions</strong> row has:</p>
 	<ul>
 		<li><strong>Edit Map</strong> opens the editor (only on maps you may change).</li>
 		<li><strong>View Map</strong> shows it read-only, exactly as it prints.</li>
 		<li><strong>Clone to Next Year</strong> copies it forward (see below).</li>
-		<li><strong>Public page</strong> opens the student-facing version.</li>
+		<li><strong>Public page</strong> opens the student-facing version. On a map that is not approved yet it reads <strong>Preview public page</strong>: only signed-in advisors can open that address.</li>
+		<li><strong>Approve for public site</strong> / <strong>Withdraw from public site</strong>, for advisor admins and super admins.</li>
 		<li><strong>New Map</strong> creates an empty map for a brand-new degree. Most of the time you want Clone instead.</li>
 	</ul>
 
@@ -87,18 +89,20 @@ $mail = $contact !== '' ? '<a href="mailto:' . $t->e($contact) . '">' . $t->e($c
 	<h2 id="h-details">8. Map details</h2>
 	<p><strong>Edit Map Details</strong> holds the degree name, degree type (BA, BS, BFA…), the map-wide note, the college, the department and the link to the degree's marketing page. The <strong>catalog year is fixed</strong> once a map exists; to change year, clone. The college name printed on an old map is the name the college had when that map was published, so a renamed college keeps its history.</p>
 
-	<h2 id="h-publish">9. When students see it</h2>
-	<p>Being frank, because this trips people up:</p>
+	<h2 id="h-publish">9. Approval: when students see it</h2>
 	<ul>
-		<li>Everything you save here is live <strong>on this site</strong> immediately. There is no draft state and no approval step.</li>
-		<li>The main site (www.wichita.edu) is updated by copying the degree-map data across, which <?= $mail ?> does on request. When next year's maps are ready, say so, and they go live together.</li>
-		<li>Because next year's maps are the only editable ones, and next year's maps are not yet what students print, "live immediately" is rarely a problem. It matters only for the changes super admins make to published years.</li>
+		<li>A map is on the public site only once it has been <strong>approved</strong>. New maps and clones start out not approved, so next year's map can take as long as it takes: students see nothing until an advisor admin or a super admin approves it.</li>
+		<li>Approving is a button on the map's page, or several maps at once from the listing: choose the catalog year, narrow by college if you like, tick the maps (the box in the table heading ticks every map shown) and choose <strong>Approve selected</strong>. Colleges usually approve a whole year together. <strong>Withdraw</strong> hides an approved map again.</li>
+		<li>Until a map is approved, its public address shows it only to signed-in advisors, with a "Not approved" notice, so you can check how it prints. Students get "not found".</li>
+		<li>The public page lists a catalog year as soon as that year has one approved map. Approving a single next-year map early therefore shows students that year with one map in it; approve a year's maps together.</li>
+		<li>Once a map is approved, every save is live <strong>immediately</strong>. The listing marks an approved map that has been saved since as <em>edited since approval</em>, so an admin can look it over; approving it again clears the mark.</li>
+		<li>This is the live site. There is no separate copy to publish any more.</li>
 	</ul>
 
 	<h2 id="h-limits">10. What the editor can't do</h2>
 	<ul>
 		<li><strong>No undo.</strong> Deleting a course or footnote is final in the editor. A mistake can usually be put right by <?= $mail ?> from a database backup, but it is not a click, so read the confirmation before you agree to it.</li>
-		<li><strong>No editing of the current or past years</strong> for advisors, as above.</li>
+		<li><strong>No editing of the current or past years</strong> for advisors, as above. An advisor admin can still approve or withdraw a map of any year.</li>
 		<li><strong>No rich text.</strong> Course info, notes and footnotes are plain text.</li>
 		<li><strong>Printing is the browser's.</strong> The public page is laid out for one US-letter portrait sheet per map; use the browser's Print with no extra headers.</li>
 		<li><strong>Sessions end after eight idle hours</strong>, and the editor will tell you to sign in again. Unsaved text in an open form is lost, so save as you go.</li>

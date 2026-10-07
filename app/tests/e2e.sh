@@ -32,6 +32,12 @@ chk "$(GET "$B/degree_maps/maps.php?map_id=$ENG2027")" 200 "legacy map_id alias"
 chk "$(GET "$B/degree_maps/maps.php?degree_map_id=$FAM_OLD")" 200 "old version"; has $S/out.html 'You are viewing the 2023 - 2024' 'older-version notice'; has $S/out.html 'dm-versions__list' 'year switcher'
 chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/degree_maps/maps.php?latest=$FAM_OLD")" "302 $B/degree_maps/maps.php?degree_map_id=$FAM_NEW" "?latest redirects to newest"
 chk "$(GET "$B/degree_maps/maps.php?degree_map_id=999999")" 404 "missing map"
+UNAPP=$(Q "SELECT id FROM degree_maps WHERE COALESCE(approved,0)<>1 ORDER BY id LIMIT 1"); UNAPP_YEAR=$(Q "SELECT academic_year FROM degree_maps WHERE id=$UNAPP")
+[ -n "$UNAPP" ] && chk "$(GET "$B/degree_maps/maps.php?degree_map_id=$UNAPP")" 404 "an unapproved map is not public (id $UNAPP)"
+if [ -n "$UNAPP" ] && [ "$(Q "SELECT COUNT(*) FROM degree_maps WHERE academic_year=$UNAPP_YEAR AND approved=1")" = 0 ]; then
+  GET "$B/degree_maps/maps.php" >/dev/null; hasnt $S/out.html "value=\"$UNAPP_YEAR\"" "a year with no approved map is not offered ($UNAPP_YEAR)"
+  chk "$(GET -X POST -d "searchList=&selected_year=$UNAPP_YEAR" "$B/degree_maps/search.php")" 200 "public search of that year"; has $S/out.html 'No results' 'finds nothing'
+fi
 chk "$(GET -X POST -d "searchList=Account&selected_year=2027" "$B/degree_maps/search.php")" 200 "search json"; has $S/out.html '"success":true' 'search success'
 chk "$(GET -X POST -d "searchList=Zzzqqq&selected_year=2027" "$B/degree_maps/search.php")" 200 "search no results"; has $S/out.html 'No results' 'no results message'
 chk "$(GET -X POST -d "searchList=A&selected_year=2027" "$B/degree_maps/search.php")" 200 "short search"; has $S/out.html 'two or more' 'short search message'
@@ -63,6 +69,8 @@ chk "$(GET -b $J "$B/degree_maps/admin/maps.php")" 200 "advisor admin page"; has
 CSRF=$(grep -o 'name="csrf-token" content="[a-f0-9]*"' $S/out.html | grep -o '[a-f0-9]\{64\}'); [ -n "$CSRF" ] && ok "csrf token present" || bad "csrf token"
 chk "$(GET -b $J "$B/_admin/index.php")" 403 "advisor blocked from majors admin"
 chk "$(GET -b $J "$B/degree_maps/admin/manage_users.php")" 403 "advisor blocked from users"
+chk "$(GET -b $J "$B/degree_maps/admin/maps.php?selected_year=2028")" 200 "advisor: 2028 listing"; has $S/out.html 'id="maps_table"' 'maps table'; has $S/out.html 'id="selected_status"' 'approval filter'; hasnt $S/out.html 'id="bulkApprove"' 'advisor gets no bulk approve'; hasnt $S/out.html 'class="ma-row-check"' 'nor tick boxes'
+if [ -n "$UNAPP" ]; then chk "$(GET -b $J "$B/degree_maps/maps.php?degree_map_id=$UNAPP")" 200 "advisor previews an unapproved map on the public page"; has $S/out.html 'dm-preview-notice' 'preview notice'; fi
 chk "$(GET -b $J "$B/degree_maps/admin/help.php")" 200 "advisor help page"; has $S/out.html 'id="h-course"' 'help: add-a-course section'; has $S/out.html 'href="/academics/majors/degree_maps/admin/help.php"' 'help linked from admin bar'
 chk "$(curl -s -o /dev/null -w "%{http_code}" "$B/degree_maps/admin/help.php")" 302 "anonymous help redirects to sign-in"
 
@@ -298,6 +306,21 @@ chk "$(GET -b $N "$B/degree_maps/admin/manage_users.php")" 403 "advisor admin bl
 GET -b $N "$B/degree_maps/admin/maps.php" >/dev/null; CN=$(grep -o 'name="csrf-token" content="[a-f0-9]*"' $S/out.html | grep -o '[a-f0-9]\{64\}')
 R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$LAS2027" "$A?action=clone_degree_map"); AN=$(echo "$R" | grep -o '"degree_map_id":[0-9]*' | grep -o '[0-9]*$'); [ -n "$AN" ] && ok "advisor admin clones another college's map → $AN" || bad "aa clone: $R"
 R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$AN&year=1&semester=1" "$A?action=edit_course"); echo "$R" | grep -q 'editCourseModal' && ok "advisor admin edits the clone" || bad "aa edit: $R"
+chk "$(GET "$B/degree_maps/maps.php?degree_map_id=$AN")" 404 "a fresh clone is not public"
+chk "$(GET -b $N "$B/degree_maps/admin/maps.php?degree_map_id=$AN")" 200 "advisor admin views the clone"; has $S/out.html 'id="approveMap"' 'Approve button'; has $S/out.html 'data-approved="0"' 'not approved yet'; has $S/out.html '>Preview public page<' 'public link reads Preview'
+R=$(P -d "degree_map_id=$AN&approved=1" "$A?action=set_approval"); echo "$R" | grep -q 'permission' && ok "advisor cannot approve" || bad "advisor approve: $R"
+chk "$(curl -s -o /dev/null -b $N -w "%{http_code}" -X POST -d "degree_map_id=$AN&approved=1" "$A?action=set_approval")" 419 "approval without the CSRF token → 419"
+R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "ids[]=$AN&approved=1" "$A?action=set_approval"); echo "$R" | grep -q '"approved":true' && ok "advisor admin approves the clone" || bad "aa approve: $R"
+chk "$(Q "SELECT CONCAT(approved,'|',approved_by,'|',approved_at IS NOT NULL) FROM degree_maps WHERE id=$AN")" "1|Aaron Admin|1" "approval recorded with who and when"
+chk "$(GET "$B/degree_maps/maps.php?degree_map_id=$AN")" 200 "the approved clone is public"; hasnt $S/out.html 'dm-preview-notice' 'no preview notice once approved'
+GET "$B/degree_maps/maps.php" >/dev/null; has $S/out.html 'value="2028"' 'the public year menu now offers 2028'
+chk "$(GET -b $N "$B/degree_maps/admin/maps.php?selected_year=2028")" 200 "advisor admin: 2028 listing"; has $S/out.html 'id="bulkApprove"' 'bulk approve'; has $S/out.html "data-id=\"$AN\"" 'clone listed'; has $S/out.html 'ma-state--approved' 'shown as approved'
+R=$(curl -s -b $N -X POST -d "searchList=&selected_year=2028&link_base=/academics/majors/degree_maps/admin/maps.php?degree_map_id=" "$B/degree_maps/search.php"); echo "$R" | grep -q "degree_map_id=$AN" && ok "admin search lists the clone" || bad "admin search: $R"
+R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$AN&approved=0" "$A?action=set_approval"); echo "$R" | grep -q '"approved":false' && ok "advisor admin withdraws it" || bad "aa withdraw: $R"
+chk "$(GET "$B/degree_maps/maps.php?degree_map_id=$AN")" 404 "the withdrawn clone is hidden again"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/degree_maps/maps.php?latest=$AN")" "302 $B/degree_maps/maps.php?degree_map_id=$LAS2027" "?latest= on the withdrawn clone lands on the newest approved version"
+R=$(curl -s -b $N -X POST -d "searchList=&selected_year=2028&link_base=/academics/majors/degree_maps/admin/maps.php?degree_map_id=" "$B/degree_maps/search.php"); echo "$R" | grep -q 'not approved' && ok "admin search flags unapproved maps" || bad "admin search flags: $R"
+R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "approved=1" "$A?action=set_approval"); echo "$R" | grep -q 'No maps selected' && ok "approval with no ids is refused" || bad "no ids: $R"
 R=$(curl -s -b $N -H "X-CSRF-Token: $CN" -X POST -d "degree_map_id=$AN" "$A?action=delete_degree_map"); echo "$R" | grep -q 'permission' && ok "advisor admin cannot delete" || bad "aa delete: $R"
 R=$(PK -d "degree_map_id=$AN" "$A?action=delete_degree_map"); echo "$R" | grep -q '"success":true' && ok "cleanup clone" || bad "cleanup: $R"
 R=$(PK -d "user_id=$(Q "SELECT id FROM majors_users WHERE email='aaron.admin@wichita.edu'")" "$A?action=delete_user"); echo "$R" | grep -q '"success":true' && ok "cleanup advisor admin user" || bad "cleanup user: $R"

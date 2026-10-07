@@ -10,6 +10,12 @@ use mysqli;
  * Read side of the degree_maps* tables. Port of the data functions in the
  * legacy maps_functions.php, with every request-sourced value bound.
  *
+ * Approval: a map reaches the public site only once an advisor admin or a
+ * super admin has approved it (`approved` = 1, sql/009). The repository the
+ * kernel hands out sees approved maps only, so every public path (the viewer,
+ * the search, the CMS shim, the program pages) hides the rest by default. The
+ * admin asks for includingUnapproved() explicitly.
+ *
  * Shape of a full map (find()):
  *   header columns + 'footnotes' => [id => row], 'hours' => [year => [semester => ['hours'=>..], 'total_hours' => ..]],
  *   'courses' => [year => [semester => [order => row]]]
@@ -18,8 +24,37 @@ final class MapRepository
 {
     public const SEMESTERS = [1 => 'Fall', 2 => 'Spring', 3 => 'Summer'];
 
-    public function __construct(private readonly mysqli $db)
+    /** SQL fragment appended to WHERE clauses: approved maps only, or nothing. */
+    private readonly string $visible;
+
+    public function __construct(private readonly mysqli $db, private readonly bool $approvedOnly = true)
     {
+        $this->visible = $approvedOnly ? ' AND `approved` = 1' : '';
+    }
+
+    /** The same tables without the approval filter: for the admin, which must see what is not yet public. */
+    public function includingUnapproved(): self
+    {
+        return $this->approvedOnly ? new self($this->db, false) : $this;
+    }
+
+    public function approvedOnly(): bool
+    {
+        return $this->approvedOnly;
+    }
+
+    /** True when the row is on the public site. */
+    public static function isApproved(array $map): bool
+    {
+        return (int) ($map['approved'] ?? 0) === 1;
+    }
+
+    /** Approved, but saved again since: worth a second look before it stays public. */
+    public static function changedSinceApproval(array $map): bool
+    {
+        return self::isApproved($map)
+            && !empty($map['approved_at']) && !empty($map['timestamp'])
+            && strcmp((string) $map['timestamp'], (string) $map['approved_at']) > 0;
     }
 
     /** Academic year label convention: the year in which the spring semester falls. Aug+ rolls over. */
@@ -35,7 +70,7 @@ final class MapRepository
     public function years(): array
     {
         $years = [];
-        $res   = $this->db->query('SELECT DISTINCT `academic_year` FROM `degree_maps` ORDER BY `academic_year` DESC');
+        $res   = $this->db->query('SELECT DISTINCT `academic_year` FROM `degree_maps` WHERE 1' . $this->visible . ' ORDER BY `academic_year` DESC');
         while ($r = $res->fetch_assoc()) {
             $years[] = (int) $r['academic_year'];
         }
@@ -68,7 +103,7 @@ final class MapRepository
     public function colleges(int $year): array
     {
         $out  = [];
-        $stmt = $this->db->prepare('SELECT DISTINCT `college` FROM `degree_maps` WHERE `academic_year` = ? AND `college` <> "" ORDER BY `college`');
+        $stmt = $this->db->prepare('SELECT DISTINCT `college` FROM `degree_maps` WHERE `academic_year` = ? AND `college` <> ""' . $this->visible . ' ORDER BY `college`');
         $stmt->bind_param('i', $year);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -86,7 +121,7 @@ final class MapRepository
      */
     public function list(int $year, string $order = 'alpha', ?string $college = null): array
     {
-        $sql    = 'SELECT * FROM `degree_maps` WHERE `academic_year` = ?';
+        $sql    = 'SELECT * FROM `degree_maps` WHERE `academic_year` = ?' . $this->visible;
         $types  = 'i';
         $params = [$year];
         if ($college !== null && $college !== '' && $college !== 'all') {
@@ -108,7 +143,7 @@ final class MapRepository
     public function search(string $text, int $year, ?string $college = null, string $order = 'alpha'): array
     {
         $like   = '%' . $text . '%';
-        $sql    = 'SELECT * FROM `degree_maps` WHERE `academic_year` = ?
+        $sql    = 'SELECT * FROM `degree_maps` WHERE `academic_year` = ?' . $this->visible . '
                    AND (`major` LIKE ? OR `college` LIKE ? OR `degree_type` LIKE ? OR `department` LIKE ? OR `note` LIKE ?)';
         $types  = 'isssss';
         $params = [$year, $like, $like, $like, $like, $like];
@@ -126,7 +161,7 @@ final class MapRepository
     /** @return array<string,mixed>|null header row only */
     public function header(int $id): ?array
     {
-        $rows = $this->rows('SELECT * FROM `degree_maps` WHERE `id` = ? LIMIT 1', 'i', [$id]);
+        $rows = $this->rows('SELECT * FROM `degree_maps` WHERE `id` = ?' . $this->visible . ' LIMIT 1', 'i', [$id]);
         return $rows[0] ?? null;
     }
 
@@ -156,7 +191,7 @@ final class MapRepository
     public function forProgram(int $programId): array
     {
         return $this->rows(
-            'SELECT `id`, `major`, `degree_type`, `academic_year` FROM `degree_maps` WHERE `program_id` = ?
+            'SELECT `id`, `major`, `degree_type`, `academic_year`, `approved` FROM `degree_maps` WHERE `program_id` = ?' . $this->visible . '
              ORDER BY `major` ASC, `degree_type` ASC, `academic_year` DESC',
             'i',
             [$programId]
@@ -217,15 +252,17 @@ final class MapRepository
      * Maps have no explicit family id: a new year is a clone that keeps the
      * program_id (when set) and the major / degree_type / college. So the
      * family is "same program_id" OR "same major + degree type + college".
+     * On the public side only approved versions count, so the year switcher
+     * and ?latest= never lead to a map students cannot open.
      *
      * @param array<string,mixed> $map header row
-     * @return list<array<string,mixed>> header rows (includes $map itself)
+     * @return list<array<string,mixed>> header rows (includes $map itself when visible)
      */
     public function versions(array $map): array
     {
         $programId = (int) ($map['program_id'] ?? 0);
-        $sql = 'SELECT `id`, `major`, `degree_type`, `college`, `academic_year`, `program_id` FROM `degree_maps`
-                WHERE (`major` = ? AND `degree_type` = ? AND `college` = ?)';
+        $sql = 'SELECT `id`, `major`, `degree_type`, `college`, `academic_year`, `program_id`, `approved` FROM `degree_maps`
+                WHERE ((`major` = ? AND `degree_type` = ? AND `college` = ?)';
         $types  = 'sss';
         $params = [(string) $map['major'], (string) $map['degree_type'], (string) $map['college']];
         if ($programId > 0) {
@@ -233,13 +270,14 @@ final class MapRepository
             $types   .= 'i';
             $params[] = $programId;
         }
-        $sql .= ' ORDER BY `academic_year` DESC, `id` DESC';
+        $sql .= ')' . $this->visible . ' ORDER BY `academic_year` DESC, `id` DESC';
         return $this->rows($sql, $types, $params);
     }
 
     /**
      * Another map with the same major, degree type and college in $year (a
-     * would-be duplicate), excluding $exceptId. @return array<string,mixed>|null
+     * would-be duplicate), excluding $exceptId. Approval does not matter here:
+     * a hidden duplicate is still a duplicate. @return array<string,mixed>|null
      */
     public function findDuplicate(string $major, string $degreeType, string $college, int $year, ?int $exceptId = null): ?array
     {
@@ -268,11 +306,29 @@ final class MapRepository
         return array_map(static fn (array $r) => (int) $r['id'], $rows);
     }
 
-    /** Newest version in the family of $map (may be $map itself). @return array<string,mixed> */
+    /**
+     * Newest version in the family of $map (may be $map itself). When the newest
+     * year holds more than one map of the family (one program with a BA and a BS
+     * map, say), the one with $map's own name and degree type wins; a renamed
+     * degree, which has no such match, gets the newest map outright.
+     *
+     * @return array<string,mixed>
+     */
     public function latestVersion(array $map): array
     {
         $versions = $this->versions($map);
-        return $versions[0] ?? $map;
+        if ($versions === []) {
+            return $map;
+        }
+        $newestYear = (int) $versions[0]['academic_year'];
+        foreach ($versions as $v) {
+            if ((int) $v['academic_year'] === $newestYear
+                && (string) $v['major'] === (string) ($map['major'] ?? '')
+                && (string) $v['degree_type'] === (string) ($map['degree_type'] ?? '')) {
+                return $v;
+            }
+        }
+        return $versions[0];
     }
 
     /** Maps for a future academic year may be edited; current and past years are read-only. */
