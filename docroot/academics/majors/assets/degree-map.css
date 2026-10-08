@@ -249,3 +249,21 @@ body {
 .majors-alpha-nav { margin: 0 0 1.5rem; }
 .majors-alpha-nav .alpha-filters__list { display: flex; flex-wrap: wrap; }
 .alpha-filters .button[aria-disabled="true"], .alpha-filters .button[aria-disabled="true"]:hover { opacity: .35; cursor: default; pointer-events: none; }
+
+/* ---- programs listing, redesign ------------------------------------------- */
+/* The results header (Heading atom + nc-buttons) and the Certificates view's
+   "Select View" line and sections; the lists themselves are the theme's
+   AlphaListing / ColumnedLinkList markup. Sprite icons get a size: the redesign
+   has no rule for .icon, and an unsized <svg> grows to 300x150. */
+.majors-new svg.icon { width: 1em; height: 1em; }
+.majors-new .majors-results-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin: 0 0 1.5rem; }
+.majors-new .majors-results-header h2 { margin: 0; }
+.majors-new .majors-results-header__buttons { margin: 0; padding: 0; list-style: none; }
+.majors-new .majors-view-switch { margin: 0 0 1.5rem; }
+.majors-new .majors-view-switch p { margin: 0; }
+.majors-new .majors-view-switch a { text-decoration: underline; font-weight: 600; }
+.majors-new .majors-cert-sections { display: grid; gap: 3rem; }
+.majors-new .majors-cert-section { display: grid; gap: 1.5rem; }
+.majors-new .majors-cert-section > h2 { margin: 0; }
+.majors-new .majors-callout .prose > :last-child { margin-bottom: 0; }
+.majors-old .majors-view-switch p:last-child { font-size: 1.1rem; }

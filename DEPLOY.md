@@ -237,6 +237,19 @@ never set (one cleared in the editor stays cleared) and adds a band only to a
 page that has no band yet, so a second run changes nothing unless an editor
 has removed one of the two bands since.
 
+### The listing pages, per design
+
+Current design: the markup of the CMS listing pages (the 2018 library's
+alpha-list organism, taxonomy/search filters, section headers). Only the A–Z
+letter headings get the `section-header` wrapper, because `.alpha-list
+.section-header h2…h6` is the round yellow letter; college and certificate-topic
+headings are bare, as on the original pages. Redesign: its own template
+(`templates/new/majors/listing.php`) built from the design system's pieces
+(Heading and Button atoms, AlphaNav + AlphaListing / ColumnedLinkList, the
+Callout for the certificate intros); no sprite icons there, and
+`degree-map.css` sizes any that slip through. The search/select bar is
+`majors/filters.php` in the layout's top slot on both designs.
+
 ### The A–Z letter index
 
 The CMS listing pages had no letter index. Each design's own pattern is used

@@ -116,8 +116,7 @@ final class PublicMajorsController extends Controller
             Json::send(['success' => true, 'results' => $listing, 'title' => $headline, 'count' => count($rows)]);
         }
 
-        $content = $layout->render('majors/index', [
-            'results'    => $listing,
+        $filtersBar = $layout->render('majors/filters', [
             'filters'    => self::filterLabels(),
             'filter'     => $filter,
             'order'      => $order,
@@ -127,7 +126,9 @@ final class PublicMajorsController extends Controller
             'self_url'   => $layout->url('index.php'),
             'search_url' => $layout->url('search.php'),
         ]);
+        $content = $layout->render('majors/index', ['results' => $listing]);
         $this->page($content, [
+            'top'         => $filtersBar,
             'title'       => 'Degree Programs',
             'page_header' => 'Degree Programs',
             'nav_items'   => $renderer->sectionNav(),
