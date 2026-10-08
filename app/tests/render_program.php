@@ -39,7 +39,7 @@ foreach (['old', 'new'] as $design) {
     $certVars = ['groups' => [], 'cert_sections' => $certs, 'intros' => ['graduate' => ['headline' => "What's a certificate?", 'body' => '<p>A group of courses.</p>']],
         'headline' => 'Certificates', 'order' => 'alpha', 'results_url' => null, 'all_url' => '/academics/majors/index.php'];
     $cert  = $layout->render('majors/results_header', $certVars) . $layout->render('majors/listing', $certVars);
-    check(str_contains($cert, 'Select View:') && str_contains($cert, 'href="#graduate"') && str_contains($cert, "What&#039;s a certificate?") && str_contains($cert, '<p>A group of courses.</p>'), 'certificates: view switch, section and intro');
+    check(str_contains($cert, 'View Graduate Certificates') && !str_contains($cert, 'Select View') && str_contains($cert, 'href="#graduate"') && str_contains($cert, "What&#039;s a certificate?") && str_contains($cert, '<p>A group of courses.</p>'), 'certificates: view buttons, section and intro');
     check(str_contains($cert, 'id="graduate-education"') && str_contains($cert, '>Education</h3>'), 'certificates: topic heading');
     $collegeVars = ['groups' => ProgramRenderer::group([$program], 'college'), 'headline' => 'All Degrees by College', 'order' => 'college', 'results_url' => null, 'all_url' => '/academics/majors/index.php'];
     $byCollege = $layout->render('majors/results_header', $collegeVars) . $layout->render('majors/listing', $collegeVars);

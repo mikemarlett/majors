@@ -7,6 +7,8 @@
  * The round yellow letter comes from `.alpha-list .section-header h2…h6`, so only
  * the A–Z headings get the section-header wrapper; college and certificate-topic
  * headings are bare, as on the original pages (a word in a 60px circle is wrong).
+ * The Certificates view's "Select View" links are buttons ("View Graduate
+ * Certificates" …), the same as on the redesign.
  * The redesign has its own template (templates/new/majors/listing.php).
  *
  * Each line is a listing entry: its name and the detail after the dash (list_name / list_detail).
@@ -34,14 +36,11 @@ $intros        = $intros ?? [];
 <?php if ($cert_sections === []): ?>
 <p class="<?= $t->cls('heading3') ?>">No programs match.</p>
 <?php else: ?>
-<div class="majors-view-switch noprint">
-	<p class="<?= $t->cls('heading5') ?>">Select View:</p>
-	<p>
-<?php foreach ($cert_sections as $i => $sec): ?>
-<?= $i ? ' &nbsp;&nbsp;|&nbsp;&nbsp; ' : '' ?><a href="#<?= $t->e($sec['key']) ?>"><?= $t->e($sec['label']) ?></a>
+<nav class="majors-view-buttons noprint <?= $t->cls('button_collection') ?>" aria-label="Jump to a section">
+<?php foreach ($cert_sections as $sec): ?>
+	<a href="#<?= $t->e($sec['key']) ?>" role="button" class="<?= $t->cls('button') ?>">View <?= $t->e($sec['label']) ?></a>
 <?php endforeach; ?>
-	</p>
-</div>
+</nav>
 <hr>
 <?php foreach ($cert_sections as $sec): ?>
 <section class="majors-cert-section" aria-labelledby="<?= $t->e($sec['key']) ?>">

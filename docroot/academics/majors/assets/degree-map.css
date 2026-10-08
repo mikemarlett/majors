@@ -259,21 +259,25 @@ body {
 .majors-new .majors-results-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin: 0 0 1.5rem; }
 .majors-new .majors-results-header h2 { margin: 0; }
 .majors-new .majors-results-header__buttons { margin: 0; padding: 0; list-style: none; }
-.majors-new .majors-view-switch { margin: 0 0 1.5rem; }
-.majors-new .majors-view-switch p { margin: 0; }
-.majors-new .majors-view-switch a { text-decoration: underline; font-weight: 600; }
 .majors-new .majors-cert-sections { display: grid; gap: 3rem; }
 .majors-new .majors-cert-section { display: grid; gap: 1.5rem; }
 .majors-new .majors-cert-section > h2 { margin: 0; }
 .majors-new .majors-callout .prose > :last-child { margin-bottom: 0; }
-.majors-old .majors-view-switch p:last-child { font-size: 1.1rem; }
 
 /* ---- programs listing, redesign: the top band ------------------------------ */
 /* Under the search/select slab: the results headline + buttons slab, then the
    AlphaNav slab, all full width; the listing starts beside the sidebar. */
-.majors-new .majors-top .majors-slab--results .majors-slab__inner { padding-top: 0; }
+/* The headline and buttons sit on white, clear of the grey search band, with room above
+   them. The theme paints a slab's colour on its inner wrapper from --theme-bg-color, so
+   the slab keeps its neutral theme attribute (for the container behaviour) and gets the
+   colour overridden here. */
+.majors-new .majors-top section.majors-slab--results { --theme-bg-color: 255 255 255; }
+.majors-new .majors-top .majors-slab--results .majors-slab__inner { padding: 2.25rem 0 0; }
 .majors-new .majors-top .majors-results-header { margin: 0; }
-.majors-new .majors-top .majors-view-switch { margin: .75rem 0 0; }
+.majors-new .majors-top .majors-view-buttons { margin: 1.25rem 0 0; }
+.majors-new .majors-top .majors-view-buttons ul { margin: 0; padding: 0; list-style: none; }
+.majors-new .majors-top .majors-slab--results + [data-nc-component="alpha-nav"] { margin-top: 2rem; }
+.majors-old .majors-view-buttons { margin: 0 0 1.5rem; }
 .majors-new .majors-top [data-nc-component="alpha-nav"] { margin-bottom: 0; }
 .majors-new .majors-top [data-nc-component="alpha-nav"] .generic-slab-inner { padding-top: 0; }
 

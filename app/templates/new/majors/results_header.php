@@ -3,7 +3,7 @@
  * Redesign: the part of the results that lives in the full-width top band,
  * under the search/select bar: the results headline with its buttons (Heading
  * and Button atoms), the letter index (AlphaNav) for the A–Z view, and the
- * "Select View" links for the Certificates view. The listing itself starts in
+ * "View … Certificates" buttons for the Certificates view. The listing itself starts in
  * the main column beside the sidebar (majors/listing.php). majors.js swaps
  * this block (#majors-results-top) together with the results.
  *
@@ -25,12 +25,12 @@ ob_start();
 		</ul>
 	</header>
 <?php if ($cert_sections !== null && $cert_sections !== []): ?>
-	<nav class="majors-view-switch noprint" aria-label="Jump to">
-		<p><strong>Select View:</strong>
-<?php foreach ($cert_sections as $i => $sec): ?>
-<?= $i ? ' &nbsp;|&nbsp; ' : ' ' ?><a href="#<?= $t->e($sec['key']) ?>"><?= $t->e($sec['label']) ?></a>
+	<nav class="majors-view-buttons noprint" aria-label="Jump to a section">
+		<ul role="list" class="<?= $t->cls('button_collection') ?>">
+<?php foreach ($cert_sections as $sec): ?>
+			<li><a class="nc-button" href="#<?= $t->e($sec['key']) ?>"><span class="nc-button-text">View <?= $t->e($sec['label']) ?></span></a></li>
 <?php endforeach; ?>
-		</p>
+		</ul>
 	</nav>
 <?php endif; ?>
 <?php $body = (string) ob_get_clean(); ?>
