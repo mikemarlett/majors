@@ -370,6 +370,12 @@ the command above. Never the full docroot bundle before the Majors switch.
 
 ### The Majors switch
 
+Done 2026-10-08 (tables, the full docroot bundle ddf92a8, `cms_import` off).
+The nine CMS listing pages were recycled through the CMS API from the sandbox
+(their sources are in `/srv/work/majors-backups/cms-listing-pages-20261008/`);
+the rewrite in redirects.conf goes live by the deploy timer the same evening.
+The CMS program pages are still published and still to be retired at leisure.
+
 The Majors tables travel from the test box once, in this order; after that the
 www database is the source for program pages too. Not in the copy: the degree
 map tables (edited on www since 2026-10-07), the users tables and
