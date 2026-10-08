@@ -1,4 +1,5 @@
-/* Degree Programs listing: filter changes and typed searches update the list in place. */
+/* Degree Programs listing: filter changes and typed searches update the list in place
+   (and, on the redesign, the headline / buttons / letter index block in the top band). */
 (function () {
 	'use strict';
 	var filters = document.getElementById('majors-filters');
@@ -30,6 +31,14 @@
 			.then(function (data) {
 				results.innerHTML = data.results || '<p>No results</p>';
 				results.removeAttribute('aria-busy');
+				// Redesign: the headline, buttons and letter index live in the top band.
+				var top = document.getElementById('majors-results-top');
+				if (top && typeof data.header === 'string') {
+					var holder = document.createElement('div');
+					holder.innerHTML = data.header;
+					var fresh = holder.querySelector('#majors-results-top');
+					if (fresh) { top.replaceWith(fresh); }
+				}
 				if (data.title) { document.title = data.title; }
 				if (window.history && window.history.replaceState) {
 					window.history.replaceState(null, '', selfUrl + (p.toString() ? '?' + p.toString() : ''));

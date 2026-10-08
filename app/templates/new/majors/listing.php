@@ -1,9 +1,10 @@
 <?php
 /**
- * Redesign: the programs listing built from the design system's pieces.
- *   results header  Heading atom + Button atoms (nc-button, no sprite icons)
- *   A–Z / college   AlphaNav (partials/alpha_nav, A–Z only) + AlphaListing sections,
- *                   each a ColumnedLinkList (theme/components/Organism/{AlphaListing,ColumnedLinkList})
+ * Redesign: the programs listing, in the main column beside the sidebar. The
+ * results headline, its buttons, the letter index and the Certificates
+ * "Select View" links are in the full-width top band (majors/results_header.php).
+ *   A–Z / college   AlphaListing sections, each a ColumnedLinkList
+ *                   (theme/components/Organism/{AlphaListing,ColumnedLinkList})
  *   Certificates    Graduate / Undergraduate sections, each with its intro Callout
  *                   (majors-callout in degree-map.css) and its topics as AlphaListing sections
  * Each line is a listing entry: its name and the detail after the dash (list_name / list_detail).
@@ -33,26 +34,10 @@ $section = static function (string $id, string $label, int $styleLevel, array $i
     return $out . '</ul></div></div></section>';
 };
 ?>
-<header class="majors-results-header">
-	<h2 data-style-level="2" class="<?= $headingClass ?>"><?= $t->e($headline) ?></h2>
-	<ul role="list" class="<?= $t->cls('button_collection') ?> majors-results-header__buttons">
-		<li><a class="nc-button" href="<?= $t->e($all_url) ?>"><span class="nc-button-text">All Degree Programs</span></a></li>
-<?php if ($results_url): ?>
-		<li><a class="nc-button" href="<?= $t->e($results_url) ?>"><span class="nc-button-text">Link to These Results</span></a></li>
-<?php endif; ?>
-	</ul>
-</header>
 <?php if ($cert_sections !== null): ?>
 <?php if ($cert_sections === []): ?>
 <p class="nc-heading text-2xl">No programs match.</p>
 <?php else: ?>
-<nav class="majors-view-switch noprint" aria-label="Jump to">
-	<p><strong>Select View:</strong>
-<?php foreach ($cert_sections as $i => $sec): ?>
-<?= $i ? ' &nbsp;|&nbsp; ' : ' ' ?><a href="#<?= $t->e($sec['key']) ?>"><?= $t->e($sec['label']) ?></a>
-<?php endforeach; ?>
-	</p>
-</nav>
 <div class="majors-cert-sections">
 <?php foreach ($cert_sections as $sec): ?>
 	<section class="majors-cert-section scroll-mt-6" id="<?= $t->e($sec['key']) ?>" aria-labelledby="<?= $t->e($sec['key']) ?>-heading">
@@ -78,16 +63,6 @@ $section = static function (string $id, string $label, int $styleLevel, array $i
 <?php elseif ($groups === []): ?>
 <p class="nc-heading text-2xl">No programs match.</p>
 <?php else: ?>
-<?php if ($order === 'alpha'): ?>
-<?php
-$links = [];
-foreach ($groups as $g) {
-    $letter = preg_match('/^[A-Z]$/', (string) $g['key']) ? (string) $g['key'] : '#';
-    $links[$letter] ??= (string) $g['key'];
-}
-echo $t->partial('partials/alpha_nav', ['links' => $links]);
-?>
-<?php endif; ?>
 <div data-nc-component="alpha-listing" class="grid grid-cols-1 gap-10">
 <?php foreach ($groups as $g): ?>
 <?= $section((string) $g['key'], (string) $g['label'], 3, $g['items']) ?>

@@ -102,7 +102,7 @@ final class PublicMajorsController extends Controller
             && ($order === 'alpha' || (Listings::LISTS[$filter]['college'] ?? null) !== null);
         $resultsUrl = $query === '' ? null : ($plain ? Listings::url($layout->url(''), $filter, $order) : $layout->url('index.php') . '?' . $query);
         $certs = $filter === 'certificates' && $order === 'alpha';
-        $listing  = $layout->render('majors/listing', [
+        $vars  = [
             'groups'        => $certs ? [] : ProgramRenderer::group($rows, $order),
             'cert_sections' => $certs ? ProgramRenderer::groupCertificates($rows) : null,
             'intros'        => $certs ? $this->certificateIntros() : [],
@@ -110,10 +110,15 @@ final class PublicMajorsController extends Controller
             'order'         => $order,
             'results_url'   => $resultsUrl,
             'all_url'       => Listings::url($layout->url(''), 'all'),
-        ]);
+        ];
+        // Each design decides what sits in the full-width top band and what in the column:
+        // the redesign puts the headline, buttons and letter index up top (majors/results_header),
+        // the current design keeps them in the listing itself and renders nothing here.
+        $header  = $layout->render('majors/results_header', $vars);
+        $listing = $layout->render('majors/listing', $vars);
 
         if ($isJson) {
-            Json::send(['success' => true, 'results' => $listing, 'title' => $headline, 'count' => count($rows)]);
+            Json::send(['success' => true, 'results' => $listing, 'header' => $header, 'title' => $headline, 'count' => count($rows)]);
         }
 
         $filtersBar = $layout->render('majors/filters', [
@@ -128,7 +133,7 @@ final class PublicMajorsController extends Controller
         ]);
         $content = $layout->render('majors/index', ['results' => $listing]);
         $this->page($content, [
-            'top'         => $filtersBar,
+            'top'         => $filtersBar . $header,
             'title'       => 'Degree Programs',
             'page_header' => 'Degree Programs',
             'nav_items'   => $renderer->sectionNav(),

@@ -30,24 +30,31 @@ foreach (['old', 'new'] as $design) {
     check(count($groups) === 2 && $groups[0]['label'] === 'A' && $groups[1]['label'] === 'B', 'alpha grouping');
     $list = $layout->render('majors/listing', ['groups' => $groups, 'headline' => 'All Degrees', 'order' => 'alpha',
         'results_url' => '/academics/majors/index.php?filter=online', 'all_url' => '/academics/majors/index.php']);
+    $listVars = ['groups' => $groups, 'headline' => 'All Degrees', 'order' => 'alpha', 'results_url' => '/academics/majors/index.php?filter=online', 'all_url' => '/academics/majors/index.php'];
+    $top  = $layout->render('majors/results_header', $listVars);   // redesign: headline, buttons and index in the top band; current design: empty
+    $list = $top . $list;
     check(str_contains($list, 'Link to These Results') && str_contains($list, '?program=aerospace_engineering_bs_41') && str_contains($list, '?id=9'), 'listing header and links by basename');
     check(substr_count($list, 'partials') === 0 && str_contains($list, 'href="#A"'), 'letter index links to the A section');
     $certs = [['key' => 'graduate', 'label' => 'Graduate Certificates', 'topics' => [['key' => 'graduate-education', 'label' => 'Education', 'items' => [$program]]]]];
-    $cert  = $layout->render('majors/listing', ['groups' => [], 'cert_sections' => $certs, 'intros' => ['graduate' => ['headline' => "What's a certificate?", 'body' => '<p>A group of courses.</p>']],
-        'headline' => 'Certificates', 'order' => 'alpha', 'results_url' => null, 'all_url' => '/academics/majors/index.php']);
+    $certVars = ['groups' => [], 'cert_sections' => $certs, 'intros' => ['graduate' => ['headline' => "What's a certificate?", 'body' => '<p>A group of courses.</p>']],
+        'headline' => 'Certificates', 'order' => 'alpha', 'results_url' => null, 'all_url' => '/academics/majors/index.php'];
+    $cert  = $layout->render('majors/results_header', $certVars) . $layout->render('majors/listing', $certVars);
     check(str_contains($cert, 'Select View:') && str_contains($cert, 'href="#graduate"') && str_contains($cert, "What&#039;s a certificate?") && str_contains($cert, '<p>A group of courses.</p>'), 'certificates: view switch, section and intro');
     check(str_contains($cert, 'id="graduate-education"') && str_contains($cert, '>Education</h3>'), 'certificates: topic heading');
-    $byCollege = $layout->render('majors/listing', ['groups' => ProgramRenderer::group([$program], 'college'), 'headline' => 'All Degrees by College', 'order' => 'college',
-        'results_url' => null, 'all_url' => '/academics/majors/index.php']);
+    $collegeVars = ['groups' => ProgramRenderer::group([$program], 'college'), 'headline' => 'All Degrees by College', 'order' => 'college', 'results_url' => null, 'all_url' => '/academics/majors/index.php'];
+    $byCollege = $layout->render('majors/results_header', $collegeVars) . $layout->render('majors/listing', $collegeVars);
     check(!str_contains($byCollege, 'alpha-filters') && !str_contains($byCollege, 'alpha-nav'), 'by college: no letter index');
     if ($design === 'old') {
         check(!preg_match('/section-header[^>]*>\s*<h3[^>]*id="graduate-education"/', $cert), 'old: a topic heading is not wrapped as a letter (no circle)');
         check(!str_contains($byCollege, 'class="section-header"'), 'old: a college heading is not wrapped as a letter');
         check(preg_match('/<header class="section-header"><h3[^>]*id="A"/', $list) === 1, 'old: the letter heading keeps the circle');
         check(str_contains($list, 'alpha-filters majors-alpha-nav'), 'old: alpha-filters molecule');
+        check(trim($top) === '', 'old: nothing extra in the top band');
     } else {
         check(!str_contains($list, '<svg') && !str_contains($cert, '<svg'), 'new: no sprite icons');
         check(str_contains($list, 'data-nc-component="alpha-nav"') && str_contains($list, 'data-nc-component="alpha-listing"'), 'new: AlphaNav + AlphaListing');
+        check(str_contains($top, 'id="majors-results-top"') && str_contains($top, 'data-nc-component="alpha-nav"') && !str_contains($top, 'alpha-listing'), 'new: headline, buttons and index are the top-band block; the listing is not');
+        check(!str_contains($layout->render('majors/listing', $listVars), 'majors-results-header'), 'new: the listing body carries no header');
         check(str_contains($list, '<a class="nc-button" href="/academics/majors/index.php"><span class="nc-button-text">All Degree Programs</span></a>'), 'new: Button atom markup');
         check(str_contains($cert, 'class="majors-callout"') && str_contains($cert, 'data-nc-component="alpha-listing"'), 'new: certificates use the callout and alpha listing');
         check(str_contains($byCollege, 'data-nc-component="alpha-listing"'), 'new: by college is an alpha listing without the nav');

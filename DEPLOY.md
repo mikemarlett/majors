@@ -248,7 +248,12 @@ headings are bare, as on the original pages. Redesign: its own template
 (Heading and Button atoms, AlphaNav + AlphaListing / ColumnedLinkList, the
 Callout for the certificate intros); no sprite icons there, and
 `degree-map.css` sizes any that slip through. The search/select bar is
-`majors/filters.php` in the layout's top slot on both designs.
+`majors/filters.php` in the layout's top slot on both designs. On the redesign
+the results headline, its buttons, the letter index and the Certificates
+"Select View" links are in that top band too (`majors/results_header.php`,
+swapped by majors.js along with the results), so the listing starts beside the
+sidebar; on the current design that template is empty and the header stays in
+the listing, as on the CMS pages.
 
 ### The A–Z letter index
 
