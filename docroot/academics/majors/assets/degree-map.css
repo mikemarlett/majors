@@ -279,7 +279,6 @@ body {
 .majors-new .majors-top .majors-slab--results + [data-nc-component="alpha-nav"] { margin-top: 2rem; }
 .majors-old .majors-view-buttons { margin: 0 0 1.5rem; }
 .majors-new .majors-top [data-nc-component="alpha-nav"] { margin-bottom: 0; }
-.majors-new .majors-top [data-nc-component="alpha-nav"] .generic-slab-inner { padding-top: 0; }
 
 /* ---- search/select bar, redesign: four controls on one line ----------------- */
 /* A <select> is as wide as its longest option, so the College select pushed the
