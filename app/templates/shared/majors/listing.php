@@ -3,6 +3,8 @@
  * Programs listing: A–Z or by college, or the Certificates layout (Graduate / Undergraduate
  * Certificates grouped by topic, each half with its intro), with the results header.
  * Each line is a listing entry: its name and the detail after the dash (list_name / list_detail).
+ * The A–Z view gets the letter index of its design (partials/alpha_nav); the by-college and
+ * Certificates views have none, like the pages they replaced.
  * Variables: $groups, $cert_sections (null unless the Certificates layout), $intros (section => headline/body),
  *            $headline, $order, $results_url (nullable), $all_url
  * @var \Majors\View\Layout $t
@@ -27,11 +29,6 @@ $intros        = $intros ?? [];
 <?php if ($cert_sections === []): ?>
 <p class="<?= $t->cls('heading3') ?>">No programs match.</p>
 <?php else: ?>
-<nav class="majors-jump noprint <?= $t->cls('button_collection') ?>" aria-label="Jump to">
-<?php foreach ($cert_sections as $sec): ?>
-	<a href="#<?= $t->e($sec['key']) ?>" role="button" class="<?= $t->cls('button.small') ?>"><?= $t->e($sec['label']) ?></a>
-<?php endforeach; ?>
-</nav>
 <?php foreach ($cert_sections as $sec): ?>
 <section class="majors-cert-section" aria-labelledby="<?= $t->e($sec['key']) ?>">
 	<h2 class="<?= $t->cls('heading3') ?>" id="<?= $t->e($sec['key']) ?>"><?= $t->e($sec['label']) ?></h2>
@@ -62,11 +59,18 @@ $intros        = $intros ?? [];
 <?php elseif ($groups === []): ?>
 <p class="<?= $t->cls('heading3') ?>">No programs match.</p>
 <?php else: ?>
-<nav class="majors-jump noprint <?= $t->cls('button_collection') ?>" aria-label="Jump to">
-<?php foreach ($groups as $g): ?>
-	<a href="#<?= $t->e($g['key']) ?>" role="button" class="<?= $t->cls('button.small') ?>"><?= $t->e($g['label']) ?></a>
-<?php endforeach; ?>
-</nav>
+<?php if ($order === 'alpha'): ?>
+<?php
+// Letter index (each design's own pattern: alpha-filters on the current site, AlphaNav on the redesign).
+// Section ids are the group keys; every numeric group is reached from '#'.
+$links = [];
+foreach ($groups as $g) {
+    $letter = preg_match('/^[A-Z]$/', (string) $g['key']) ? (string) $g['key'] : '#';
+    $links[$letter] ??= (string) $g['key'];
+}
+echo $t->partial('partials/alpha_nav', ['links' => $links]);
+?>
+<?php endif; ?>
 <hr>
 <div class="<?= $t->cls('alpha_list') ?> dm-listing">
 <?php foreach ($groups as $g): ?>

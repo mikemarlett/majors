@@ -1,9 +1,9 @@
 <?php
 /**
  * New design: A–Z / by-college list of maps as the design system's
- * AlphaNav (letter jump links, alphabetical order only) + AlphaListing
- * (dotted-rule sections) with a ColumnedLinkList in each section. Markup
- * mirrors theme/components/Organism/{AlphaNav,AlphaListing,ColumnedLinkList}.
+ * AlphaNav (partials/alpha_nav; letter jump links, alphabetical order only)
+ * + AlphaListing (dotted-rule sections) with a ColumnedLinkList in each
+ * section. Markup mirrors theme/components/Organism/{AlphaListing,ColumnedLinkList}.
  *
  * Variables: $groups (Listing::byAlpha/byCollege), $link_base, optional $alpha_nav (bool),
  *            $flags (map id => label; admin: duplicates, not approved)
@@ -21,39 +21,23 @@ $flagTitles = [
 $flagTitle = static fn (string $label): string => implode('. ', array_filter(array_map(static fn (string $part): string => $flagTitles[trim($part)] ?? '', explode(',', $label))));
 $alpha_nav = !empty($alpha_nav);
 $anchor    = static fn (string $key): string => 'dm-' . (preg_match('/^[A-Za-z]$/', $key) ? strtoupper($key) : (ctype_digit($key) ? 'num' : 'other'));
-$present   = [];
-foreach ($groups as $g) {
-    $present[$anchor((string) $g['key'])] = true;
-}
-$linkBase = 'rounded-full absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-full h-full bg-theme-button-bg-color text-theme-button-text-color font-semibold flex justify-center items-center';
 ?>
 <div class="dm-listing">
 <?php if ($groups === []): ?>
 	<p class="nc-heading text-2xl">No degree maps found.</p>
 <?php endif; ?>
 <?php if ($alpha_nav && $groups !== []): ?>
-	<nav data-nc-component="alpha-nav" data-tw-theme="neutral-200" aria-label="Jump to a letter" class="generic-slab [--vertical-space-padding:1.75rem] mb-8 noprint">
-		<div class="generic-slab-inner theme-not-default:py-vertical-space-padding">
-			<div class="generic-slab-content-outer-wrapper relative conditional-container theme-not-default:container">
-				<div class="generic-slab-content-inner-wrapper flex flex-col gap-8">
-					<div class="generic-slab-component-wrapper">
-						<ul role="list" class="flex flex-wrap gap-2 text-lg/0">
-<?php foreach (array_merge(range('A', 'Z'), ['#']) as $letter): ?>
-<?php $id = $anchor($letter === '#' ? '0' : $letter); ?>
-							<li class="relative p-[calc(18rem/16)]">
-<?php if (isset($present[$id])): ?>
-								<a href="#<?= $id ?>" class="<?= $linkBase ?> hocus:bg-theme-button-2-bg-color hocus:text-theme-button-2-text-color"<?= $letter === '#' ? ' aria-label="Numeric"' : '' ?>><?= $letter ?></a>
-<?php elseif ($letter !== '#'): ?>
-								<span role="link" aria-disabled="true" class="<?= $linkBase ?> opacity-50"><?= $letter ?></span>
-<?php endif; ?>
-							</li>
-<?php endforeach; ?>
-						</ul>
-					</div>
-				</div>
-			</div>
-		</div>
-	</nav>
+<?php
+$links = [];
+foreach ($groups as $g) {
+    $key = (string) $g['key'];
+    $letter = preg_match('/^[A-Za-z]$/', $key) ? strtoupper($key) : (ctype_digit($key) ? '#' : null);
+    if ($letter !== null) {
+        $links[$letter] ??= $anchor($key);
+    }
+}
+echo $t->partial('partials/alpha_nav', ['links' => $links]);
+?>
 <?php endif; ?>
 <?php if ($groups !== []): ?>
 	<div data-nc-component="alpha-listing" class="grid grid-cols-1 gap-10">

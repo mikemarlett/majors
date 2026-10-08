@@ -43,7 +43,7 @@ chk "$(GET -X POST -d "searchList=Zzzqqq&selected_year=2027" "$B/degree_maps/sea
 chk "$(GET -X POST -d "searchList=A&selected_year=2027" "$B/degree_maps/search.php")" 200 "short search"; has $S/out.html 'two or more' 'short search message'
 
 echo "[public majors]"
-chk "$(GET "$B/index.php")" 200 "programs listing"; has $S/out.html 'All Degrees' 'headline'; has $S/out.html 'majors-jump' 'jump nav'
+chk "$(GET "$B/index.php")" 200 "programs listing"; has $S/out.html 'All Degrees' 'headline'; has $S/out.html 'class="alpha-filters majors-alpha-nav' 'letter index (alpha-filters)'; has $S/out.html 'href="#A" role="button" class="button">A</a>' 'letter A links to its section'; hasnt $S/out.html 'majors-jump' 'no invented jump row'
 chk "$(GET "$B/index.php?order=college&filter=online")" 200 "filtered"; has $S/out.html 'Online Programs' 'filter headline'
 chk "$(GET "$B/index.php?program=$PBN")" 200 "program page"; grep -qE 'program-card|majors-program-intro' $S/out.html && ok "program page body (either design)" || bad "program page body"
 chk "$(GET "$B/search.php?filter=graduate")" 200 "majors search json"; has $S/out.html '"title":"Graduate Degrees"' 'json title'

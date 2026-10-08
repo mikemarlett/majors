@@ -237,6 +237,15 @@ never set (one cleared in the editor stays cleared) and adds a band only to a
 page that has no band yet, so a second run changes nothing unless an editor
 has removed one of the two bands since.
 
+### The A–Z letter index
+
+The CMS listing pages had no letter index. Each design's own pattern is used
+instead (`templates/<design>/partials/alpha_nav.php`): on the current site the
+2018 library's "alpha filters" molecule (`molecules/filtration/alpha-filters`
+in `/srv/work/wichita`, round letter buttons; the live stylesheet still carries
+its rule), on the redesign the AlphaNav organism. Only the A–Z views get one;
+by-college and Certificates have none, like the pages they replaced.
+
 ### When the CMS program pages retire (cutover; plan, not done)
 
 1. Set `'majors' => ['cms_import' => false]` in the site config
@@ -364,9 +373,10 @@ www again; that would undo www's edits. Advisors still cannot edit a published
 year: a revision is still a next-year copy moved back with section 5's
 `degree-maps-replace.sql`, or a super admin's correction.
 
-Later Degree Maps releases on www: `sql/` files first (section 2h's 009 is the
-first), then the app bundle, then the Degree-Maps-only docroot bundle built with
-the command above. Never the full docroot bundle before the Majors switch.
+Later releases on www: `sql/` files first (section 2h's 009 was the first), then
+the app bundle, then the docroot bundle. Before the Majors switch that had to be
+the Degree-Maps-only bundle built with the command above; since the switch
+(2026-10-08) www takes the full docroot bundle like the test box.
 
 ### The Majors switch
 

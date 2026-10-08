@@ -242,3 +242,10 @@ body {
 /* ---- not-approved preview (signed-in advisors on the public page) ---------- */
 .dm-preview-notice { margin: 0 0 1rem; padding: .6rem .9rem; border-left: 4px solid #e80000; background: #fff5f5; color: #27251f; font-size: .95rem; line-height: 1.4; }
 .dm-preview-notice a { font-weight: 600; }
+
+/* ---- letter index (old design: the theme's alpha-filters molecule) --------- */
+/* The theme styles the round buttons; this adds the spacing under the row and
+   the dimmed state for a letter with no section to jump to. */
+.majors-alpha-nav { margin: 0 0 1.5rem; }
+.majors-alpha-nav .alpha-filters__list { display: flex; flex-wrap: wrap; }
+.alpha-filters .button[aria-disabled="true"], .alpha-filters .button[aria-disabled="true"]:hover { opacity: .35; cursor: default; pointer-events: none; }
