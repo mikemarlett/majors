@@ -253,10 +253,27 @@ has removed one of the two bands since.
    live there.
 3. Each CMS program page (`/academics/majors/<basename>.php`) needs a
    permanent forward to `index.php?program=<basename>`. `.htaccess` is not
-   honoured on these servers, so either ITS adds one rewrite rule to the
-   Apache config, or a script writes a two-line PHP forward at each old
-   address from the database (page names never change while
-   `cms_import` is on, so the list is exact on cutover day).
+   honoured on these servers; the rule goes in www's Apache `redirects.conf`
+   (server/vhost context, so patterns start with `/`). It must not go live
+   before the switch: until then www's `index.php` is the CMS listing page.
+   Every program basename matches `[a-z0-9][a-z0-9_-]*`, so the rule forwards
+   every such page except the app's own files; names starting with `_` and
+   the subfolders never match. The app then handles the rest (case, earlier
+   names, retired programs that forward, 404 for the unknown):
+
+   ```apache
+   RewriteCond %{REQUEST_URI} !^/academics/majors/(index|search|majors|graduate|online|certificates|index_by_college|majors_by_college|graduate_by_college|online_by_college|majors_functions|approot|program-list)\.php$ [NC]
+   RewriteRule ^/academics/majors/([a-z0-9][a-z0-9_-]*)\.php$ /academics/majors/index.php?program=$1 [NC,R=301,L]
+   ```
+
+   Before enabling it, list the `.php` files in that folder on www that are
+   not program pages and add any CMS extras to the exclusion:
+
+   ```bash
+   comm -23 <(ls /data/www/main/academics/majors/*.php | xargs -n1 basename | sed 's/\.php$//' | sort) <(mysql -N formshandlerdb -e "SELECT basename FROM majors_academic_programs WHERE basename <> ''" | sort)
+   ```
+
+   Test with `R=302` first (browsers cache a 301), then switch to 301.
 4. Anything else that links the old pages (CMS navigation, other sites) can
    then move to the `?program=` addresses at leisure.
 
