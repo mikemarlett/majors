@@ -102,6 +102,7 @@ final class PublicMapsController extends Controller
             'top'         => $filters,
             'title'       => $title,
             'page_header' => 'Degree Maps',
+            'body_class'  => 'majors-degree-map', // print: hides the site chrome, the map prints its own logo line
             'nav_html'    => is_file($navFile) ? (string) file_get_contents($navFile) : '',
             'nav_items'   => is_file($navFile) ? [] : ['All Degree Maps' => $layout->url('degree_maps/maps.php'), 'All Programs' => $layout->url('index.php')],
             'description' => 'Degree Maps to guide students through degrees at Wichita State',

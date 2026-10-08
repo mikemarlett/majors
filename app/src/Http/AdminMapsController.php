@@ -154,7 +154,7 @@ final class AdminMapsController extends Controller
             'page_header' => 'Edit Degree Maps',
             'user'       => $user,
             'csrf'       => $csrf,
-            'body_class' => 'majors-admin',
+            'body_class' => 'majors-admin majors-degree-map',
             'head'       => [
                 '<link rel="stylesheet" href="' . $layout->e($layout->asset('degree-map.css')) . '">',
                 '<link rel="stylesheet" href="' . $layout->e($layout->asset('jquery-ui-1.14.1/jquery-ui.min.css')) . '">',

@@ -337,7 +337,7 @@ approved. Approving a year's maps together is the intended workflow.
 
 ## 3. Verify on www-test
 
-1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome.
+1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome (only degree-map pages hide the site's header and footer when printing, through the `majors-degree-map` body class; a program page prints with the site's own header, like every other page on the site).
 2. `…/degree_maps/maps.php?latest=<id>` redirects to the newest year.
 3. `…/degree_maps/admin/maps.php` → CAS login → your name in the admin bar. Check the Apache error log for `[majors]` lines if the CAS attribute names differ (`CasProvider::identityFromAttributes` falls back to the CAS principal).
 4. As an advisor: Edit/Clone only on own-college, future-year maps; the ajax endpoint answers 403 otherwise.

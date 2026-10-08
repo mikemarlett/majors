@@ -195,14 +195,18 @@ body {
 @media print {
 	@page { size: letter portrait; margin: 0.5in; }
 
-	/* Hide either site's chrome (any header/footer that is not inside <main>)
-	   and anything marked as screen-only. Works for the old design (header.inc
-	   renders <header class="global-header">) and the new one (<header id="site-header">,
-	   <footer data-tw-theme>) without wrapping the fragments in anything. */
-	header:not(main *), footer:not(main *), .noprint, .majors-admin-bar, .dm-versions,
-	.global-header, #site-header, #hidden, #de,
+	/* Screen-only things never print. */
+	.noprint, .majors-admin-bar, .dm-versions, #hidden, #de,
 	[data-nc-component="mobile-section-nav"], .with-sidebar__sidebar { display: none !important; }
 	.with-sidebar { display: block !important; margin: 0 !important; }
+
+	/* Degree maps print as one letter-size sheet with their own logo line (.dm-logo), so
+	   on those pages either site's chrome goes: any header/footer that is not inside <main>
+	   (old design: <header class="global-header">; new: <header id="site-header">,
+	   <footer data-tw-theme>). Every other page, the program pages included, prints with the
+	   site's own header and footer, as the rest of the site does. */
+	.majors-degree-map header:not(main *), .majors-degree-map footer:not(main *),
+	.majors-degree-map .global-header, .majors-degree-map #site-header { display: none !important; }
 
 	main { margin: 0; padding: 0; }
 	.dm-page { margin-top: 0; }
