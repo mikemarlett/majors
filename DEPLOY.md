@@ -370,11 +370,62 @@ the command above. Never the full docroot bundle before the Majors switch.
 
 ### The Majors switch
 
-Copy the Majors tables from the test box, unpack the full docroot bundle, retire the
-CMS listing pages in the CMS at the same time (or a publish overwrites the app's
-files), set `'majors' => ['cms_import' => false]` once the CMS program pages are
-retired, and forward each old program page (see "When the CMS program pages retire"
-in section 2g).
+The Majors tables travel from the test box once, in this order; after that the
+www database is the source for program pages too. Not in the copy: the degree
+map tables (edited on www since 2026-10-07), the users tables and
+`majors_colleges` (on www since the Degree Maps go-live). `majors_departments`
+does come along: the importer adds rows to it, and the users' default
+department ids point into the test box's copy.
+
+1. On the test box, dump the eight Majors tables and copy the file to www:
+   ```bash
+   mysqldump --single-transaction formshandlerdb majors_academic_programs majors_programs_content majors_similar_programs majors_program_sections majors_content_blocks majors_listing_entries majors_program_aliases majors_departments > majors-tables-$(date +%Y%m%d).sql
+   ```
+2. On www, see which site scripts still read the old tables or the old
+   `majors_functions.php`; they keep working (the new tables keep every old
+   column; the shim serves the old functions), but you want to know they exist:
+   ```bash
+   grep -rl "majors_academic_programs\|majors_programs_content\|majors/majors_functions.php" /data/www/main/_resources /data/www/main/academics 2>/dev/null
+   ```
+3. On www, back up the tables and the folder:
+   ```bash
+   mysqldump --single-transaction formshandlerdb $(mysql -N formshandlerdb -e "SHOW TABLES LIKE 'majors_%'" | tr '\n' ' ') | gzip > ~/majors-tables-www-before-$(date +%Y%m%d).sql.gz
+   tar czf ~/academics-majors-before-switch-$(date +%Y%m%d).tgz -C /data/www/main/academics --exclude=majors/_images majors
+   ```
+4. Load the tables (the dump drops and recreates each one), then compare the
+   count with the test box:
+   ```bash
+   mysql formshandlerdb < majors-tables-YYYYMMDD.sql
+   mysql formshandlerdb -e "SELECT status, COUNT(*) FROM majors_academic_programs GROUP BY status; SELECT COUNT(*) AS sections FROM majors_program_sections; SELECT COUNT(*) AS listing_lines FROM majors_listing_entries"
+   ```
+5. In the CMS, retire the listing pages whose addresses the app takes:
+   `index.php`, `majors.php`, `graduate.php`, `online.php`, `certificates.php`,
+   `index_by_college.php`, `majors_by_college.php`, `graduate_by_college.php`,
+   `online_by_college.php`, all directly under `/academics/majors/`. If
+   retiring also removes the published file, do it right before the next step.
+   Leave the program pages, `degree_maps/`, `_images/`, `_props.php` and
+   `_nav.ounav` alone.
+6. Unpack the full docroot bundle (the only time it goes on www):
+   ```bash
+   tar xzf majors-docroot-<hash>.tgz -C /data/www/main/academics --overwrite
+   ```
+7. In `/data/www/config/majors/config/app.www.php`, add
+   `'majors' => ['cms_import' => false],` (the example file has the line
+   commented out). The importers then refuse to run and page names become
+   editable in Page settings.
+8. `MAJORS_SITE=www php bin/migrate.php --dry-run` from
+   `/data/www/config/majors` should now print only "dry run complete".
+9. Check on www: the nine listing pages; a program page by name and the
+   `?id=` address redirecting to it; photos (run
+   `MAJORS_SITE=www php bin/images-audit.php --images /data/www/main/academics/majors/_images`
+   from the app root: report only, "missing" should be 0); `_admin/index.php`
+   as a marketing user or super admin, and one page in the in-place editor;
+   the Degree Maps pages, which share the folder, still fine.
+10. Only now let the rewrite in redirects.conf (section 2g, step 3) go live,
+    then test one old program address.
+11. At leisure: retire the CMS program pages (the rewrite forwards their
+    addresses either way), and tell marketing the editor is at
+    `/academics/majors/_admin/`.
 
 ## 5. Revised maps for the current year, then the maps to www
 
