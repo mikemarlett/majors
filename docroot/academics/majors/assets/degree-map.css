@@ -276,3 +276,30 @@ body {
 .majors-new .majors-top .majors-view-switch { margin: .75rem 0 0; }
 .majors-new .majors-top [data-nc-component="alpha-nav"] { margin-bottom: 0; }
 .majors-new .majors-top [data-nc-component="alpha-nav"] .generic-slab-inner { padding-top: 0; }
+
+/* ---- search/select bar, redesign: four controls on one line ----------------- */
+/* A <select> is as wide as its longest option, so the College select pushed the
+   fourth control onto a second line. The forms share the row instead: the search
+   form gets the largest share, each select an equal one, and a select may shrink
+   below its longest option (the closed control clips the text, as on the current
+   design). They still wrap on narrow screens. */
+.majors-new .majors-top .dm-filters { flex-wrap: wrap; align-items: stretch; gap: 1rem; }
+.majors-new .majors-top .dm-filters > form { flex: 1 1 10rem; min-width: 0; }
+.majors-new .majors-top .dm-filters > form#degreeSearchForm, .majors-new .majors-top .dm-filters > form#search_form { flex: 1.6 1 16rem; }
+.majors-new .majors-top .dm-filters select { width: 100%; min-width: 0; max-width: 100%; }
+.majors-new .majors-top .dm-filters button { flex: 0 0 auto; white-space: nowrap; }
+.majors-new .majors-top .dm-filters input[type="search"] { min-width: 0; flex: 1 1 8rem; }
+
+/* ---- selects, redesign: the theme's caret -------------------------------- */
+/* The design's SearchFilter hides the native arrow and draws the theme's caret
+   (its mask-caret glyph, a 3px chevron) 0.75rem from the right edge with room
+   for it; the native arrow sat hard against the edge. Same glyph, as a
+   background, pointing down. Both selectors so the image survives the
+   background shorthands above. */
+.majors-new .dm-filters select, .majors-new .majors-top .dm-filters select {
+	-webkit-appearance: none; appearance: none;
+	padding-right: 2.5rem;
+	background-image: url("data:image/svg+xml,%3Csvg width='17' height='11' viewBox='0 0 17 11' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 2L8.5 8L15 2' stroke='%2327251f' stroke-width='3'/%3E%3C/svg%3E");
+	background-repeat: no-repeat; background-position: right .75rem top calc(50% + 1px); background-size: 14px 9px;
+}
+.majors-new .dm-filters select::-ms-expand { display: none; }
