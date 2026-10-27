@@ -65,7 +65,8 @@ contains this change, so if that replacement goes in, this step is part of it.
 The two halves are independent: neither order can produce a redirect loop, and
 each half alone is safe. The suggested order:
 
-1. **Erik: the rule.** Replace the two lines, `apachectl -t`, graceful reload (or
+1. **Erik: the rule.** *Done 2026-10-27, as part of the optimized redirects.conf.*
+   Replace the two lines, `apachectl -t`, graceful reload (or
    Mike's git and the deploy timer). Then check:
    ```bash
    curl -sI https://www.wichita.edu/academics/majors/accounting_minor_2.php | grep -i '^HTTP\|^location'
@@ -81,9 +82,11 @@ each half alone is safe. The suggested order:
    point the page already works at its old address; its links and canonical tag
    still name the `?program=` form.
 
-   If every answer is a 200 of about 900 bytes, Imperva is showing curl its bot
-   check, not the site. Run these checks, and those in step 2, on a www node, aimed at that node, by
-   adding `-k --resolve www.wichita.edu:443:127.0.0.1` to each curl.
+   These curl checks don't work in practice (found 2026-10-27): Imperva answers curl
+   from outside with a 200 bot-check page of about 900 bytes, and on a www node
+   127.0.0.1 reaches Apache's default SSL site, not www's. Check in a new incognito
+   window instead (Chrome caches 301s): `accounting_minor_2.php?utm_source=test`
+   keeps its address and tag and shows the Accounting minor page.
 
 2. **Mike: the app setting.** With the app bundle that has the setting
    (`majors-app-016f10f.tgz` or later) unpacked, add `'pretty_urls' => true` to
@@ -91,11 +94,11 @@ each half alone is safe. The suggested order:
    ```php
    'majors' => ['cms_import' => false, 'pretty_urls' => true],
    ```
-   Then check that the listing links and the canonical tag use the old addresses:
-   ```bash
-   curl -s https://www.wichita.edu/academics/majors/graduate.php | grep -o 'href="/academics/majors/[a-z0-9_-]*\.php"' | head -3
-   curl -s https://www.wichita.edu/academics/majors/accounting_minor_2.php | grep -o '<link rel="canonical"[^>]*>'
-   ```
+   Do it on both nodes. Then check in the browser that the listing links and the
+   canonical tag use the old addresses: on
+   `https://www.wichita.edu/academics/majors/graduate.php` a program link points at
+   `/academics/majors/<name>.php`, and view-source of `accounting_minor_2.php` shows
+   `<link rel="canonical" href="/academics/majors/accounting_minor_2.php">`.
 
 3. **Later: retire the CMS program pages.** Their published copies still sit at
    those addresses on www, hidden behind the rule. Recycling them in the CMS stops
