@@ -190,6 +190,25 @@ final class ProgramRenderer
         return $t;
     }
 
+    /**
+     * The page's <title>, as the CMS program pages had it ("Details: Accountancy, Master's, BUS"):
+     * analytics reports key on it. The CMS's own string (page_title, kept by the importer and by
+     * sql/010) is used while it still says the same thing as the program's name, credential and
+     * college code, so a few titles keep their original stray spaces; a renamed or new program
+     * gets the same pattern built from those fields.
+     */
+    public static function pageTitle(array $program): string
+    {
+        $built  = 'Details: ' . implode(', ', array_values(array_filter([
+            trim((string) ($program['academic_program'] ?? '')),
+            trim((string) (($program['credential'] ?? '') !== '' ? $program['credential'] : ($program['program_simple_type'] ?? ''))),
+            trim((string) ($program['college_code'] ?? '')),
+        ], static fn (string $v): bool => $v !== '')));
+        $stored = trim((string) ($program['page_title'] ?? ''));
+        $norm   = static fn (string $s): string => (string) preg_replace(['/\s+/u', '/\s+,/'], [' ', ','], trim($s));
+        return $stored !== '' && $norm($stored) === $norm($built) ? $stored : $built;
+    }
+
     /** Section menu entries (label => href): the listing pages, then the program's college and departments. */
     public function sectionNav(?array $program = null): array
     {

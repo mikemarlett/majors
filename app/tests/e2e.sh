@@ -46,7 +46,7 @@ echo "[public majors]"
 chk "$(GET "$B/index.php")" 200 "programs listing"; has $S/out.html 'All Degrees' 'headline'; has $S/out.html 'class="alpha-filters majors-alpha-nav' 'letter index (alpha-filters)'; has $S/out.html 'href="#A" role="button" class="button">A</a>' 'letter A links to its section'; hasnt $S/out.html 'majors-jump' 'no invented jump row'
 chk "$(GET "$B/index.php?order=college&filter=online")" 200 "filtered"; has $S/out.html 'Online Programs' 'filter headline'
 chk "$(GET "$B/index.php?program=$PBN")" 200 "program page"; grep -qE 'program-card|majors-program-intro' $S/out.html && ok "program page body (either design)" || bad "program page body"
-chk "$(GET "$B/search.php?filter=graduate")" 200 "majors search json"; has $S/out.html '"title":"Graduate Degrees"' 'json title'
+chk "$(GET "$B/search.php?filter=graduate")" 200 "majors search json"; has $S/out.html '"title":"Graduate Degrees by Alphabetical Listing"' 'json title is the page title (live filtering keeps document.title in step)'
 
 echo "[listings]"
 chk "$(GET "$B/index.php")" 200 "All Programs"; has $S/out.html '>Nursing Practice - Family Nurse Practitioner</a>' 'listing names from the CMS (DNP as Nursing Practice)'; hasnt $S/out.html 'program=business_administration_mem_to_mba"' 'a page left off the CMS listing is not listed'
@@ -88,6 +88,8 @@ chk "$(GET "$B/index.php?program=no_such_program_zz")" 404 "unknown basename"
 RET_BN=$(Q "SELECT basename FROM majors_academic_programs WHERE status='retired' AND basename<>'' LIMIT 1"); [ -n "$RET_BN" ] && chk "$(GET "$B/index.php?program=$RET_BN")" 404 "retired program is not public"
 chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$B/index.php?program=$(echo $PBN | tr a-z A-Z)")" "301 $B/index.php?program=$PBN" "another spelling of the page name redirects to the stored one"
 GET "$B/index.php?program=$PBN" >/dev/null; has $S/out.html "rel=\"canonical\" href=\"/academics/majors/index.php?program=$PBN\"" 'canonical link on the public page'
+grep -q '<title>Details: ' $S/out.html && ok "program page title in the CMS pattern" || bad "program page title: $(grep -o '<title>[^<]*' $S/out.html)"
+GET "$B/graduate_by_college.php" >/dev/null; has $S/out.html '<title>Graduate Degrees by College</title>' 'listing page keeps its CMS title'
 GET -b $M "$B/_admin/program.php?id=$PROG" >/dev/null; MC=$(grep -o 'name="csrf-token" content="[^"]*"' $S/out.html | head -1 | sed 's/.*content="//; s/"$//')
 MP() { curl -s -b $M -H "X-CSRF-Token: $MC" "$@"; }
 MA=$B/_admin/ajax.php

@@ -277,6 +277,9 @@ final class Importer
         if ($this->hasListings()) {                      // migration 008 has run
             $vals['similar_bg_url'] = (string) ($p['similar_bg'] ?? '');
         }
+        if ($this->hasPageTitle()) {                     // migration 010 has run
+            $vals['page_title'] = (string) ($p['title'] ?? '');
+        }
         if ($online !== null) {
             $vals['online_learning'] = $online;
         }
@@ -481,7 +484,7 @@ final class Importer
     }
 
     private const PROGRAM_WIDTHS = ['academic_program' => 255, 'program_type' => 255, 'program_simple_type' => 255, 'department' => 255, 'college' => 255,
-        'basename' => 200, 'credential' => 100, 'college_code' => 10, 'learn_how' => 255, 'image_url' => 255, 'image_credit' => 255, 'similar_bg_url' => 255,
+        'basename' => 200, 'page_title' => 255, 'credential' => 100, 'college_code' => 10, 'learn_how' => 255, 'image_url' => 255, 'image_credit' => 255, 'similar_bg_url' => 255,
         'college_url' => 255, 'department_url' => 255, 'cms_path' => 255];
     private const FLAT_WIDTHS = ['learn_how' => 200, 'learn_how_links' => 65000, 'main_image_url' => 200, 'main_image_credit' => 200,
         'curriculum_link_text' => 200, 'curriculum_link_url' => 200, 'admissions_headline' => 300, 'admissions_link_text' => 200, 'admissions_link_url' => 200,
@@ -593,6 +596,13 @@ final class Importer
     private ?bool $listingsTable = null;
 
     /** Whether migration 008 (listing entries) has run on this database. */
+    private ?bool $pageTitleColumn = null;
+
+    private function hasPageTitle(): bool
+    {
+        return $this->pageTitleColumn ??= $this->db->query("SHOW COLUMNS FROM `majors_academic_programs` LIKE 'page_title'")->num_rows > 0;
+    }
+
     private function hasListings(): bool
     {
         return $this->listingsTable ??= $this->db->query("SHOW TABLES LIKE 'majors_listing_entries'")->num_rows > 0;

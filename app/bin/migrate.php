@@ -306,4 +306,10 @@ if ($dm !== []) {
     }
 }
 
+// 010: the CMS page title, kept for analytics continuity (sql/010_page_titles.sql).
+$progCols = $columns('majors_academic_programs');
+if ($progCols !== [] && !in_array('page_title', $progCols, true)) {
+    $run('ALTER TABLE `majors_academic_programs` ADD COLUMN `page_title` VARCHAR(255) NULL');
+}
+
 echo $dry ? "dry run complete\n" : "migration complete\n";

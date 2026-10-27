@@ -25,7 +25,7 @@ $hasNav = $section_nav !== null || $nav_html !== '';
 <html lang="en">
 <head>
 <?= $chrome['headcode'] ?>
-	<title><?= $t->e($title) ?> · Wichita State University</title>
+	<title><?= $t->e($title) ?></title>
 <?php if ($description !== ''): ?>
 	<meta name="description" content="<?= $t->e($description) ?>">
 <?php endif; ?>

@@ -55,7 +55,7 @@ final class PublicMajorsController extends Controller
             $this->page($parts['content'], [
                 'top'         => $parts['top'],
                 'bottom'      => $parts['bottom'],
-                'title'       => ProgramRenderer::title($program),
+                'title'       => ProgramRenderer::pageTitle($program),   // the CMS page's title, for analytics continuity
                 'page_header' => 'Details: ' . ProgramRenderer::title($program),
                 'nav_items'   => $renderer->sectionNav($program),
                 'header_print' => true,
@@ -115,10 +115,12 @@ final class PublicMajorsController extends Controller
         // the redesign puts the headline, buttons and letter index up top (majors/results_header),
         // the current design keeps them in the listing itself and renders nothing here.
         $header  = $layout->render('majors/results_header', $vars);
+        // The CMS listing pages' titles (analytics reports key on them); other views are "Degree Programs".
+        $pageTitle = Listings::pageTitle($filter, $order, $plain);
         $listing = $layout->render('majors/listing', $vars);
 
         if ($isJson) {
-            Json::send(['success' => true, 'results' => $listing, 'header' => $header, 'title' => $headline, 'count' => count($rows)]);
+            Json::send(['success' => true, 'results' => $listing, 'header' => $header, 'title' => $pageTitle, 'count' => count($rows)]);
         }
 
         $filtersBar = $layout->render('majors/filters', [
@@ -134,7 +136,7 @@ final class PublicMajorsController extends Controller
         $content = $layout->render('majors/index', ['results' => $listing]);
         $this->page($content, [
             'top'         => $filtersBar . $header,
-            'title'       => 'Degree Programs',
+            'title'       => $pageTitle,
             'page_header' => 'Degree Programs',
             'nav_items'   => $renderer->sectionNav(),
             'description' => 'All Wichita State University degree programs.',

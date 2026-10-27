@@ -335,6 +335,26 @@ lists a year once it has one approved map, and after August 1 the public
 default stays on the previous year until something in the new year is
 approved. Approving a year's maps together is the intended workflow.
 
+## 2i. Page titles (sql/010)
+
+Analytics reports key on page titles, and since the program pages all share one
+path (`index.php?program=…`, which GA4's default page report shows without the
+query string) the title is what tells them apart. The app gives every page the
+title its CMS page had: programs "Details: Accountancy, Master's, BUS" (the
+CMS's exact string in `majors_academic_programs.page_title` while it still
+agrees with the name, credential and college code; otherwise the same pattern
+built from those fields), the listing pages their CMS titles
+(`Listings::PAGE_TITLES`), degree maps as before. Both designs use the same
+title (the redesign's " · Wichita State University" suffix is gone).
+
+```bash
+mysql formshandlerdb < /data/www/config/majors/sql/010_page_titles.sql
+mysql formshandlerdb -t < majors-page-titles-20261027.sql     # the CMS titles, generated on the sandbox
+```
+
+Order: the SQL can run before or after the app bundle (without the column the app
+builds every title from the fields, which matches all but 6 of them).
+
 ## 3. Verify on www-test
 
 1. `https://www-test.wichita.edu/academics/majors/degree_maps/maps.php` — list renders with the site header/footer; open a map; print preview is letter portrait with no chrome (only degree-map pages hide the site's header and footer when printing, through the `majors-degree-map` body class; a program page prints with the site's own header, like every other page on the site).

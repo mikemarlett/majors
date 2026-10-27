@@ -97,6 +97,13 @@ foreach (['old', 'new'] as $design) {
     check(!str_contains($hp, 'Click to write') && !str_contains($hp, 'Add a photo') && !str_contains($hp, 'Similar Programs'), "$design: the empty program's public page shows no placeholders and no empty similar band");
 }
 
+$tp = ['academic_program' => 'Accountancy', 'credential' => "Master's", 'program_simple_type' => "Master's", 'college_code' => 'BUS'];
+check(ProgramRenderer::pageTitle($tp) === "Details: Accountancy, Master's, BUS", 'page title: the CMS pattern built from the fields');
+check(ProgramRenderer::pageTitle($tp + ['page_title' => "Details: Accountancy , Master's, BUS"]) === "Details: Accountancy , Master's, BUS", 'page title: the stored CMS string, stray space and all, while it agrees');
+check(ProgramRenderer::pageTitle(['academic_program' => 'Accounting Analytics'] + $tp + ['page_title' => "Details: Accountancy, Master's, BUS"]) === "Details: Accounting Analytics, Master's, BUS", 'page title: a renamed program gets a fresh title');
+check(ProgramRenderer::pageTitle(['academic_program' => 'Coaching', 'credential' => '', 'program_simple_type' => 'Undergraduate Certificate', 'college_code' => '']) === 'Details: Coaching, Undergraduate Certificate', 'page title: falls back to the simple type, skips an empty college code');
+check(\Majors\Majors\Listings::pageTitle('graduate', 'alpha', true) === 'Graduate Degrees by Alphabetical Listing' && \Majors\Majors\Listings::pageTitle('online', 'college', true) === 'Online Programs by College', 'listing titles as on the CMS pages');
+check(\Majors\Majors\Listings::pageTitle('graduate', 'alpha', false) === 'Degree Programs' && \Majors\Majors\Listings::pageTitle('minors', 'alpha', true) === 'Degree Programs', 'filtered views are "Degree Programs"');
 check(ProgramRenderer::headline('online', 'College of Engineering', null, 'robot') === '"robot" in Online Programs in College of Engineering', 'headline composition (list names as on the CMS pages)');
 check(ProgramRenderer::title($program) === 'Aerospace Engineering, Major', 'page title');
 $lay = test_layout('new', ['image_base' => 'https://www.wichita.edu']);

@@ -26,6 +26,27 @@ final class Listings
         'badges'       => ['label' => 'Badges',                    'page' => null,               'college' => null,                      'headline' => 'Badges'],
     ];
 
+    /**
+     * The <title> of each listing page, as the CMS pages had them (analytics reports key on
+     * them): list key => [A–Z page, by-college page]. Any other view (a search, a college or
+     * department filter, Minors) is "Degree Programs", like the CMS index page that hosted them.
+     */
+    public const PAGE_TITLES = [
+        'all'          => ['Degree Programs', 'Degree Programs by College'],
+        'undergrad'    => ['Undergraduate Majors and Minors', 'Majors and Minors by College'],
+        'graduate'     => ['Graduate Degrees by Alphabetical Listing', 'Graduate Degrees by College'],
+        'online'       => ['Online Programs', 'Online Programs by College'],
+        'certificates' => ['Certificate Programs', 'Certificate Programs'],
+    ];
+
+    public static function pageTitle(string $list, string $order, bool $plain): string
+    {
+        if (!$plain || !isset(self::PAGE_TITLES[$list])) {
+            return 'Degree Programs';
+        }
+        return self::PAGE_TITLES[$list][$order === 'college' ? 1 : 0];
+    }
+
     /** Short labels for the control panel's pills. */
     public const SHORT = ['all' => 'All', 'undergrad' => 'UG', 'graduate' => 'Grad', 'online' => 'Online', 'certificates' => 'Cert', 'badges' => 'Badge'];
 
