@@ -14,9 +14,13 @@ $layout = test_layout('old');
 
 echo "[programs]\n";
 $row = ['id' => 41, 'basename' => 'aerospace_engineering_bs_41', 'status' => 'active'];
-check($urls['program']($row) === 'https://www.wichita.edu' . $layout->programUrl($row), 'program address matches Layout::programUrl');
-check($urls['program'](['id' => 9, 'basename' => '']) === 'https://www.wichita.edu' . $layout->programUrl(['id' => 9]), 'a program without a page name falls back to ?id=');
-check($urls['program'](['basename' => 'a b/c'], 'https://www-dev.wichita.edu') === 'https://www-dev.wichita.edu/academics/majors/index.php?program=a%20b%2Fc', 'name is URL-encoded, site is a parameter');
+$pretty = test_layout('old', ['pretty_program_urls' => true]);
+check($urls['program']($row) === 'https://www.wichita.edu' . $pretty->programUrl($row) && $pretty->programUrl($row) === '/academics/majors/aerospace_engineering_bs_41.php', 'program address matches Layout::programUrl with pretty_urls on');
+check($urls['program_query']($row) === 'https://www.wichita.edu' . $layout->programUrl($row) && $layout->programUrl($row) === '/academics/majors/index.php?program=aerospace_engineering_bs_41', 'query address matches Layout::programUrl with pretty_urls off');
+check($urls['program'](['id' => 9, 'basename' => '']) === 'https://www.wichita.edu' . $pretty->programUrl(['id' => 9]), 'a program without a page name falls back to ?id=');
+check($urls['program'](['basename' => 'a b/c'], 'https://www-dev.wichita.edu') === 'https://www-dev.wichita.edu/academics/majors/index.php?program=a%20b%2Fc'
+    && $pretty->programUrl(['basename' => 'a b/c']) === '/academics/majors/index.php?program=a%20b%2Fc', 'a name the rewrite cannot carry keeps the query form, URL-encoded; site is a parameter');
+check($pretty->programUrlParts() === ['/academics/majors/', '.php'] && $layout->programUrlParts() === ['/academics/majors/index.php?program=', ''], 'address parts for the editor forms');
 check($urls['program_visible']($row) && !$urls['program_visible'](['status' => 'retired'] + $row) && !$urls['program_visible'](['status' => 'retired', 'forward_to' => 3]), 'only active programs are visible');
 
 echo "[degree maps]\n";

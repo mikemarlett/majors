@@ -23,6 +23,14 @@ $path    = rawurldecode($path);
 
 $_SERVER['DOCUMENT_ROOT'] = $stub;
 
+// www's rewrite (docs/program-addresses.md): /academics/majors/<page name>.php that is not one of the
+// app's own files is the program page itself.
+if (preg_match('#^/academics/majors/([a-z0-9][a-z0-9_-]*)\.php$#i', $path, $pm) && !is_file($public . $path)) {
+    $_GET = ['program' => $pm[1]] + $_GET;
+    $_REQUEST = ['program' => $pm[1]] + $_REQUEST;
+    $path = '/academics/majors/index.php';
+}
+
 $candidate = null;
 if (str_starts_with($path, '/academics/majors/')) {
     $candidate = $public . $path;

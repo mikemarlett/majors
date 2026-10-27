@@ -334,5 +334,22 @@ chk "$(GET -b $L "$B/degree_maps/admin/maps.php")" 403 "marketing blocked from d
 chk "$(curl -s -o /dev/null -b $L -w "%{http_code} %{redirect_url}" "$B/auth/logout.php")" "302 $B/degree_maps/maps.php" "logout"
 chk "$(curl -s -o /dev/null -b $L -w "%{http_code}" "$B/_admin/index.php")" 302 "session cleared"
 
+echo "[program addresses: pretty_urls on, rewrite emulated by the dev router]"
+PCFG=app/config/app.prettytest.php
+printf '%s\n' '<?php return ["majors" => ["pretty_urls" => true]];' > $PCFG
+MAJORS_SITE=prettytest php -S 127.0.0.1:8088 app/dev/router.php >$S/e2e-pretty.log 2>&1 & PSRV=$!; sleep 1
+PB=http://127.0.0.1:8088/academics/majors
+chk "$(GET "$PB/$PBN.php")" 200 "the CMS-era address is the page itself"; has $S/out.html "rel=\"canonical\" href=\"/academics/majors/$PBN.php\"" 'canonical is the CMS-era address'; grep -q '<title>Details: ' $S/out.html && ok "title in the CMS pattern" || bad "title"
+GET "$PB/index.php" >/dev/null; has $S/out.html "href=\"/academics/majors/$PBN.php\"" 'listing links use the CMS-era address'
+chk "$(GET "$PB/index.php?program=$PBN")" 200 "?program= still answers itself (never redirects: browsers cached the old 301 to it)"; has $S/out.html "rel=\"canonical\" href=\"/academics/majors/$PBN.php\"" '...with the canonical pointing at the CMS-era address'
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$PB/index.php?id=$PROG")" "301 $PB/$PBN.php" "?id= forwards to the CMS-era address"
+chk "$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$PB/$(echo $PBN | tr a-z A-Z).php")" "301 $PB/$PBN.php" "another spelling forwards to the stored one"
+chk "$(GET "$PB/$PBN.php?utm_source=e2e")" 200 "a campaign query string rides along"
+chk "$(GET "$PB/no_such_program_zz.php")" 404 "an unknown page name is a 404"
+chk "$(GET "$PB/graduate_by_college.php")" 200 "the app's own listing files are not rewritten"; has $S/out.html '<title>Graduate Degrees by College</title>' 'listing title'
+chk "$(curl -s -o /dev/null -w "%{http_code}" -c $S/p.jar -b $S/p.jar "$PB/auth/login.php?as=mia.marketing@wichita.edu")" 302 "marketing signs in"
+GET -b $S/p.jar "$PB/_admin/ajax.php?action=get_settings_form&program_id=$PROG" >/dev/null; grep -q "/academics/majors/<strong>$PBN</strong>.php\|/academics/majors/<span data-ma-basename-echo>$PBN</span>.php" $S/out.html && ok "the editor's Page settings show the CMS-era address" || bad "settings form address: $(grep -o 'academics/majors/[^ ]*' $S/out.html | head -2)"
+kill $PSRV; rm -f $PCFG $S/p.jar
+
 kill $SRV
 echo; echo "PASS=$PASS FAIL=$FAIL"; echo "--- server errors:"; grep -i "majors\]\|PHP " $S/e2e-server.log | head -20

@@ -39,7 +39,7 @@ final class AdminProgramController extends Controller
                 '<script src="' . $layout->e($layout->asset('admin/ma-ui.js')) . '"></script>',
                 '<script src="' . $layout->e($layout->asset('admin/inplace.js')) . '" defer></script>',
             ];
-            $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf, 'public_base' => $layout->url('index.php') . '?program=', 'colleges' => $colleges, 'departments' => $departments]), [
+            $this->page($layout->render('majors/admin/program_new', ['csrf' => $csrf, 'public_base' => $layout->programUrlParts()[0], 'public_suffix' => $layout->programUrlParts()[1], 'colleges' => $colleges, 'departments' => $departments]), [
                 'title' => 'New program', 'page_header' => 'New program', 'body_class' => 'majors-admin', 'foot' => $foot,
                 'head'  => array_merge(['<link rel="stylesheet" href="' . $layout->e($layout->asset('admin.css')) . '">'], $head),   // the admin's compact rhythm; the editor page keeps the public one
             ] + $common);

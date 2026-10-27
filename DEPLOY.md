@@ -301,6 +301,11 @@ by-college and Certificates have none, like the pages they replaced.
    ```
 
    Test with `R=302` first (browsers cache a 301), then switch to 301.
+
+   Since 2026-10-27 the plan is to make that rule an internal rewrite instead
+   (`[NC,PT,QSA,L]`), so the old addresses serve the program pages themselves and
+   stay the canonical ones, with the app setting `majors.pretty_urls` on www:
+   `docs/program-addresses.md`.
 4. Anything else that links the old pages (CMS navigation, other sites) can
    then move to the `?program=` addresses at leisure.
 

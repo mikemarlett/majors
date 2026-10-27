@@ -18,4 +18,6 @@ return [
     'auth'   => ['provider' => 'azure', 'service_host' => 'www.wichita.edu'],
     // At the Majors switch, once the CMS program pages are retired:
     // 'majors' => ['cms_import' => false],
+    // Once the redirects.conf rule is the internal rewrite (docs/program-addresses.md):
+    // 'majors' => ['cms_import' => false, 'pretty_urls' => true],
 ];

@@ -36,8 +36,11 @@ Database `formshandlerdb` on www, the site account can read it.
 SELECT p.* FROM majors_academic_programs p WHERE p.status = 'active'
 ```
 
-- **URL**: `$urls['program']($row)` — `index.php?program=<basename>`; a row
-  with an empty basename (none today) gets `?id=`.
+- **URL**: `$urls['program']($row)`: `/academics/majors/<basename>.php`, the
+  address the CMS page had. On www it forwards to `index.php?program=<basename>`
+  until the rewrite becomes internal (`docs/program-addresses.md`), then it is
+  the page itself, so index it either way. `$urls['program_query']($row)` is the
+  `?program=` form; a row with an empty basename (none today) gets `?id=`.
 - **Visibility**: `$urls['program_visible']($row)`, i.e. `status = 'active'`.
   Retired programs stay in the table; one with `forward_to` set redirects its
   old address to another program, so neither kind is indexed.

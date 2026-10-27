@@ -170,7 +170,24 @@ final class Layout
     public function programUrl(array $p): string
     {
         $b = (string) ($p['basename'] ?? '');
+        // The CMS-era address (/academics/majors/<page name>.php) once the server rewrites it to the
+        // program page (config majors.pretty_urls); the pattern is the rewrite rule's own.
+        if ($b !== '' && $this->prettyProgramUrls() && preg_match('/^[a-z0-9][a-z0-9_-]*$/', $b)) {
+            return $this->url($b . '.php');
+        }
         return $this->url('index.php') . ($b !== '' ? '?program=' . rawurlencode($b) : '?id=' . (int) ($p['id'] ?? 0));
+    }
+
+    /** True when program pages are addressed as /academics/majors/<page name>.php (config majors.pretty_urls). */
+    public function prettyProgramUrls(): bool
+    {
+        return $this->site('pretty_program_urls') === '1';
+    }
+
+    /** The public address of a program as [before, after] the page name, for forms that echo a name being typed. */
+    public function programUrlParts(): array
+    {
+        return $this->prettyProgramUrls() ? [$this->url(''), '.php'] : [$this->url('index.php') . '?program=', ''];
     }
 
     /** The in-place editor for a program (same key as the public page). */

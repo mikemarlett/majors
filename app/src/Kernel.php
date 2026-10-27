@@ -99,7 +99,7 @@ final class Kernel
             $this->theme(),
             $this->config->string('base_url', '/academics/majors'),
             $this->webRoot . '/assets',
-            (array) $this->config->get('site', []),
+            (array) $this->config->get('site', []) + ['pretty_program_urls' => (bool) $this->config->get('majors.pretty_urls', false)],
             $this->docroot(),
         );
     }

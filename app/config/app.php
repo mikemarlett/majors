@@ -83,6 +83,11 @@ return [
         // fixed. Set false once the CMS program pages are retired; page names can then be changed
         // in Page settings, and every earlier name keeps forwarding to the current one.
         'cms_import' => true,
+        // true once the web server serves /academics/majors/<page name>.php as the program page
+        // itself (an internal rewrite to index.php?program=<page name>, docs/program-addresses.md):
+        // links and canonical addresses then use those, the addresses the CMS pages had.
+        // false: index.php?program=<page name>. Both addresses keep working either way.
+        'pretty_urls' => false,
     ],
 
     // Colleges get renamed but the maps keep the name they were created with.

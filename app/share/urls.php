@@ -7,7 +7,8 @@
  * require from anywhere on a WSU box:
  *
  *   $urls = require '/data/www/config/majors/share/urls.php';
- *   $urls['program']($row)                 // $row: a majors_academic_programs row (basename, id)
+ *   $urls['program']($row)                 // $row: a majors_academic_programs row (basename, id): /academics/majors/<page name>.php
+ *   $urls['program_query']($row)           // the same page as index.php?program=<page name> (also always works)
  *   $urls['program_visible']($row)         // false for retired programs (their old address forwards)
  *   $urls['degree_map']($id)               // one catalog year's map
  *   $urls['degree_map_latest']($id)        // permanent: the newest approved year of that degree
@@ -28,7 +29,17 @@ return [
     'site' => $site,
     'base' => $site . $base,
 
+    // The address the CMS page had, /academics/majors/<page name>.php. On www it is the canonical one
+    // once majors.pretty_urls is on (docs/program-addresses.md); before that it forwards to the
+    // index.php?program= form, so it is the right address to index either way.
     'program' => static function (array $row, string $site = 'https://www.wichita.edu'): string {
+        $b = (string) ($row['basename'] ?? '');
+        if ($b !== '' && preg_match('/^[a-z0-9][a-z0-9_-]*$/', $b)) {
+            return $site . '/academics/majors/' . $b . '.php';
+        }
+        return $site . '/academics/majors/index.php' . ($b !== '' ? '?program=' . rawurlencode($b) : '?id=' . (int) ($row['id'] ?? 0));
+    },
+    'program_query' => static function (array $row, string $site = 'https://www.wichita.edu'): string {
         $b = (string) ($row['basename'] ?? '');
         return $site . '/academics/majors/index.php' . ($b !== '' ? '?program=' . rawurlencode($b) : '?id=' . (int) ($row['id'] ?? 0));
     },
