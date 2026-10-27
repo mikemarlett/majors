@@ -81,6 +81,10 @@ each half alone is safe. The suggested order:
    point the page already works at its old address; its links and canonical tag
    still name the `?program=` form.
 
+   If every answer is a 200 of about 900 bytes, Imperva is showing curl its bot
+   check, not the site. Run these checks, and those in step 2, on a www node, aimed at that node, by
+   adding `-k --resolve www.wichita.edu:443:127.0.0.1` to each curl.
+
 2. **Mike: the app setting.** With the app bundle that has the setting
    (`majors-app-016f10f.tgz` or later) unpacked, add `'pretty_urls' => true` to
    `/data/www/config/majors/config/app.www.php`:
