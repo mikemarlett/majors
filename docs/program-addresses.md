@@ -88,7 +88,7 @@ each half alone is safe. The suggested order:
    window instead (Chrome caches 301s): `accounting_minor_2.php?utm_source=test`
    keeps its address and tag and shows the Accounting minor page.
 
-2. **Mike: the app setting.** With the app bundle that has the setting
+2. **Mike: the app setting.** *Done 2026-10-27.* With the app bundle that has the setting
    (`majors-app-016f10f.tgz` or later) unpacked, add `'pretty_urls' => true` to
    `/data/www/config/majors/config/app.www.php`:
    ```php
