@@ -94,7 +94,7 @@ each half alone is safe. The suggested order:
    ```php
    'majors' => ['cms_import' => false, 'pretty_urls' => true],
    ```
-   Do it on both nodes. Then check in the browser that the listing links and the
+   Then check in the browser that the listing links and the
    canonical tag use the old addresses: on
    `https://www.wichita.edu/academics/majors/graduate.php` a program link points at
    `/academics/majors/<name>.php`, and view-source of `accounting_minor_2.php` shows
