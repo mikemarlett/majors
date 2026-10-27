@@ -78,8 +78,8 @@ each half alone is safe. The suggested order:
    point the page already works at its old address; its links and canonical tag
    still name the `?program=` form.
 
-2. **Mike: the app setting.** With the app bundle that has the setting (5e509b9 or
-   later; this change is the commit after it), add `'pretty_urls' => true` to
+2. **Mike: the app setting.** With the app bundle that has the setting
+   (`majors-app-016f10f.tgz` or later) unpacked, add `'pretty_urls' => true` to
    `/data/www/config/majors/config/app.www.php`:
    ```php
    'majors' => ['cms_import' => false, 'pretty_urls' => true],
