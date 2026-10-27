@@ -57,6 +57,9 @@ inside a `<Directory>` block, both patterns would lose the leading `/`.
 
 Test with `apachectl -t` before the graceful reload.
 
+The optimized redirects.conf in `/srv/work/Modern Campus/redirects-optimized/` (2026-10-27) already
+contains this change, so if that replacement goes in, this step is part of it.
+
 ## Order of steps
 
 The two halves are independent: neither order can produce a redirect loop, and
