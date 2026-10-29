@@ -67,6 +67,9 @@ foreach (['old', 'new'] as $design) {
     $pub  = $r->page($program, $maps);
     $edit = $r->page($program, $maps, true, [7 => 268]);
     check(!str_contains($pub, 'data-ma-') && !str_contains($pub, 'ma-ph'), "$design: public output carries no editing markers");
+    if ($design === 'old') {
+        check(preg_match('~<div class="teaser__image"><a name="insidetheprogram"><img [^>]+></a></div>~', $pub) === 1 && preg_match('~<div class="teaser__image"[^>]*data-ma-form="section-image"[^>]*><a name="insidetheprogram"><img ~', $edit) === 1, 'old: the feature photo sits directly in an <a> (the theme fills the box only then), editing too');
+    }
     check(substr_count($edit, 'data-ma-part="card"') === 1 && substr_count($edit, 'data-ma-part="similar"') === 1 && substr_count($edit, 'data-ma-part="content"') >= 2, "$design: card, content roots and similar band are marked as parts");
     check(str_contains($edit, 'data-ma-scope="program"') && str_contains($edit, 'data-ma-text="academic_program"') && str_contains($edit, 'data-ma-html="description"') && str_contains($edit, 'data-ma-text="learn_how"'), "$design: program card fields are editable");
     check(str_contains($edit, 'data-ma-form="image"') && str_contains($edit, 'data-ma-form="buttons"') && str_contains($edit, 'data-ma-form="identity"') && str_contains($edit, 'data-ma-form="crumbs"'), "$design: card popover forms");

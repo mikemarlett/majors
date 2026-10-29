@@ -167,7 +167,8 @@ $buttonsForm = $ed->form('buttons', ['buttons' => $buttons]);
 	<header class="section-header section-header--no-border"><h2<?= $ed->text('label', $s['label'], 'Inside the Program') ?>><?= $t->e($s['label'] !== '' ? $s['label'] : 'Inside the Program') ?></h2></header>
 	<div class="teaser teaser--columned-intro">
 <?php if ($s['image']): ?>
-		<div class="teaser__image"<?= $imgForm ?>><img src="<?= $t->e($t->img($s['image']['url'])) ?>" alt="<?= $t->e($s['image']['alt']) ?>"></div>
+<?php // The theme's columned teaser sizes the photo to fill the box only when an <a> wraps it (as on the CMS pages). ?>
+		<div class="teaser__image"<?= $imgForm ?>><a name="insidetheprogram"><img src="<?= $t->e($t->img($s['image']['url'])) ?>" alt="<?= $t->e($s['image']['alt']) ?>"></a></div>
 <?php elseif ($editing): ?>
 		<div class="teaser__image"><?= $ed->placeholder('Add a photo', $imgForm, 'ma-ph--photo') ?></div>
 <?php endif; ?>
