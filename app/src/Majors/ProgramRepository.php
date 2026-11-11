@@ -114,11 +114,17 @@ final class ProgramRepository
         }
         $text = trim((string) ($f['search'] ?? ''));
         if ($text !== '') {
+            // The line's name, the program's names, its department(s), the note, the SEO keywords,
+            // and the introduction: the paragraph at the top of the program page, where editors put
+            // the words prospective students actually type ("biology" for Biological Sciences). The
+            // intro is stored as HTML, so its tags go before matching; the meta description is the
+            // intro's plain-text twin and is searched too.
             $like = '%' . $text . '%';
             $sql .= ' AND (COALESCE(NULLIF(TRIM(e.`name`), ""), p.`academic_program`) LIKE ? OR p.`academic_program` LIKE ? OR p.`sort_title` LIKE ?
-                           OR p.`department` LIKE ? OR p.`more_departments` LIKE ? OR p.`note` LIKE ? OR p.`meta_keywords` LIKE ?)';
-            $types .= 'sssssss';
-            array_push($params, $like, $like, $like, $like, $like, $like, $like);
+                           OR p.`department` LIKE ? OR p.`more_departments` LIKE ? OR p.`note` LIKE ? OR p.`meta_keywords` LIKE ?
+                           OR p.`meta_description` LIKE ? OR REGEXP_REPLACE(p.`description`, "<[^>]*>", " ") LIKE ?)';
+            $types .= 'sssssssss';
+            array_push($params, $like, $like, $like, $like, $like, $like, $like, $like, $like);
         }
         if (!empty($f['college']) && $f['college'] !== 'all') {
             $sql .= ' AND p.`college` = ?';
